@@ -64,7 +64,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 }
 
 /**
- * Sends a visitor approval notification
+ * Sends a visitor approval notification with QR code
  */
 export async function sendVisitorApprovalEmail(visitor: Visitor, qrCodeUrl: string): Promise<boolean> {
   const visitDate = new Date(visitor.visitDate).toLocaleDateString('en-US', {
@@ -126,6 +126,61 @@ export async function sendVisitorApprovalEmail(visitor: Visitor, qrCodeUrl: stri
   return sendEmail({
     to: visitor.email,
     subject: 'Your Visit to Sukha Senior Resort is Approved',
+    html,
+  });
+}
+
+/**
+ * Sends a visitor rejection notification
+ */
+export async function sendVisitorRejectionEmail(visitor: Visitor, reason: string = ''): Promise<boolean> {
+  const visitDate = new Date(visitor.visitDate).toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+      <div style="text-align: center; padding-bottom: 20px;">
+        <h1 style="color: #004c4c; margin-bottom: 5px;">Visit Request Update</h1>
+        <p style="color: #666; font-size: 16px;">Sukha Senior Resort</p>
+      </div>
+      
+      <p>Dear ${visitor.fullName},</p>
+      
+      <p>We regret to inform you that your visit request to Sukha Senior Resort could not be accommodated at this time.</p>
+      
+      <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <h3 style="color: #004c4c; margin-top: 0;">Visit Details</h3>
+        <p><strong>Date requested:</strong> ${visitDate}</p>
+        <p><strong>Time requested:</strong> ${visitor.visitTime}</p>
+        <p><strong>Purpose:</strong> ${visitor.purpose}</p>
+      </div>
+      
+      ${reason ? `
+      <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <h3 style="color: #004c4c; margin-top: 0;">Reason</h3>
+        <p>${reason}</p>
+      </div>
+      ` : ''}
+      
+      <p>If you would like to reschedule your visit for another time, please submit a new visit request or contact our administration office directly.</p>
+      
+      <p>We appreciate your understanding.</p>
+      
+      <p style="margin-top: 30px;">Best regards,<br>The Sukha Senior Resort Team</p>
+      
+      <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #777; font-size: 12px;">
+        <p>This is an automated message. Please do not reply to this email.</p>
+      </div>
+    </div>
+  `;
+
+  return sendEmail({
+    to: visitor.email,
+    subject: 'Your Visit Request to Sukha Senior Resort',
     html,
   });
 }

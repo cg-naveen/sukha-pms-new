@@ -390,18 +390,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // TypeScript safety: req.user is guaranteed to exist due to checkRole middleware
       const userId = req.user!.id;
       
-      const rejectedVisitor = await storage.rejectVisitor(id, userId);
-      res.json(rejectedVisitor);
+      // Get reason if provided
+      const { reason } = req.body;
       
-      // In a real app, would send email notification here
+      const rejectedVisitor = await storage.rejectVisitor(id, userId);
+      
+      // Send rejection email notification
+      try {
+        const { sendVisitorRejectionEmail } = await import('./services/email');
+        await sendVisitorRejectionEmail(rejectedVisitor, reason);
+        console.log('Rejection email sent to visitor:', rejectedVisitor.email);
+      } catch (emailError) {
+        console.error('Failed to send rejection email:', emailError);
+        // We still reject the visitor even if email fails
+      }
+      
+      res.json(rejectedVisitor);
     } catch (error) {
       console.error('Error rejecting visitor:', error);
       res.status(500).json({ message: 'Failed to reject visitor' });
     }
   });
 
-  // ==================== Test Email Route (Development Only) ====================
-  app.post("/api/test-email", async (req, res) => {
+  // ==================== Test Email Routes (Development Only) ====================
+  app.post("/api/test-email/approval", async (req, res) => {
     try {
       // Only allow in development mode
       if (process.env.NODE_ENV === 'production') {
@@ -444,17 +456,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import the email service
       const { sendVisitorApprovalEmail } = await import('./services/email');
       
-      // Send test email
+      // Send test approval email
       const result = await sendVisitorApprovalEmail(mockVisitor, qrCodeUrl);
       
       if (result) {
-        res.json({ message: 'Test email processed successfully' });
+        res.json({ message: 'Test approval email processed successfully' });
       } else {
-        res.status(500).json({ message: 'Failed to process email' });
+        res.status(500).json({ message: 'Failed to process approval email' });
       }
     } catch (error) {
-      console.error('Error sending test email:', error);
-      res.status(500).json({ message: 'Error sending test email' });
+      console.error('Error sending test approval email:', error);
+      res.status(500).json({ message: 'Error sending test approval email' });
+    }
+  });
+
+  app.post("/api/test-email/rejection", async (req, res) => {
+    try {
+      // Only allow in development mode
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(404).json({ message: 'Route not found' });
+      }
+
+      const { email, reason } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: 'Email address is required' });
+      }
+      
+      // Create a mock visitor for testing
+      const mockVisitor = {
+        id: 999,
+        fullName: "Test Visitor",
+        email: email,
+        phone: "+60123456789",
+        visitDate: new Date().toISOString().split('T')[0],
+        visitTime: "10:00 AM",
+        purpose: "Site Visit",
+        residentName: "Test Resident",
+        roomNumber: "A-101",
+        numberOfVisitors: 2,
+        status: "rejected", 
+        residentId: null,
+        details: "Test visit details",
+        vehicleNumber: "ABC123",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      } as any; // Type assertion to avoid strict type checking for this test route
+      
+      // Import the email service
+      const { sendVisitorRejectionEmail } = await import('./services/email');
+      
+      // Send test rejection email
+      const result = await sendVisitorRejectionEmail(mockVisitor, reason || "The facility is unavailable on the requested date.");
+      
+      if (result) {
+        res.json({ message: 'Test rejection email processed successfully' });
+      } else {
+        res.status(500).json({ message: 'Failed to process rejection email' });
+      }
+    } catch (error) {
+      console.error('Error sending test rejection email:', error);
+      res.status(500).json({ message: 'Error sending test rejection email' });
     }
   });
 
