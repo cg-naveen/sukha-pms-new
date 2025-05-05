@@ -76,7 +76,7 @@ export default function VisitorRegistrationPage() {
       roomNumber: "",
       vehicleNumber: "",
       numberOfVisitors: 1,
-      purpose: "general_visit",
+      purpose: "General",
       otherPurpose: "",
     },
   });
@@ -94,7 +94,7 @@ export default function VisitorRegistrationPage() {
       const formattedData = {
         ...data,
         visitDate: format(data.visitDate, "yyyy-MM-dd"),
-        details: data.purpose === "other" ? data.otherPurpose : data.purpose,
+        details: data.purpose === "Other" ? data.otherPurpose : data.purpose,
       };
 
       const res = await apiRequest("POST", "/api/public/visitor-registration", formattedData);
@@ -374,9 +374,9 @@ export default function VisitorRegistrationPage() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="general_visit">General Visit</SelectItem>
-                              <SelectItem value="celebration">Celebration</SelectItem>
-                              <SelectItem value="other">Other (specify)</SelectItem>
+                              <SelectItem value="General">General Visit</SelectItem>
+                              <SelectItem value="Celebration">Celebration</SelectItem>
+                              <SelectItem value="Other">Other (specify)</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -384,7 +384,7 @@ export default function VisitorRegistrationPage() {
                       )}
                     />
                     
-                    {purpose === "other" && (
+                    {purpose === "Other" && (
                       <FormField
                         control={form.control}
                         name="otherPurpose"
