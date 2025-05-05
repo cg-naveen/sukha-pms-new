@@ -44,7 +44,7 @@ const visitorRegistrationSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(10, "Please enter a valid phone number"),
-  residentName: z.string().min(2, "Resident name must be at least 2 characters"),
+  residentName: z.string().optional(),
   roomNumber: z.string().optional(),
   visitDate: z.date({
     required_error: "Please select a date for your visit",
@@ -54,7 +54,7 @@ const visitorRegistrationSchema = z.object({
   }),
   vehicleNumber: z.string().optional(),
   numberOfVisitors: z.coerce.number().int().min(1, "At least 1 visitor is required").max(10, "Maximum 10 visitors allowed"),
-  purpose: z.enum(["General", "Celebration", "Other"], {
+  purpose: z.enum(["General Visit of Father/Mother/Relative", "Site Visit", "Celebration", "Other"], {
     required_error: "Please select a purpose for your visit",
   }),
   otherPurpose: z.string().optional(),
@@ -88,7 +88,7 @@ export default function VisitorRegistrationPage() {
       roomNumber: "",
       vehicleNumber: "",
       numberOfVisitors: 1,
-      purpose: "General",
+      purpose: "General Visit of Father/Mother/Relative",
       otherPurpose: "",
     },
   });
@@ -181,6 +181,9 @@ export default function VisitorRegistrationPage() {
               <CardTitle>Visitor Registration</CardTitle>
               <CardDescription>
                 Register your visit to Sukha Senior Resort
+                <div className="mt-2 text-sm text-muted-foreground">
+                  For site visits, please leave the Resident Name / Room Number fields empty
+                </div>
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -237,7 +240,7 @@ export default function VisitorRegistrationPage() {
                         name="residentName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Resident Name *</FormLabel>
+                            <FormLabel>Resident Name (optional)</FormLabel>
                             <FormControl>
                               <Input placeholder="Jane Doe" {...field} />
                             </FormControl>
@@ -386,7 +389,8 @@ export default function VisitorRegistrationPage() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="General">General Visit</SelectItem>
+                              <SelectItem value="General Visit of Father/Mother/Relative">General Visit of Father/Mother/Relative</SelectItem>
+                              <SelectItem value="Site Visit">Site Visit</SelectItem>
                               <SelectItem value="Celebration">Celebration</SelectItem>
                               <SelectItem value="Other">Other (specify)</SelectItem>
                             </SelectContent>
