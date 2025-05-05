@@ -12,23 +12,8 @@ import {
   insertOccupancySchema,
   insertBillingSchema,
   insertVisitorSchema,
+  publicVisitorRegistrationSchema
 } from "@shared/schema";
-
-// Schema for public visitor registration
-const publicVisitorRegistrationSchema = z.object({
-  fullName: z.string().min(2, "Full name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  phone: z.string().min(10, "Please enter a valid phone number"),
-  residentName: z.string().min(2, "Resident name must be at least 2 characters"),
-  roomNumber: z.string().optional(),
-  visitDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Visit date must be in YYYY-MM-DD format"),
-  visitTime: z.string(),
-  vehicleNumber: z.string().optional(),
-  numberOfVisitors: z.number().int().min(1).max(10),
-  purpose: z.enum(["general_visit", "celebration", "other"]),
-  otherPurpose: z.string().optional(),
-  details: z.string().optional(),
-});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -457,18 +442,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fullName: validatedData.fullName,
         email: validatedData.email,
         phone: validatedData.phone,
-        visitDate: new Date(validatedData.visitDate),
+        visitDate: validatedData.visitDate,
         visitTime: validatedData.visitTime,
-        status: 'pending',
-        details: validatedData.purpose === 'other' 
-          ? validatedData.otherPurpose 
-          : validatedData.purpose,
+        purpose: validatedData.purpose === 'other' ? 'Other' : validatedData.purpose,
+        details: validatedData.purpose === 'other' ? validatedData.otherPurpose : undefined,
         residentName: validatedData.residentName,
         roomNumber: validatedData.roomNumber || null,
         vehicleNumber: validatedData.vehicleNumber || null,
         numberOfVisitors: validatedData.numberOfVisitors,
-        qrCode: null, // Will be generated upon approval
-        userId: null, // Will be set when approved/rejected
+        status: 'pending',
       };
       
       // Create the visitor record

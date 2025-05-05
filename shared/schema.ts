@@ -92,18 +92,25 @@ export const billings = pgTable("billings", {
 // Visitors table
 export const visitors = pgTable("visitors", {
   id: serial("id").primaryKey(),
-  residentId: integer("resident_id").references(() => residents.id).notNull(),
+  residentId: integer("resident_id").references(() => residents.id),
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
   phone: text("phone").notNull(),
-  purpose: text("purpose").notNull(),
+  purpose: text("purpose"),
   visitDate: date("visit_date").notNull(),
+  visitTime: text("visit_time"),
   status: visitorStatusEnum("status").notNull().default('pending'),
   approvedById: integer("approved_by_id").references(() => users.id),
   approvedAt: timestamp("approved_at"),
   qrCode: text("qr_code"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  // Additional fields for public registration
+  residentName: text("resident_name"),
+  roomNumber: text("room_number"),
+  vehicleNumber: text("vehicle_number"),
+  numberOfVisitors: integer("number_of_visitors"),
+  details: text("details"),
 });
 
 // Relations
@@ -172,7 +179,9 @@ export const insertVisitorSchema = createInsertSchema(visitors, {
   fullName: (schema) => schema.min(2, "Full name must be at least 2 characters"),
   email: (schema) => schema.email("Must provide a valid email"),
   phone: (schema) => schema.min(10, "Phone number must be at least 10 characters"),
-  purpose: (schema) => schema.min(5, "Purpose must be at least 5 characters"),
+  // Make purpose optional for both paths (purpose or details can be used)
+  purpose: (schema) => schema.optional(),
+  details: (schema) => schema.optional(),
 }).omit({ 
   createdAt: true, 
   updatedAt: true, 
@@ -210,3 +219,26 @@ export type InsertVisitor = z.infer<typeof insertVisitorSchema>;
 export type Visitor = typeof visitors.$inferSelect;
 
 export type Login = z.infer<typeof loginSchema>;
+
+// Public visitor registration schema
+export const publicVisitorRegistrationSchema = z.object({
+  fullName: z.string().min(2, "Full name must be at least 2 characters"),
+  email: z.string().email("Must provide a valid email"),
+  phone: z.string().min(10, "Phone number must be at least 10 characters"),
+  residentName: z.string().min(2, "Resident name must be at least 2 characters"),
+  roomNumber: z.string().optional().nullable(),
+  visitDate: z.string(),
+  visitTime: z.string(),
+  vehicleNumber: z.string().optional().nullable(),
+  numberOfVisitors: z.number().min(1, "Number of visitors must be at least 1"),
+  purpose: z.enum(["General", "Celebration", "Other"]),
+  otherPurpose: z.string().optional().refine(
+    (val) => {
+      // If purpose is 'Other', otherPurpose must be provided and not empty
+      return val !== undefined && val.trim() !== "";
+    },
+    {
+      message: "Please specify the purpose of your visit",
+    }
+  ),
+});

@@ -54,7 +54,7 @@ const visitorRegistrationSchema = z.object({
   }),
   vehicleNumber: z.string().optional(),
   numberOfVisitors: z.coerce.number().int().min(1, "At least 1 visitor is required").max(10, "Maximum 10 visitors allowed"),
-  purpose: z.enum(["general_visit", "celebration", "other"], {
+  purpose: z.enum(["General", "Celebration", "Other"], {
     required_error: "Please select a purpose for your visit",
   }),
   otherPurpose: z.string().optional(),
@@ -211,7 +211,7 @@ export default function VisitorRegistrationPage() {
                           <FormItem>
                             <FormLabel>Phone Number *</FormLabel>
                             <FormControl>
-                              <Input placeholder="(555) 123-4567" {...field} />
+                              <Input placeholder="+60123456789" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
