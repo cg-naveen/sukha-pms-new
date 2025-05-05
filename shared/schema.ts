@@ -232,13 +232,17 @@ export const publicVisitorRegistrationSchema = z.object({
   vehicleNumber: z.string().optional().nullable(),
   numberOfVisitors: z.number().min(1, "Number of visitors must be at least 1"),
   purpose: z.enum(["General", "Celebration", "Other"]),
-  otherPurpose: z.string().optional().refine(
-    (val) => {
-      // If purpose is 'Other', otherPurpose must be provided and not empty
-      return val !== undefined && val.trim() !== "";
-    },
-    {
-      message: "Please specify the purpose of your visit",
+  otherPurpose: z.string().optional(),
+}).refine(
+  (data) => {
+    // If purpose is 'Other', otherPurpose must be provided and not empty
+    if (data.purpose === "Other") {
+      return data.otherPurpose !== undefined && data.otherPurpose.trim() !== "";
     }
-  ),
-});
+    return true;
+  },
+  {
+    message: "Please specify the purpose of your visit",
+    path: ["otherPurpose"]
+  }
+);

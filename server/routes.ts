@@ -434,6 +434,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== Public Routes ====================
   app.post("/api/public/visitor-registration", async (req, res) => {
     try {
+      console.log("Received visitor registration request:", req.body);
+      
       // Validate the incoming data
       const validatedData = publicVisitorRegistrationSchema.parse(req.body);
       
@@ -445,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         visitDate: validatedData.visitDate,
         visitTime: validatedData.visitTime,
         purpose: validatedData.purpose,
-        details: validatedData.purpose === 'Other' ? validatedData.otherPurpose : undefined,
+        details: validatedData.purpose === 'Other' ? validatedData.otherPurpose : validatedData.purpose,
         residentName: validatedData.residentName,
         roomNumber: validatedData.roomNumber || null,
         vehicleNumber: validatedData.vehicleNumber || null,
@@ -453,8 +455,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'pending',
       };
       
+      console.log("Processed visitor data:", visitorData);
+      
       // Create the visitor record
       const newVisitor = await storage.createVisitor(visitorData);
+      
+      console.log("Created visitor record:", newVisitor);
       
       // Return success response
       res.status(201).json({
@@ -468,6 +474,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error('Validation error:', error.errors);
         return res.status(400).json({ 
           success: false,
           errors: error.errors 

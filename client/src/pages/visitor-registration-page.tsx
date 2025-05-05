@@ -58,7 +58,19 @@ const visitorRegistrationSchema = z.object({
     required_error: "Please select a purpose for your visit",
   }),
   otherPurpose: z.string().optional(),
-});
+}).refine(
+  (data) => {
+    // If purpose is 'Other', otherPurpose must be provided and not empty
+    if (data.purpose === "Other") {
+      return data.otherPurpose !== undefined && data.otherPurpose.trim() !== "";
+    }
+    return true;
+  },
+  {
+    message: "Please specify the purpose of your visit",
+    path: ["otherPurpose"]
+  }
+);
 
 type VisitorRegistrationFormData = z.infer<typeof visitorRegistrationSchema>;
 
