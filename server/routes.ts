@@ -472,6 +472,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create a test visitor with QR code for testing verification
+  app.post("/api/test-visitor/create", async (req, res) => {
+    try {
+      // Only allow in development mode
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(404).json({ message: 'Route not found' });
+      }
+      
+      // Create a visitor with a known QR code for testing
+      const visitorData = {
+        fullName: "Test Visitor",
+        email: "test@example.com",
+        phone: "+60123456789",
+        visitDate: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
+        visitTime: "10:00 AM",
+        purpose: "Site Visit",
+        residentName: "Test Resident",
+        roomNumber: "A-101",
+        numberOfVisitors: 2,
+        status: 'approved',
+        details: "Test visit details",
+        vehicleNumber: "ABC123",
+        qrCode: "test_qr_code_123456"
+      };
+      
+      // Create or update the test visitor
+      const visitors = await storage.getAllVisitors();
+      const existingVisitor = visitors.find(v => v.qrCode === visitorData.qrCode);
+      
+      let testVisitor;
+      if (existingVisitor) {
+        testVisitor = await storage.updateVisitor(existingVisitor.id, {
+          ...visitorData,
+          status: 'approved'
+        });
+      } else {
+        testVisitor = await storage.createVisitor(visitorData);
+        // Approve the visitor to set the QR code
+        testVisitor = await storage.approveVisitor(testVisitor.id, 1, visitorData.qrCode);
+      }
+      
+      res.json({ 
+        message: 'Test visitor created successfully', 
+        visitor: testVisitor,
+        verifyUrl: `${req.protocol}://${req.get('host')}/api/public/visitors/verify/${visitorData.qrCode}`
+      });
+    } catch (error) {
+      console.error('Error creating test visitor:', error);
+      res.status(500).json({ message: 'Error creating test visitor' });
+    }
+  });
+
   app.post("/api/test-email/rejection", async (req, res) => {
     try {
       // Only allow in development mode
@@ -571,6 +623,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ==================== Public Routes ====================
+  // QR Code verification endpoint - used when staff scans a visitor's QR code
+  app.get("/api/public/visitors/verify/:qrCode", async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    try {
+      const { qrCode } = req.params;
+      
+      if (!qrCode) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'QR code is required'
+        });
+      }
+      
+      // Find visitor with this QR code
+      const visitors = await storage.getAllVisitors('approved');
+      const visitor = visitors.find(v => v.qrCode === qrCode);
+      
+      if (!visitor) {
+        return res.status(404).json({
+          success: false,
+          message: 'Invalid or expired QR code'
+        });
+      }
+      
+      // Check if the visit date is valid (not in the past)
+      const visitDate = new Date(visitor.visitDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (visitDate < today) {
+        return res.status(400).json({
+          success: false,
+          message: 'This visit has expired',
+          visitor: {
+            id: visitor.id,
+            fullName: visitor.fullName,
+            visitDate: visitor.visitDate,
+            status: 'expired'
+          }
+        });
+      }
+      
+      // Valid QR code for an upcoming or today's visit
+      return res.status(200).json({
+        success: true,
+        message: 'QR code verified successfully',
+        visitor
+      });
+      
+    } catch (error) {
+      console.error('Error verifying QR code:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Failed to verify QR code'
+      });
+    }
+  });
+
   app.post("/api/public/visitor-registration", async (req, res) => {
     try {
       console.log("Received visitor registration request:", req.body);

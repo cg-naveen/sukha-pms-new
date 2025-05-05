@@ -17,7 +17,7 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
 
   const verifyMutation = useMutation({
     mutationFn: async (code: string) => {
-      const res = await apiRequest('GET', `/api/visitors/verify/${code}`);
+      const res = await apiRequest('GET', `/api/public/visitors/verify/${code}`);
       return await res.json();
     },
     onError: (error: Error) => {
