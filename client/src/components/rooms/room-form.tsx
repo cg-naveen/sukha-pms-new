@@ -217,7 +217,7 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
             name="monthlyRate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Monthly Rate ($)</FormLabel>
+                <FormLabel>Monthly Rate (RM)</FormLabel>
                 <FormControl>
                   <Input 
                     type="number" 

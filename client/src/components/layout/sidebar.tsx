@@ -5,7 +5,7 @@ import {
   Home,
   Users,
   Building2,
-  DollarSign,
+  Receipt,
   UserPlus,
   User,
   Settings,
@@ -27,7 +27,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Residents', href: '/residents', icon: Users },
     { name: 'Rooms', href: '/rooms', icon: Building2 },
-    { name: 'Billing', href: '/billing', icon: DollarSign },
+    { name: 'Billing', href: '/billing', icon: Receipt },
     { name: 'Visitors', href: '/visitors', icon: UserPlus },
   ];
   
