@@ -82,7 +82,7 @@ export default function AuthPage() {
         <div className="w-full max-w-sm mx-auto lg:w-[350px]">
           <div className="flex items-center justify-center mb-8">
             <Building2 className="h-10 w-10 text-primary" />
-            <h2 className="ml-2 text-2xl font-bold text-gray-900">PropertyPro</h2>
+            <h2 className="ml-2 text-2xl font-bold text-gray-900">Sukha Senior Resort</h2>
           </div>
           
           <Tabs 
@@ -262,7 +262,7 @@ export default function AuthPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-primary-800 to-primary-600">
           <div className="flex flex-col justify-center items-center h-full px-16 text-white">
             <Building2 className="h-20 w-20 mb-6" />
-            <h1 className="text-4xl font-bold mb-4">PropertyPro Management System</h1>
+            <h1 className="text-4xl font-bold mb-4">Sukha Senior Resort Management</h1>
             <p className="text-lg text-center mb-8">
               A comprehensive solution for managing properties, residents, billing, and visitor access.
             </p>

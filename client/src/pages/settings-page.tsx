@@ -63,9 +63,9 @@ export default function SettingsPage() {
   const generalForm = useForm<z.infer<typeof generalSettingsSchema>>({
     resolver: zodResolver(generalSettingsSchema),
     defaultValues: {
-      propertyName: "PropertyPro",
+      propertyName: "Sukha Senior Resort",
       address: "123 Main Street, Anytown, USA",
-      contactEmail: "admin@property.com",
+      contactEmail: "admin@sukhasenior.com",
       contactPhone: "(555) 123-4567",
     },
   });

@@ -55,7 +55,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       >
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-800">PropertyPro</h1>
+            <h1 className="text-xl font-bold text-gray-800">Sukha Senior Resort</h1>
             <p className="text-xs text-gray-500">Management System</p>
           </div>
           <button 
