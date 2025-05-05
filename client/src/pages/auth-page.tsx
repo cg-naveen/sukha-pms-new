@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -91,9 +91,8 @@ export default function AuthPage() {
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-1">
+              <TabsTrigger value="login" className="w-full">Login</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
@@ -150,13 +149,13 @@ export default function AuthPage() {
                 </CardContent>
                 <CardFooter className="justify-center">
                   <p className="text-sm text-gray-500">
-                    Don't have an account?{" "}
-                    <button 
+                    Planning to visit?{" "}
+                    <Link
+                      href="/visitor-registration"
                       className="text-primary hover:underline"
-                      onClick={() => setActiveTab("register")}
                     >
-                      Register
-                    </button>
+                      Register as visitor
+                    </Link>
                   </p>
                 </CardFooter>
               </Card>

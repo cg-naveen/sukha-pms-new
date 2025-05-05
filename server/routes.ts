@@ -14,6 +14,22 @@ import {
   insertVisitorSchema,
 } from "@shared/schema";
 
+// Schema for public visitor registration
+const publicVisitorRegistrationSchema = z.object({
+  fullName: z.string().min(2, "Full name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  phone: z.string().min(10, "Please enter a valid phone number"),
+  residentName: z.string().min(2, "Resident name must be at least 2 characters"),
+  roomNumber: z.string().optional(),
+  visitDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Visit date must be in YYYY-MM-DD format"),
+  visitTime: z.string(),
+  vehicleNumber: z.string().optional(),
+  numberOfVisitors: z.number().int().min(1).max(10),
+  purpose: z.enum(["general_visit", "celebration", "other"]),
+  otherPurpose: z.string().optional(),
+  details: z.string().optional(),
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   const { checkRole, checkWriteAccess } = setupAuth(app);
