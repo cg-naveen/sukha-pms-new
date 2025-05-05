@@ -113,7 +113,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { resident, nextOfKin } = req.body;
       
       const validatedResident = insertResidentSchema.parse(resident);
-      let validatedNextOfKin = null;
+      // Default to undefined instead of null for proper TypeScript compatibility
+      let validatedNextOfKin = undefined;
       
       if (nextOfKin) {
         validatedNextOfKin = insertNextOfKinSchema.parse(nextOfKin);
@@ -330,10 +331,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const visitorData = insertVisitorSchema.parse(req.body);
       
-      // Check if resident exists
-      const resident = await storage.getResident(visitorData.residentId);
-      if (!resident) {
-        return res.status(404).json({ message: 'Resident not found' });
+      // Check if resident exists when residentId is provided
+      if (visitorData.residentId) {
+        const resident = await storage.getResident(visitorData.residentId);
+        if (!resident) {
+          return res.status(404).json({ message: 'Resident not found' });
+        }
       }
       
       const newVisitor = await storage.createVisitor(visitorData);
@@ -353,7 +356,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/visitors/:id/approve", checkRole('admin', 'staff'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const userId = req.user.id;
+      // TypeScript safety: req.user is guaranteed to exist due to checkRole middleware
+      const userId = req.user!.id;
       
       // Generate QR code data
       const qrCode = randomBytes(16).toString('hex');
@@ -383,7 +387,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/visitors/:id/reject", checkRole('admin', 'staff'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const userId = req.user.id;
+      // TypeScript safety: req.user is guaranteed to exist due to checkRole middleware
+      const userId = req.user!.id;
       
       const rejectedVisitor = await storage.rejectVisitor(id, userId);
       res.json(rejectedVisitor);
