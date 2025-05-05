@@ -96,6 +96,9 @@ export default function UpcomingRenewals({ renewals = [], isLoading }: RenewalPr
                 Room {billing.occupancy?.room?.unitNumber || "N/A"}, 
                 {billing.occupancy?.room?.roomType?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || "Unknown"}
               </p>
+              <p className="text-xs font-medium text-gray-700 mt-1">
+                RM {billing.amount?.toLocaleString() || 0}
+              </p>
               <div className="mt-2 flex">
                 <Button 
                   variant="outline" 

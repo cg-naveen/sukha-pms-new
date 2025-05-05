@@ -196,7 +196,7 @@ export default function BillingPage() {
                         {billing.occupancy?.room?.roomType?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Unknown'}
                       </div>
                     </TableCell>
-                    <TableCell>${billing.amount.toLocaleString()}</TableCell>
+                    <TableCell>RM {billing.amount.toLocaleString()}</TableCell>
                     <TableCell>{format(new Date(billing.dueDate), "MMM d, yyyy")}</TableCell>
                     <TableCell>{getStatusBadge(billing.status)}</TableCell>
                     <TableCell className="text-right space-x-2">

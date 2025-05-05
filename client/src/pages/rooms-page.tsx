@@ -213,7 +213,7 @@ export default function RoomsPage() {
                       <TableCell>{room.size} sq ft</TableCell>
                       <TableCell>{room.floor}</TableCell>
                       <TableCell>{renderStatusBadge(room.status)}</TableCell>
-                      <TableCell>${room.monthlyRate.toLocaleString()}</TableCell>
+                      <TableCell>RM {room.monthlyRate.toLocaleString()}</TableCell>
                       <TableCell>
                         {resident ? (
                           <span className="text-gray-900">{resident.fullName}</span>
