@@ -107,7 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/residents", checkRole('admin', 'staff'), async (req, res) => {
+  app.post("/api/residents", checkWriteAccess('residents'), async (req, res) => {
     try {
       const { resident, nextOfKin } = req.body;
       
@@ -129,7 +129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/residents/:id", checkRole('admin', 'staff'), async (req, res) => {
+  app.put("/api/residents/:id", checkWriteAccess('residents'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { resident, nextOfKin } = req.body;
@@ -182,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/rooms", checkRole('admin', 'staff'), async (req, res) => {
+  app.post("/api/rooms", checkWriteAccess('rooms'), async (req, res) => {
     try {
       const roomData = insertRoomSchema.parse(req.body);
       const newRoom = await storage.createRoom(roomData);
@@ -196,7 +196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/rooms/:id", checkRole('admin', 'staff'), async (req, res) => {
+  app.put("/api/rooms/:id", checkWriteAccess('rooms'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const roomData = req.body;
@@ -223,7 +223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/occupancies", checkRole('admin', 'staff'), async (req, res) => {
+  app.post("/api/occupancies", checkWriteAccess('rooms'), async (req, res) => {
     try {
       const occupancyData = insertOccupancySchema.parse(req.body);
       const newOccupancy = await storage.createOccupancy(occupancyData);

@@ -24,16 +24,16 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
-          50: "#f0f7ff", // Light shade for bg-primary-50
-          100: "#e0f0ff",
-          200: "#c0e0ff",
-          300: "#a1d0ff",
-          400: "#81c0ff",
-          500: "#61b0ff",
-          600: "#419cff", 
-          700: "#2184e6",
-          800: "#106dcc",
-          900: "#0057b3",
+          50: "#e6f0f0", // Light shade for bg-primary-50
+          100: "#cce6e6",
+          200: "#99cdcd",
+          300: "#66b3b3",
+          400: "#339a9a",
+          500: "#008080",
+          600: "#006666", 
+          700: "#004c4c", // Our main brand color
+          800: "#003333",
+          900: "#001919",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
