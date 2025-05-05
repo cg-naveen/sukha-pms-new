@@ -183,7 +183,7 @@ export default function RoomsPage() {
                 <TableHead>Size</TableHead>
                 <TableHead>Floor</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Monthly Rate</TableHead>
+                <TableHead>Monthly Rate (RM)</TableHead>
                 <TableHead>Resident</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>

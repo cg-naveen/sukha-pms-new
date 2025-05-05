@@ -165,7 +165,7 @@ export default function BillingPage() {
               <TableRow>
                 <TableHead>Resident</TableHead>
                 <TableHead>Room</TableHead>
-                <TableHead>Amount</TableHead>
+                <TableHead>Amount (RM)</TableHead>
                 <TableHead>Due Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
