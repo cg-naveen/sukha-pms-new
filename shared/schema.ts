@@ -225,13 +225,13 @@ export const publicVisitorRegistrationSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   email: z.string().email("Must provide a valid email"),
   phone: z.string().min(10, "Phone number must be at least 10 characters"),
-  residentName: z.string().min(2, "Resident name must be at least 2 characters"),
+  residentName: z.string().optional().nullable(),
   roomNumber: z.string().optional().nullable(),
   visitDate: z.string(),
   visitTime: z.string(),
   vehicleNumber: z.string().optional().nullable(),
   numberOfVisitors: z.number().min(1, "Number of visitors must be at least 1"),
-  purpose: z.enum(["General", "Celebration", "Other"]),
+  purpose: z.enum(["General Visit of Father/Mother/Relative", "Site Visit", "Celebration", "Other"]),
   otherPurpose: z.string().optional(),
 }).refine(
   (data) => {
