@@ -18,32 +18,43 @@ interface EmailOptions {
 }
 
 /**
- * Sends an email using MailerLite
+ * Sends an email using MailerLite integration
+ * 
+ * Note: MailerLite doesn't have a direct transactional email API like SendGrid.
+ * In a production environment, you would set up a proper transactional email provider.
+ * This implementation logs the email details and optionally tries to add the
+ * recipient to the MailerLite subscribers list.
  */
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
-    // In MailerLite, we need to first add the visitor as a subscriber
-    // Using the typed status value
-    await mailerLite.subscribers.createOrUpdate({
-      email: options.to,
-      fields: {
-        name: 'Visitor',
-      },
-      status: 'active' as 'active' // Type assertion to match the expected enum
-    });
-
-    // Fallback to logging if we're in development since MailerLite
-    // doesn't have a direct "send single email" feature like SendGrid
+    // Log the email details
     console.log('------------------------------------------------');
-    console.log('Email that would be sent:');
+    console.log('Email would be sent:');
     console.log(`To: ${options.to}`);
     console.log(`Subject: ${options.subject}`);
     console.log('HTML Content:', options.html.substring(0, 150) + '...');
     console.log('------------------------------------------------');
     
-    // For production, you would need to use their Campaigns API with more setup
+    // Try to add the email to MailerLite subscribers list if it's a valid email
+    // This is not required for the approval notification, just for demonstration
+    if (options.to && options.to.includes('@')) {
+      try {
+        await mailerLite.subscribers.createOrUpdate({
+          email: options.to,
+          fields: {
+            name: 'Visitor',
+          },
+          status: 'active' as 'active'
+        });
+        console.log(`Added ${options.to} to MailerLite subscribers list`);
+      } catch (error) {
+        // Type-safe error handling
+        const subscriberError = error as Error;
+        console.error('Failed to add to subscribers list, but continuing with email log:', subscriberError.message || 'Unknown error');
+        // Continue execution - we don't want subscriber issues to stop the email flow
+      }
+    }
     
-    // Return success as we've logged the email content
     console.log(`Email notification processed for ${options.to}`);
     return true;
   } catch (error) {

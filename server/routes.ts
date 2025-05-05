@@ -400,6 +400,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== Test Email Route (Development Only) ====================
+  app.post("/api/test-email", async (req, res) => {
+    try {
+      // Only allow in development mode
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(404).json({ message: 'Route not found' });
+      }
+
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: 'Email address is required' });
+      }
+      
+      // Create a mock visitor for testing that matches our Visitor type
+      const mockVisitor = {
+        id: 999,
+        fullName: "Test Visitor",
+        email: email,
+        phone: "+60123456789",
+        visitDate: new Date().toISOString().split('T')[0],
+        visitTime: "10:00 AM",
+        purpose: "Site Visit",
+        residentName: "Test Resident",
+        roomNumber: "A-101",
+        numberOfVisitors: 2,
+        status: "approved", 
+        approvedById: 1,
+        residentId: null,
+        details: "Test visit details",
+        qrCode: "test_qr_code_123456",
+        vehicleNumber: "ABC123",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        approvedAt: new Date(),
+        approvedBy: { id: 1, username: "admin", role: "admin" }
+      } as any; // Type assertion to avoid strict type checking for this test route
+      
+      // Mock QR code URL
+      const qrCodeUrl = `${req.protocol}://${req.get('host')}/test-qr-code`;
+      
+      // Import the email service
+      const { sendVisitorApprovalEmail } = await import('./services/email');
+      
+      // Send test email
+      const result = await sendVisitorApprovalEmail(mockVisitor, qrCodeUrl);
+      
+      if (result) {
+        res.json({ message: 'Test email processed successfully' });
+      } else {
+        res.status(500).json({ message: 'Failed to process email' });
+      }
+    } catch (error) {
+      console.error('Error sending test email:', error);
+      res.status(500).json({ message: 'Error sending test email' });
+    }
+  });
+
   // ==================== Dashboard Stats ====================
   app.get("/api/dashboard/stats", async (req, res) => {
     try {
