@@ -355,13 +355,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const userId = req.user.id;
       
-      // Generate QR code data (in real app, this would be a unique code or URL)
+      // Generate QR code data
       const qrCode = randomBytes(16).toString('hex');
       
       const approvedVisitor = await storage.approveVisitor(id, userId, qrCode);
-      res.json(approvedVisitor);
       
-      // In a real app, would send email notification here with QR code link
+      // Generate a data URL for the QR code to include in the email
+      const qrCodeDataUrl = `${req.protocol}://${req.get('host')}/api/visitors/qr/${approvedVisitor.id}`;
+      
+      // Send an email notification to the visitor
+      try {
+        const { sendVisitorApprovalEmail } = await import('./services/email');
+        await sendVisitorApprovalEmail(approvedVisitor, qrCodeDataUrl);
+        console.log('Approval email sent to visitor:', approvedVisitor.email);
+      } catch (emailError) {
+        console.error('Failed to send approval email:', emailError);
+        // We still approve the visitor even if email fails
+      }
+      
+      res.json(approvedVisitor);
     } catch (error) {
       console.error('Error approving visitor:', error);
       res.status(500).json({ message: 'Failed to approve visitor' });
