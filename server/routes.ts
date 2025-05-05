@@ -325,6 +325,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to fetch visitor' });
     }
   });
+  
+
 
   // Public endpoint for visitor registration
   app.post("/api/public/visitor-request", async (req, res) => {

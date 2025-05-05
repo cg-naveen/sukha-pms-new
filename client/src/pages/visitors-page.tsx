@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/main-layout";
 import VisitorForm from "@/components/visitors/visitor-form";
 import QRCodeGenerator from "@/components/visitors/qr-code-generator";
+import QrCodeScanner from "@/components/visitors/qr-code-scanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -38,7 +39,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
-import { Plus, Search, Check, X, QrCode, Loader2 } from "lucide-react";
+import { Plus, Search, Check, X, QrCode, Loader2, ScanLine } from "lucide-react";
 
 export default function VisitorsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -48,6 +49,7 @@ export default function VisitorsPage() {
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
+  const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -170,10 +172,20 @@ export default function VisitorsPage() {
     <MainLayout title="Visitor Management">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Visitor Management</h1>
-        <Button onClick={openForm} className="flex items-center">
-          <Plus className="h-5 w-5 mr-1" />
-          Request Visit
-        </Button>
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setIsQrScannerOpen(true)} 
+            className="flex items-center"
+          >
+            <ScanLine className="h-5 w-5 mr-1" />
+            Verify QR
+          </Button>
+          <Button onClick={openForm} className="flex items-center">
+            <Plus className="h-5 w-5 mr-1" />
+            Request Visit
+          </Button>
+        </div>
       </div>
       
       {/* Filters and search */}
@@ -404,6 +416,16 @@ export default function VisitorsPage() {
           {selectedVisitor && (
             <QRCodeGenerator visitor={selectedVisitor} />
           )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* QR Scanner Dialog */}
+      <Dialog open={isQrScannerOpen} onOpenChange={setIsQrScannerOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Verify Visitor QR Code</DialogTitle>
+          </DialogHeader>
+          <QrCodeScanner onClose={() => setIsQrScannerOpen(false)} />
         </DialogContent>
       </Dialog>
     </MainLayout>
