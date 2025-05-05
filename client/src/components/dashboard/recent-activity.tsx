@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UserPlus, DollarSign, UserCheck, Building2 } from "lucide-react";
+import { UserPlus, Receipt, UserCheck, Building2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface Activity {
@@ -43,7 +43,7 @@ export default function RecentActivity({ activities = [], isLoading }: RecentAct
       case 'visitor_request':
         return <UserPlus className="text-primary-600 w-5 h-5" />;
       case 'billing_due':
-        return <DollarSign className="text-warning-600 w-5 h-5" />;
+        return <Receipt className="text-warning-600 w-5 h-5" />;
       case 'visitor_approved':
         return <UserCheck className="text-secondary-600 w-5 h-5" />;
       case 'room_update':
