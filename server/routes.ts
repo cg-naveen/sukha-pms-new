@@ -415,6 +415,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ==================== Test Email Routes (Development Only) ====================
+  // Basic email test endpoint
+  app.post("/api/test-email/basic", async (req, res) => {
+    try {
+      // Only allow in development mode
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(404).json({ message: 'Route not found' });
+      }
+      
+      const { email } = req.body;
+      const toEmail = email || 'naveen@trisquare.com.my';
+      
+      // Log API key info (without revealing it)
+      const apiKey = process.env.BREVO_API_KEY || '';
+      console.log('API Key length:', apiKey.length);
+      console.log('API Key first 5 chars:', apiKey.substring(0, 5));
+      
+      if (apiKey.startsWith('SG.')) {
+        console.log('API key appears to be a SendGrid key, not a Brevo key');
+      } else {
+        console.log('API key does not start with "SG.".');
+      }
+      
+      // Import the email service
+      const { sendEmail } = await import('./services/email');
+      
+      // Send a simple test email
+      const result = await sendEmail({
+        to: toEmail,
+        subject: 'Test Email from Sukha Senior Resort',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+            <h2 style="color: #004c4c;">Test Email from Sukha Senior Resort</h2>
+            <p>This is a test email to verify the email service is working correctly.</p>
+            <p>If you received this email, it means the Brevo API is properly configured.</p>
+            <p>Time sent: ${new Date().toISOString()}</p>
+          </div>
+        `
+      });
+      
+      if (result) {
+        res.json({ success: true, message: 'Test email sent successfully', to: toEmail });
+      } else {
+        res.status(500).json({ success: false, message: 'Failed to send test email', to: toEmail });
+      }
+    } catch (error) {
+      console.error('Error sending test email:', error);
+      res.status(500).json({ message: 'Error sending test email' });
+    }
+  });
+
   app.post("/api/test-email/approval", async (req, res) => {
     try {
       // Only allow in development mode

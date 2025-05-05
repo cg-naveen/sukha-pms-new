@@ -8,10 +8,20 @@ if (!BREVO_API_KEY) {
   console.error('BREVO_API_KEY environment variable is not set');
 } else {
   console.log('Brevo API key configured successfully');
+  
+  // Check if the key has the format we expect
+  if (BREVO_API_KEY.startsWith('xkeysib-')) {
+    console.log('API key has the expected Brevo format (starts with xkeysib-)');
+  } else {
+    console.warn('API key does not start with xkeysib-, which is usually expected for Brevo. This might cause issues.');
+  }
 }
 
 // Set API key
 sgMail.setApiKey(BREVO_API_KEY || 'dummy-key');
+
+// Configure SendGrid client options for Brevo
+sgMail.setSubstitutionWrappers('{{', '}}'); // Use Brevo's template syntax
 
 interface EmailOptions {
   to: string;
@@ -44,7 +54,10 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     // Create email data
     const msg = {
       to: options.to,
-      from: 'noreply@sukhaseniorresort.com', // Use your verified sender
+      from: {
+        email: 'noreply@sukhaseniorresort.com',
+        name: 'Sukha Senior Resort'
+      }, // Use a verified sender in Brevo
       subject: options.subject,
       html: options.html,
       attachments: options.attachments || [],
