@@ -14,11 +14,13 @@ import BillingPage from "@/pages/billing-page";
 import VisitorsPage from "@/pages/visitors-page";
 import UsersPage from "@/pages/users-page";
 import SettingsPage from "@/pages/settings-page";
+import VisitorRegistrationPage from "@/pages/visitor-registration-page";
 
 function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
+      <Route path="/visitor-registration" component={VisitorRegistrationPage} />
       <ProtectedRoute path="/" component={DashboardPage} />
       <ProtectedRoute path="/residents" component={ResidentsPage} />
       <ProtectedRoute path="/rooms" component={RoomsPage} />

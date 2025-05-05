@@ -446,6 +446,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== Public Routes ====================
+  app.post("/api/public/visitor-registration", async (req, res) => {
+    try {
+      // Validate the incoming data
+      const validatedData = publicVisitorRegistrationSchema.parse(req.body);
+      
+      // Format the data for storing in the database
+      const visitorData = {
+        fullName: validatedData.fullName,
+        email: validatedData.email,
+        phone: validatedData.phone,
+        visitDate: new Date(validatedData.visitDate),
+        visitTime: validatedData.visitTime,
+        status: 'pending',
+        details: validatedData.purpose === 'other' 
+          ? validatedData.otherPurpose 
+          : validatedData.purpose,
+        residentName: validatedData.residentName,
+        roomNumber: validatedData.roomNumber || null,
+        vehicleNumber: validatedData.vehicleNumber || null,
+        numberOfVisitors: validatedData.numberOfVisitors,
+        qrCode: null, // Will be generated upon approval
+        userId: null, // Will be set when approved/rejected
+      };
+      
+      // Create the visitor record
+      const newVisitor = await storage.createVisitor(visitorData);
+      
+      // Return success response
+      res.status(201).json({
+        success: true,
+        message: 'Visitor registration submitted successfully',
+        visitor: {
+          id: newVisitor.id,
+          fullName: newVisitor.fullName,
+          status: newVisitor.status,
+        }
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          success: false,
+          errors: error.errors 
+        });
+      }
+      console.error('Error registering visitor:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Failed to process visitor registration' 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
