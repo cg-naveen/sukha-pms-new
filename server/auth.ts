@@ -126,18 +126,51 @@ export function setupAuth(app: Express) {
   });
 
   // Middleware to check roles
-  const checkRole = (...roles: string[]) => (req: any, res: any, next: any) => {
+  const checkRole = (...allowedRoles: string[]) => (req: any, res: any, next: any) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
     
-    if (!roles.includes(req.user.role)) {
+    // Superadmin always has access to everything
+    if (req.user.role === 'superadmin') {
+      return next();
+    }
+    
+    if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({ message: 'Forbidden' });
     }
     
     next();
   };
+  
+  // Check if the user has write permissions (create, update, delete)
+  const checkWriteAccess = (module: 'users' | 'rooms' | 'residents' | 'visitors' | 'billings') => (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
+    // Superadmin has full access to everything
+    if (req.user.role === 'superadmin') {
+      return next();
+    }
+    
+    // Admin has full access to everything except users management
+    if (req.user.role === 'admin') {
+      if (module === 'users') {
+        return res.status(403).json({ message: 'Admin cannot modify users' });
+      }
+      return next();
+    }
+    
+    // Staff only has read-only access
+    if (req.user.role === 'staff') {
+      return res.status(403).json({ message: 'Staff has read-only access' });
+    }
+    
+    // Regular users don't have access
+    return res.status(403).json({ message: 'Forbidden' });
+  };
 
   // Return middleware
-  return { checkRole };
+  return { checkRole, checkWriteAccess };
 }

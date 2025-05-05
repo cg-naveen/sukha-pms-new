@@ -16,10 +16,10 @@ import {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
-  const { checkRole } = setupAuth(app);
+  const { checkRole, checkWriteAccess } = setupAuth(app);
 
   // ==================== User Routes ====================
-  app.get("/api/users", checkRole('admin'), async (req, res) => {
+  app.get("/api/users", checkRole('superadmin'), async (req, res) => {
     try {
       const users = await storage.getAllUsers();
       res.json(users);
@@ -29,7 +29,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/users/:id", checkRole('admin'), async (req, res) => {
+  app.get("/api/users/:id", checkRole('superadmin'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const user = await storage.getUser(id);
@@ -43,7 +43,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/users/:id", checkRole('admin'), async (req, res) => {
+  app.put("/api/users/:id", checkRole('superadmin'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const userData = req.body;
@@ -59,7 +59,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/users/:id/password", checkRole('admin'), async (req, res) => {
+  app.put("/api/users/:id/password", checkRole('superadmin'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { password } = req.body;
