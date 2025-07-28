@@ -1,0 +1,19 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/auth/login/route": "app/api/auth/login/route.js",
+  "/api/auth/logout/route": "app/api/auth/logout/route.js",
+  "/api/auth/user/route": "app/api/auth/user/route.js",
+  "/api/billings/upcoming/[days]/route": "app/api/billings/upcoming/[days]/route.js",
+  "/api/rooms/route": "app/api/rooms/route.js",
+  "/api/dashboard/stats/route": "app/api/dashboard/stats/route.js",
+  "/api/visitors/route": "app/api/visitors/route.js",
+  "/api/residents/route": "app/api/residents/route.js",
+  "/api/billings/route": "app/api/billings/route.js",
+  "/billings/page": "app/billings/page.js",
+  "/auth/page": "app/auth/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/residents/page": "app/residents/page.js",
+  "/rooms/page": "app/rooms/page.js",
+  "/page": "app/page.js",
+  "/visitors/page": "app/visitors/page.js"
+}

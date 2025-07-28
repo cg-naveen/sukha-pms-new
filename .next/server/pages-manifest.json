@@ -1,0 +1,15 @@
+{
+  "/_app": "pages/_app.js",
+  "/_error": "pages/_error.js",
+  "/not-found": "pages/not-found.js",
+  "/dashboard-page": "pages/dashboard-page.js",
+  "/residents-page": "pages/residents-page.js",
+  "/settings-page": "pages/settings-page.js",
+  "/auth-page": "pages/auth-page.js",
+  "/visitor-registration-page": "pages/visitor-registration-page.js",
+  "/users-page": "pages/users-page.js",
+  "/rooms-page": "pages/rooms-page.js",
+  "/visitors-page": "pages/visitors-page.js",
+  "/billing-page": "pages/billing-page.js",
+  "/_document": "pages/_document.js"
+}
