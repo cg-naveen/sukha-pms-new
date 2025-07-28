@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { format } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { Loader2, CalendarIcon } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,31 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { insertResidentSchema, insertNextOfKinSchema, Resident } from "@shared/schema";
+
+const salesReferralOptions = [
+  'Mohd Amin',
+  'Encik Rosli',
+  'Puan Mariam',
+  'Website',
+  'Google Ads',
+  'Facebook Ads',
+  'Walk-in',
+  'Referral',
+  'Other'
+];
+
+const countryCodeOptions = [
+  { value: '+60', label: '+60 (Malaysia)' },
+  { value: '+65', label: '+65 (Singapore)' },
+  { value: '+86', label: '+86 (China)' },
+  { value: '+1', label: '+1 (US/Canada)' },
+  { value: '+44', label: '+44 (UK)' },
+  { value: '+91', label: '+91 (India)' },
+  { value: '+82', label: '+82 (South Korea)' },
+  { value: '+81', label: '+81 (Japan)' },
+];
 
 interface ResidentFormProps {
   resident: Resident | null;
@@ -44,6 +68,11 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
     enabled: !!resident,
   });
 
+  // Fetch available rooms for the dropdown
+  const { data: rooms = [] } = useQuery({
+    queryKey: ['/api/rooms'],
+  });
+
   // Create form with default values
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,10 +81,13 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
         fullName: resident?.fullName || "",
         email: resident?.email || "",
         phone: resident?.phone || "",
+        countryCode: resident?.countryCode || "+60",
         dateOfBirth: resident?.dateOfBirth ? new Date(resident.dateOfBirth) : undefined,
         idNumber: resident?.idNumber || "",
         address: resident?.address || "",
         photo: resident?.photo || "",
+        roomId: resident?.roomId || undefined,
+        salesReferral: resident?.salesReferral || "Other",
       },
       nextOfKin: {
         fullName: "",
@@ -175,13 +207,91 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
               
               <FormField
                 control={form.control}
-                name="resident.phone"
+                name="resident.countryCode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone</FormLabel>
-                    <FormControl>
-                      <Input placeholder="(555) 123-4567" {...field} />
-                    </FormControl>
+                    <FormLabel>Country Code</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select country code" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {countryCodeOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="resident.phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="123456789" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="resident.roomId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assigned Room</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} defaultValue={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select room (optional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">No room assigned</SelectItem>
+                        {rooms.filter((room: any) => room.status === 'vacant' || room.id === field.value).map((room: any) => (
+                          <SelectItem key={room.id} value={room.id.toString()}>
+                            {room.unitNumber} - {room.roomType.replace('_', ' ')} (RM {room.monthlyRate})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="resident.salesReferral"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sales Referral</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select referral source" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {salesReferralOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

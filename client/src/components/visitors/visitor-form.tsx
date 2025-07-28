@@ -4,8 +4,19 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { insertVisitorSchema, Visitor } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
+
+const countryCodeOptions = [
+  { value: '+60', label: '+60 (Malaysia)' },
+  { value: '+65', label: '+65 (Singapore)' },
+  { value: '+86', label: '+86 (China)' },
+  { value: '+1', label: '+1 (US/Canada)' },
+  { value: '+44', label: '+44 (UK)' },
+  { value: '+91', label: '+91 (India)' },
+  { value: '+82', label: '+82 (South Korea)' },
+  { value: '+81', label: '+81 (Japan)' },
+];
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -51,8 +62,15 @@ export default function VisitorForm({ visitor, isPublic = false, onClose }: Visi
       fullName: visitor?.fullName || "",
       email: visitor?.email || "",
       phone: visitor?.phone || "",
+      countryCode: visitor?.countryCode || "+60",
       purpose: visitor?.purpose || "",
       visitDate: visitor?.visitDate ? new Date(visitor.visitDate) : new Date(),
+      visitTime: visitor?.visitTime || "",
+      residentName: visitor?.residentName || "",
+      roomNumber: visitor?.roomNumber || "",
+      vehicleNumber: visitor?.vehicleNumber || "",
+      numberOfVisitors: visitor?.numberOfVisitors || 1,
+      details: visitor?.details || "",
     },
   });
 
@@ -152,18 +170,43 @@ export default function VisitorForm({ visitor, isPublic = false, onClose }: Visi
           
           <FormField
             control={form.control}
-            name="phone"
+            name="countryCode"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Phone</FormLabel>
-                <FormControl>
-                  <Input placeholder="(555) 123-4567" {...field} />
-                </FormControl>
+                <FormLabel>Country Code</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select country code" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {countryCodeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+                <FormLabel>Phone Number</FormLabel>
+                <FormControl>
+                  <Input placeholder="123456789" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         
         <FormField
           control={form.control}
@@ -216,6 +259,107 @@ export default function VisitorForm({ visitor, isPublic = false, onClose }: Visi
                   />
                 </PopoverContent>
               </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Additional form fields for comprehensive visitor management */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="visitTime"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Visit Time</FormLabel>
+                <FormControl>
+                  <Input type="time" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="numberOfVisitors"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Number of Visitors</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    min="1" 
+                    max="10" 
+                    {...field} 
+                    onChange={(e) => field.onChange(parseInt(e.target.value))}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {isPublic && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="residentName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Resident Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Who are you visiting?" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="roomNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Room Number (if known)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., 101" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        )}
+
+        <FormField
+          control={form.control}
+          name="vehicleNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Vehicle Number (Optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., ABC 1234" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="details"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Additional Details</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Any special requirements or additional information" 
+                  className="resize-none"
+                  {...field} 
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

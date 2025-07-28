@@ -9,6 +9,8 @@ export const roomTypeEnum = pgEnum('room_type', ['studio', 'studio_deluxe', '1_b
 export const roomStatusEnum = pgEnum('room_status', ['vacant', 'occupied', 'maintenance', 'reserved']);
 export const billingStatusEnum = pgEnum('billing_status', ['paid', 'pending', 'overdue']);
 export const visitorStatusEnum = pgEnum('visitor_status', ['pending', 'approved', 'rejected']);
+export const salesReferralEnum = pgEnum('sales_referral', ['caGrand', 'Sales Team', 'Offline Events', 'Other']);
+export const countryCodeEnum = pgEnum('country_code', ['+60', '+65', '+86', '+91', '+1', '+44', '+61', '+81']);
 
 // Users table
 export const users = pgTable("users", {
@@ -28,10 +30,13 @@ export const residents = pgTable("residents", {
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
   phone: text("phone").notNull(),
+  countryCode: countryCodeEnum("country_code").notNull().default('+60'),
   dateOfBirth: date("date_of_birth"),
   idNumber: text("id_number").unique(),
   address: text("address"),
   photo: text("photo"),
+  roomId: integer("room_id").references(() => rooms.id),
+  salesReferral: salesReferralEnum("sales_referral").notNull().default('Other'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -80,11 +85,13 @@ export const occupancy = pgTable("occupancy", {
 // Billings table
 export const billings = pgTable("billings", {
   id: serial("id").primaryKey(),
-  occupancyId: integer("occupancy_id").references(() => occupancy.id).notNull(),
+  residentId: integer("resident_id").references(() => residents.id).notNull(),
+  occupancyId: integer("occupancy_id").references(() => occupancy.id),
   amount: integer("amount").notNull(),
   dueDate: date("due_date").notNull(),
   status: billingStatusEnum("status").notNull().default('pending'),
   description: text("description"),
+  invoiceFile: text("invoice_file"), // PDF file path/URL
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -96,6 +103,7 @@ export const visitors = pgTable("visitors", {
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
   phone: text("phone").notNull(),
+  countryCode: countryCodeEnum("country_code").notNull().default('+60'),
   purpose: text("purpose"),
   visitDate: date("visit_date").notNull(),
   visitTime: text("visit_time"),
@@ -113,6 +121,18 @@ export const visitors = pgTable("visitors", {
   details: text("details"),
 });
 
+// Notifications table
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull(), // 'visitor', 'billing', 'resident', 'room'
+  entityId: integer("entity_id"), // ID of related entity
+  read: boolean("read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   approvedVisitors: many(visitors),
@@ -122,14 +142,17 @@ export const residentsRelations = relations(residents, ({ one, many }) => ({
   nextOfKin: many(nextOfKin),
   occupancy: many(occupancy),
   visitors: many(visitors),
+  billings: many(billings),
+  room: one(rooms, { fields: [residents.roomId], references: [rooms.id] }),
 }));
 
 export const nextOfKinRelations = relations(nextOfKin, ({ one }) => ({
   resident: one(residents, { fields: [nextOfKin.residentId], references: [residents.id] }),
 }));
 
-export const roomsRelations = relations(rooms, ({ many }) => ({
+export const roomsRelations = relations(rooms, ({ many, one }) => ({
   occupancy: many(occupancy),
+  residents: many(residents),
 }));
 
 export const occupancyRelations = relations(occupancy, ({ one, many }) => ({
@@ -139,8 +162,15 @@ export const occupancyRelations = relations(occupancy, ({ one, many }) => ({
 }));
 
 export const billingsRelations = relations(billings, ({ one }) => ({
+  resident: one(residents, { fields: [billings.residentId], references: [residents.id] }),
   occupancy: one(occupancy, { fields: [billings.occupancyId], references: [occupancy.id] }),
 }));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, { fields: [notifications.userId], references: [users.id] }),
+}));
+
+
 
 export const visitorsRelations = relations(visitors, ({ one }) => ({
   resident: one(residents, { fields: [visitors.residentId], references: [residents.id] }),

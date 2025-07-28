@@ -2,6 +2,8 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, hashPassword } from "./auth";
+import { setupNotificationRoutes } from "./api/notifications";
+import { setupUploadRoutes } from "./api/upload";
 import { z } from "zod";
 import { randomBytes } from "crypto";
 import {
@@ -786,6 +788,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Setup notification routes
+  setupNotificationRoutes(app);
+  
+  // Setup upload routes
+  setupUploadRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;

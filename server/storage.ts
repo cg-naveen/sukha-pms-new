@@ -12,6 +12,7 @@ import {
   occupancy,
   billings,
   visitors,
+  notifications,
   InsertUser,
   InsertResident,
   InsertNextOfKin,
@@ -70,6 +71,14 @@ export interface IStorage {
   updateVisitor(id: number, data: Partial<InsertVisitor>): Promise<any>;
   approveVisitor(id: number, userId: number, qrCode: string): Promise<any>;
   rejectVisitor(id: number, userId: number): Promise<any>;
+  
+  // Notifications
+  createNotification(notification: any): Promise<any>;
+  getNotificationsByUserId(userId: number): Promise<any[]>;
+  markNotificationAsRead(id: number, userId: number): Promise<any>;
+  markAllNotificationsAsRead(userId: number): Promise<any>;
+  deleteNotification(id: number, userId: number): Promise<any>;
+  getUnreadNotificationCount(userId: number): Promise<number>;
   
   sessionStore: session.SessionStore;
 }
@@ -522,6 +531,49 @@ class DatabaseStorage implements IStorage {
       .where(eq(visitors.id, id))
       .returning();
     return rejectedVisitor;
+  }
+
+  // Notification methods
+  async getNotificationsByUserId(userId: number) {
+    return await db.query.notifications.findMany({
+      where: eq(notifications.userId, userId),
+      orderBy: [desc(notifications.createdAt)]
+    });
+  }
+
+  async createNotification(notificationData: any) {
+    const [notification] = await db.insert(notifications).values(notificationData).returning();
+    return notification;
+  }
+
+  async markNotificationAsRead(notificationId: number, userId: number) {
+    const [updatedNotification] = await db
+      .update(notifications)
+      .set({ read: true })
+      .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)))
+      .returning();
+    return updatedNotification;
+  }
+
+  async markAllNotificationsAsRead(userId: number) {
+    return await db
+      .update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.userId, userId));
+  }
+
+  async deleteNotification(notificationId: number, userId: number) {
+    return await db
+      .delete(notifications)
+      .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)));
+  }
+
+  async getUnreadNotificationCount(userId: number) {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.read, false)));
+    return result[0]?.count || 0;
   }
 }
 
