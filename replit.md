@@ -2,7 +2,16 @@
 
 ## Overview
 
-This is a comprehensive property management system built with modern web technologies. The application provides functionality for managing residents, rooms, billing, visitors, and users within a property management context. It features a full-stack architecture with a React frontend and Express backend, utilizing PostgreSQL for data persistence.
+This is a comprehensive property management system built with Next.js for optimal deployment on Vercel. The application provides functionality for managing residents, rooms, billing, visitors, and users within a property management context. It features a full-stack Next.js architecture with React frontend and Next.js API routes, utilizing PostgreSQL for data persistence.
+
+## Recent Changes (January 2025)
+
+✓ **Completed Next.js Migration**: Successfully migrated from Express + React to Next.js 15.4.4
+✓ **API Routes**: Converted all Express routes to Next.js API routes structure
+✓ **Authentication**: Updated session-based auth to work with Next.js middleware
+✓ **Path Aliases**: Configured TypeScript path mapping for @/ imports
+✓ **Currency**: All monetary values display in Malaysian Ringgit (RM)
+✓ **Deployment Ready**: Application optimized for Vercel deployment
 
 ## User Preferences
 
@@ -11,21 +20,21 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### Frontend Architecture
-- **Framework**: React 18 with TypeScript
-- **Routing**: Wouter for client-side routing
+- **Framework**: Next.js 15.4.4 with React 18 and TypeScript
+- **Routing**: Next.js App Router with file-based routing
 - **State Management**: TanStack Query (React Query) for server state management
 - **UI Components**: Radix UI primitives with custom shadcn/ui components
 - **Styling**: Tailwind CSS with custom design system
-- **Build Tool**: Vite with TypeScript support
+- **Build Tool**: Next.js with SWC compiler
 - **Form Handling**: React Hook Form with Zod validation
 
 ### Backend Architecture
-- **Runtime**: Node.js with TypeScript
-- **Framework**: Express.js
-- **Authentication**: Passport.js with local strategy and session-based auth
-- **Session Storage**: PostgreSQL-backed session store
+- **Runtime**: Next.js API Routes with TypeScript
+- **Framework**: Next.js serverless functions
+- **Authentication**: Session-based auth with Next.js middleware
+- **Session Storage**: PostgreSQL-backed session store with connect-pg-simple
 - **Password Security**: Scrypt-based password hashing
-- **API Design**: RESTful endpoints with role-based access control
+- **API Design**: RESTful Next.js API routes with role-based access control
 
 ### Data Storage Solutions
 - **Primary Database**: PostgreSQL via Neon serverless

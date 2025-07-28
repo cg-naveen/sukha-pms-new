@@ -1,8 +1,8 @@
 'use client'
 
+import React, { useEffect } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
 import BillingPage from '@/pages/billing-page'
 
 export default function BillingsPageRoute() {

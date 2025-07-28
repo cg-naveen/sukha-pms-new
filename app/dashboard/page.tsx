@@ -1,8 +1,8 @@
 'use client'
 
+import React, { useEffect } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
 import DashboardPage from '@/pages/dashboard-page'
 
 export default function DashboardPageRoute() {
