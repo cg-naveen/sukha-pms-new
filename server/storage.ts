@@ -388,6 +388,19 @@ class DatabaseStorage implements IStorage {
     });
   }
 
+  async getBilling(id: number) {
+    return await db.query.billings.findFirst({
+      where: eq(billings.id, id),
+      with: {
+        resident: {
+          with: {
+            room: true
+          }
+        }
+      }
+    });
+  }
+
   async getAllBillings(status?: string, dateFrom?: string, dateTo?: string) {
     let whereConditions = [];
     

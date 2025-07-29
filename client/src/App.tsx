@@ -11,6 +11,7 @@ import DashboardPage from "@/pages/dashboard-page";
 import ResidentsPage from "@/pages/residents-page";
 import RoomsPage from "@/pages/rooms-page";
 import BillingPage from "@/pages/billing-page";
+import BillingViewPage from "@/pages/billing-view-page";
 import VisitorsPage from "@/pages/visitors-page";
 import UsersPage from "@/pages/users-page";
 import SettingsPage from "@/pages/settings-page";
@@ -25,6 +26,7 @@ function Router() {
       <ProtectedRoute path="/residents" component={ResidentsPage} />
       <ProtectedRoute path="/rooms" component={RoomsPage} />
       <ProtectedRoute path="/billing" component={BillingPage} />
+      <ProtectedRoute path="/billing/:id" component={BillingViewPage} />
       <ProtectedRoute path="/visitors" component={VisitorsPage} />
       <ProtectedRoute path="/users" component={UsersPage} />
       <ProtectedRoute path="/settings" component={SettingsPage} />
