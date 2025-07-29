@@ -46,7 +46,7 @@ export default function BillingForm({ billing, onClose }: BillingFormProps) {
       residentId: billing?.residentId || 0,
       occupancyId: billing?.occupancyId || undefined,
       amount: billing?.amount || 0,
-      dueDate: billing?.dueDate ? new Date(billing.dueDate) : new Date(),
+      dueDate: billing?.dueDate || new Date().toISOString().split('T')[0],
       status: billing?.status || 'pending',
       description: billing?.description || '',
       invoiceFile: billing?.invoiceFile || '',
@@ -240,8 +240,8 @@ export default function BillingForm({ billing, onClose }: BillingFormProps) {
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
+                    selected={field.value ? new Date(field.value) : undefined}
+                    onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
                     disabled={(date) =>
                       date < new Date("1900-01-01")
                     }

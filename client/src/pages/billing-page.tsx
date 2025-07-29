@@ -35,11 +35,14 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Plus, AlertCircle, Loader2 } from "lucide-react";
+import BillingForm from "@/components/billings/billing-form";
 
 export default function BillingPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all_statuses");
   const [selectedBillingId, setSelectedBillingId] = useState<number | null>(null);
   const [isMarkPaidDialogOpen, setIsMarkPaidDialogOpen] = useState(false);
+  const [isBillingFormOpen, setIsBillingFormOpen] = useState(false);
+  const [selectedBilling, setSelectedBilling] = useState<any>(null);
   const { toast } = useToast();
 
   // Fetch billing data
@@ -132,7 +135,13 @@ export default function BillingPage() {
     <MainLayout title="Billing Management">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Billing Management</h1>
-        <Button className="flex items-center">
+        <Button 
+          className="flex items-center"
+          onClick={() => {
+            setSelectedBilling(null);
+            setIsBillingFormOpen(true);
+          }}
+        >
           <Plus className="h-5 w-5 mr-1" />
           Create Billing
         </Button>
@@ -297,6 +306,27 @@ export default function BillingPage() {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Billing Form Dialog */}
+      <Dialog open={isBillingFormOpen} onOpenChange={setIsBillingFormOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedBilling ? "Edit Billing" : "Create New Billing"}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedBilling 
+                ? "Update the billing information below."
+                : "Fill in the details to create a new billing record."
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <BillingForm 
+            billing={selectedBilling} 
+            onClose={() => setIsBillingFormOpen(false)} 
+          />
         </DialogContent>
       </Dialog>
     </MainLayout>
