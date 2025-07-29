@@ -257,7 +257,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/billings", async (req, res) => {
     try {
       const status = req.query.status as string;
-      const billings = await storage.getAllBillings(status);
+      const dateFrom = req.query.dateFrom as string;
+      const dateTo = req.query.dateTo as string;
+      const billings = await storage.getAllBillings(status, dateFrom, dateTo);
       res.json(billings);
     } catch (error) {
       console.error('Error fetching billings:', error);

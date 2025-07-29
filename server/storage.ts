@@ -388,8 +388,27 @@ class DatabaseStorage implements IStorage {
     });
   }
 
-  async getAllBillings(status?: string) {
-    let query = db.query.billings.findMany({
+  async getAllBillings(status?: string, dateFrom?: string, dateTo?: string) {
+    let whereConditions = [];
+    
+    if (status && status !== 'all_statuses') {
+      whereConditions.push(eq(billings.status, status as any));
+    }
+    
+    if (dateFrom) {
+      whereConditions.push(gte(billings.createdAt, new Date(dateFrom)));
+    }
+    
+    if (dateTo) {
+      const endDate = new Date(dateTo);
+      endDate.setHours(23, 59, 59, 999); // Include full day
+      whereConditions.push(lte(billings.createdAt, endDate));
+    }
+
+    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
+
+    return await db.query.billings.findMany({
+      where: whereClause,
       with: {
         resident: {
           with: {
@@ -399,22 +418,6 @@ class DatabaseStorage implements IStorage {
       },
       orderBy: desc(billings.createdAt)
     });
-
-    if (status && status !== 'all_statuses') {
-      query = db.query.billings.findMany({
-        where: eq(billings.status, status as any),
-        with: {
-          resident: {
-            with: {
-              room: true
-            }
-          }
-        },
-        orderBy: desc(billings.createdAt)
-      });
-    }
-    
-    return query;
   }
 
   async getUpcomingBillings(days: number) {

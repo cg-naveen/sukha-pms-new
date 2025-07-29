@@ -39,6 +39,9 @@ import BillingForm from "@/components/billings/billing-form";
 
 export default function BillingPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all_statuses");
+  const [sortOrder, setSortOrder] = useState<string>("newest_first");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [selectedBillingId, setSelectedBillingId] = useState<number | null>(null);
   const [isMarkPaidDialogOpen, setIsMarkPaidDialogOpen] = useState(false);
   const [isBillingFormOpen, setIsBillingFormOpen] = useState(false);
@@ -46,14 +49,38 @@ export default function BillingPage() {
   const { toast } = useToast();
 
   // Fetch billing data
-  const { data: billings, isLoading } = useQuery({
-    queryKey: ["/api/billings", statusFilter],
+  const { data: rawBillings = [], isLoading } = useQuery({
+    queryKey: ["/api/billings", statusFilter, dateFrom, dateTo],
     queryFn: async ({ queryKey }) => {
-      const [_, status] = queryKey;
-      const res = await fetch(`/api/billings?status=${status}`);
+      const [_, status, from, to] = queryKey;
+      const params = new URLSearchParams();
+      if (status !== 'all_statuses') params.append('status', status as string);
+      if (from) params.append('dateFrom', from as string);
+      if (to) params.append('dateTo', to as string);
+      const res = await fetch(`/api/billings?${params}`);
       if (!res.ok) throw new Error("Failed to fetch billings");
       return res.json();
     },
+  });
+
+  // Sort billings based on selected sort order
+  const billings = [...rawBillings].sort((a, b) => {
+    switch (sortOrder) {
+      case 'newest_first':
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case 'oldest_first':
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      case 'aging_oldest_first':
+        const aDays = getDaysOverdue(a.dueDate, a.status, a.createdAt);
+        const bDays = getDaysOverdue(b.dueDate, b.status, b.createdAt);
+        return bDays - aDays; // Higher days first
+      case 'aging_newest_first':
+        const aDaysNew = getDaysOverdue(a.dueDate, a.status, a.createdAt);
+        const bDaysNew = getDaysOverdue(b.dueDate, b.status, b.createdAt);
+        return aDaysNew - bDaysNew; // Lower days first
+      default:
+        return 0;
+    }
   });
 
   // Mutation to mark billing as paid
@@ -133,11 +160,22 @@ export default function BillingPage() {
     }
   };
 
-  const getDaysOverdue = (dueDate: string) => {
+  const getDaysOverdue = (dueDate: string, status: string, createdAt?: string) => {
+    if (status === 'paid') return 0;
+    
     const due = new Date(dueDate);
     const today = new Date();
     const diffTime = today.getTime() - due.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    // For new_invoice status, calculate from creation date
+    if (status === 'new_invoice' && createdAt) {
+      const created = new Date(createdAt);
+      const createdDiffTime = today.getTime() - created.getTime();
+      const createdDiffDays = Math.ceil(createdDiffTime / (1000 * 60 * 60 * 24));
+      return createdDiffDays;
+    }
+    
     return diffDays > 0 ? diffDays : 0;
   };
 
@@ -157,12 +195,12 @@ export default function BillingPage() {
         </Button>
       </div>
       
-      {/* Filter */}
+      {/* Filters */}
       <Card className="mb-6">
         <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-[180px]">
+              <SelectTrigger>
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
@@ -173,6 +211,51 @@ export default function BillingPage() {
                 <SelectItem value="overdue">Overdue</SelectItem>
               </SelectContent>
             </Select>
+
+            <Select value={sortOrder} onValueChange={setSortOrder}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest_first">Newest First</SelectItem>
+                <SelectItem value="oldest_first">Oldest First</SelectItem>
+                <SelectItem value="aging_oldest_first">Aging: Oldest First</SelectItem>
+                <SelectItem value="aging_newest_first">Aging: Newest First</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">From Date</label>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">To Date</label>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+              />
+            </div>
+
+            <div className="flex items-end">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setDateFrom("");
+                  setDateTo("");
+                  setStatusFilter("all_statuses");
+                  setSortOrder("newest_first");
+                }}
+                className="w-full"
+              >
+                Clear Filters
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -187,6 +270,7 @@ export default function BillingPage() {
                 <TableHead>Room</TableHead>
                 <TableHead>Amount (RM)</TableHead>
                 <TableHead>Due Date</TableHead>
+                <TableHead>Overdue Days</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -199,6 +283,7 @@ export default function BillingPage() {
                     <TableCell><Skeleton className="h-8 w-[120px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[100px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[120px]" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-[80px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[100px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[150px] ml-auto" /></TableCell>
                   </TableRow>
@@ -219,11 +304,17 @@ export default function BillingPage() {
                     <TableCell>RM {billing.amount.toLocaleString()}</TableCell>
                     <TableCell>
                       <div>{format(new Date(billing.dueDate), "MMM d, yyyy")}</div>
-                      {billing.status === 'overdue' && (
-                        <div className="text-xs text-red-600">
-                          {getDaysOverdue(billing.dueDate)} days overdue
-                        </div>
-                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">
+                        {getDaysOverdue(billing.dueDate, billing.status, billing.createdAt)} days
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {billing.status === 'new_invoice' && 'Since created'}
+                        {billing.status === 'pending' && 'Since due'}
+                        {billing.status === 'overdue' && 'Overdue'}
+                        {billing.status === 'paid' && 'Paid'}
+                      </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(billing.status)}</TableCell>
                     <TableCell className="text-right">
@@ -273,7 +364,7 @@ export default function BillingPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-6 text-gray-500">
+                  <TableCell colSpan={7} className="text-center py-6 text-gray-500">
                     No billings found matching filters
                   </TableCell>
                 </TableRow>
