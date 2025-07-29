@@ -25,14 +25,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { insertResidentSchema, insertNextOfKinSchema, Resident } from "@shared/schema";
 
 const salesReferralOptions = [
-  'Mohd Amin',
-  'Encik Rosli',
-  'Puan Mariam',
-  'Website',
-  'Google Ads',
-  'Facebook Ads',
-  'Walk-in',
-  'Referral',
+  'caGrand',
+  'Sales Team',
+  'Offline Event',
   'Other'
 ];
 
