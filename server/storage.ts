@@ -421,25 +421,25 @@ class DatabaseStorage implements IStorage {
   }
 
   async getUpcomingBillings(days: number) {
-    const today = new Date();
+    const today = new Date().toISOString().split('T')[0];
     const futureDate = new Date();
-    futureDate.setDate(today.getDate() + days);
+    futureDate.setDate(futureDate.getDate() + days);
+    const futureDateStr = futureDate.toISOString().split('T')[0];
     
     return await db.query.billings.findMany({
       where: and(
         eq(billings.status, 'pending'),
         gte(billings.dueDate, today),
-        lte(billings.dueDate, futureDate)
+        lte(billings.dueDate, futureDateStr)
       ),
       with: {
-        occupancy: {
+        resident: {
           with: {
-            resident: true,
             room: true
           }
         }
       },
-      orderBy: [billings.dueDate]
+      orderBy: desc(billings.createdAt)
     });
   }
 
