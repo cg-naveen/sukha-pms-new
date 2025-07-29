@@ -34,7 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Plus, AlertCircle, Loader2 } from "lucide-react";
+import { Plus, AlertCircle, Loader2, Eye, Edit, Trash2 } from "lucide-react";
 import BillingForm from "@/components/billings/billing-form";
 
 export default function BillingPage() {
@@ -126,9 +126,19 @@ export default function BillingPage() {
         return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Pending</Badge>;
       case 'overdue':
         return <Badge className="bg-red-100 text-red-800 border-red-200">Overdue</Badge>;
+      case 'new_invoice':
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">New Invoice</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
+  };
+
+  const getDaysOverdue = (dueDate: string) => {
+    const due = new Date(dueDate);
+    const today = new Date();
+    const diffTime = today.getTime() - due.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
   };
 
   return (
@@ -157,6 +167,7 @@ export default function BillingPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all_statuses">All Statuses</SelectItem>
+                <SelectItem value="new_invoice">New Invoice</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="paid">Paid</SelectItem>
                 <SelectItem value="overdue">Overdue</SelectItem>
@@ -196,65 +207,67 @@ export default function BillingPage() {
                 billings.map((billing: any) => (
                   <TableRow key={billing.id}>
                     <TableCell>
-                      <div className="font-medium">{billing.occupancy?.resident?.fullName || 'Unknown'}</div>
-                      <div className="text-sm text-gray-500">ID: R-{billing.occupancy?.residentId.toString().padStart(5, '0')}</div>
+                      <div className="font-medium">{billing.resident?.fullName || 'Unknown'}</div>
+                      <div className="text-sm text-gray-500">ID: R-{billing.residentId.toString().padStart(5, '0')}</div>
                     </TableCell>
                     <TableCell>
-                      <div>{billing.occupancy?.room?.unitNumber || 'Unknown'}</div>
+                      <div>{billing.resident?.room?.unitNumber || 'Not Assigned'}</div>
                       <div className="text-sm text-gray-500">
-                        {billing.occupancy?.room?.roomType?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Unknown'}
+                        {billing.resident?.room?.roomType?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'No Room'}
                       </div>
                     </TableCell>
                     <TableCell>RM {billing.amount.toLocaleString()}</TableCell>
-                    <TableCell>{format(new Date(billing.dueDate), "MMM d, yyyy")}</TableCell>
-                    <TableCell>{getStatusBadge(billing.status)}</TableCell>
-                    <TableCell className="text-right space-x-2">
-                      {billing.status === 'pending' && (
-                        <>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => openMarkPaidDialog(billing.id)}
-                          >
-                            Mark Paid
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleSendReminder(billing.id)}
-                            disabled={sendReminderMutation.isPending}
-                          >
-                            Remind
-                          </Button>
-                        </>
-                      )}
+                    <TableCell>
+                      <div>{format(new Date(billing.dueDate), "MMM d, yyyy")}</div>
                       {billing.status === 'overdue' && (
-                        <>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => openMarkPaidDialog(billing.id)}
-                          >
-                            Mark Paid
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleSendReminder(billing.id)}
-                            disabled={sendReminderMutation.isPending}
-                          >
-                            Remind
-                          </Button>
-                        </>
+                        <div className="text-xs text-red-600">
+                          {getDaysOverdue(billing.dueDate)} days overdue
+                        </div>
                       )}
-                      {billing.status === 'paid' && (
+                    </TableCell>
+                    <TableCell>{getStatusBadge(billing.status)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-1 justify-end">
                         <Button 
                           variant="ghost" 
                           size="sm"
+                          onClick={() => {
+                            window.open(`/billing/${billing.id}`, '_blank');
+                          }}
                         >
-                          View
+                          <Eye className="h-4 w-4" />
                         </Button>
-                      )}
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedBilling(billing);
+                            setIsBillingFormOpen(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        {(billing.status === 'pending' || billing.status === 'overdue' || billing.status === 'new_invoice') && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => openMarkPaidDialog(billing.id)}
+                          >
+                            Mark Paid
+                          </Button>
+                        )}
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => {
+                            if (confirm('Are you sure you want to delete this billing record?')) {
+                              // Add delete mutation here
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

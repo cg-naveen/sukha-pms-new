@@ -7,7 +7,7 @@ import { relations } from "drizzle-orm";
 export const roleEnum = pgEnum('role', ['superadmin', 'admin', 'staff', 'user']);
 export const roomTypeEnum = pgEnum('room_type', ['studio', 'studio_deluxe', '1_bedroom', '2_bedroom', '3_bedroom']);
 export const roomStatusEnum = pgEnum('room_status', ['vacant', 'occupied', 'maintenance', 'reserved']);
-export const billingStatusEnum = pgEnum('billing_status', ['paid', 'pending', 'overdue']);
+export const billingStatusEnum = pgEnum('billing_status', ['paid', 'pending', 'overdue', 'new_invoice']);
 export const visitorStatusEnum = pgEnum('visitor_status', ['pending', 'approved', 'rejected']);
 export const salesReferralEnum = pgEnum('sales_referral', ['caGrand', 'Sales Team', 'Offline Event', 'Other']);
 export const countryCodeEnum = pgEnum('country_code', ['+60', '+65', '+86', '+91', '+1', '+44', '+61', '+81']);

@@ -47,7 +47,7 @@ export default function BillingForm({ billing, onClose }: BillingFormProps) {
       occupancyId: billing?.occupancyId || undefined,
       amount: billing?.amount || 0,
       dueDate: billing?.dueDate || new Date().toISOString().split('T')[0],
-      status: billing?.status || 'pending',
+      status: billing?.status || 'new_invoice',
       description: billing?.description || '',
       invoiceFile: billing?.invoiceFile || '',
     },
@@ -204,6 +204,7 @@ export default function BillingForm({ billing, onClose }: BillingFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    <SelectItem value="new_invoice">New Invoice</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="paid">Paid</SelectItem>
                     <SelectItem value="overdue">Overdue</SelectItem>

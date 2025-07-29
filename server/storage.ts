@@ -391,28 +391,26 @@ class DatabaseStorage implements IStorage {
   async getAllBillings(status?: string) {
     let query = db.query.billings.findMany({
       with: {
-        occupancy: {
+        resident: {
           with: {
-            resident: true,
             room: true
           }
         }
       },
-      orderBy: [billings.dueDate]
+      orderBy: desc(billings.createdAt)
     });
 
     if (status && status !== 'all_statuses') {
       query = db.query.billings.findMany({
         where: eq(billings.status, status as any),
         with: {
-          occupancy: {
+          resident: {
             with: {
-              resident: true,
               room: true
             }
           }
         },
-        orderBy: [billings.dueDate]
+        orderBy: desc(billings.createdAt)
       });
     }
     
