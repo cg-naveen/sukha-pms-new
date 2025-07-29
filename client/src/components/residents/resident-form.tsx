@@ -252,14 +252,14 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Assigned Room</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} defaultValue={field.value?.toString()}>
+                    <Select onValueChange={(value) => field.onChange(value === "no_room" ? undefined : parseInt(value))} defaultValue={field.value?.toString() || "no_room"}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select room (optional)" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No room assigned</SelectItem>
+                        <SelectItem value="no_room">No room assigned</SelectItem>
                         {rooms.filter((room: any) => room.status === 'vacant' || room.id === field.value).map((room: any) => (
                           <SelectItem key={room.id} value={room.id.toString()}>
                             {room.unitNumber} - {room.roomType.replace('_', ' ')} (RM {room.monthlyRate})

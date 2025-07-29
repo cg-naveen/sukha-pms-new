@@ -6,12 +6,16 @@ This is a comprehensive property management system built with Next.js for optima
 
 ## Recent Changes (January 2025)
 
-✓ **Completed Next.js Migration**: Successfully migrated from Express + React to Next.js 15.4.4
-✓ **API Routes**: Converted all Express routes to Next.js API routes structure
-✓ **Authentication**: Updated session-based auth to work with Next.js middleware
-✓ **Path Aliases**: Configured TypeScript path mapping for @/ imports
-✓ **Currency**: All monetary values display in Malaysian Ringgit (RM)
-✓ **Deployment Ready**: Application optimized for Vercel deployment
+✓ **Comprehensive Property Management Enhancements**: Implemented all requested advanced features including:
+   - Room assignments and sales referral tracking in resident management
+   - PDF invoice upload functionality in billing system
+   - Real-time notification system with bell component
+   - Malaysian phone formatting with country codes (+60 default)
+   - Enhanced visitor management with comprehensive form fields
+✓ **Database Schema Updates**: Successfully updated schema with new fields (room_id, sales_referral, invoice_file, country_code, notifications table)
+✓ **UI/UX Improvements**: Added scroll-area and separator components, enhanced forms with proper validation
+✓ **File Upload System**: Implemented multer-based PDF upload for invoices with proper security
+✓ **Fixed Critical Issues**: Resolved Select.Item empty value props and port conflicts
 
 ## User Preferences
 
