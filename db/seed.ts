@@ -46,84 +46,44 @@ async function seed() {
       console.log("Creating sample rooms...");
       
       // Define arrays for rooms with proper typing
-      const roomsToCreate = [
-        {
-          unitNumber: "101A",
-          roomType: "studio" as const,
-          size: 300,
-          floor: 1,
-          status: "vacant" as const,
-          monthlyRate: 800,
-          description: "Standard studio apartment with basic amenities"
-        },
-        {
-          unitNumber: "102A",
-          roomType: "studio" as const,
-          size: 300,
-          floor: 1,
-          status: "occupied" as const,
-          monthlyRate: 800,
-          description: "Standard studio apartment with basic amenities"
-        },
-        {
-          unitNumber: "201B",
-          roomType: "studio_deluxe" as const,
-          size: 400,
-          floor: 2,
-          status: "vacant" as const,
-          monthlyRate: 950,
-          description: "Deluxe studio with additional storage space"
-        },
-        {
-          unitNumber: "202B",
-          roomType: "1_bedroom" as const,
-          size: 500,
-          floor: 2,
-          status: "occupied" as const,
-          monthlyRate: 1200,
-          description: "One bedroom apartment with separate living room"
-        },
-        {
-          unitNumber: "301C",
-          roomType: "1_bedroom" as const,
-          size: 550,
-          floor: 3,
-          status: "vacant" as const,
-          monthlyRate: 1250,
-          description: "One bedroom apartment with balcony"
-        },
-        {
-          unitNumber: "302C",
-          roomType: "2_bedroom" as const,
-          size: 700,
-          floor: 3,
-          status: "occupied" as const,
-          monthlyRate: 1500,
-          description: "Two bedroom apartment with modern kitchen"
-        },
-        {
-          unitNumber: "401D",
-          roomType: "2_bedroom" as const,
-          size: 750,
-          floor: 4,
-          status: "vacant" as const,
-          monthlyRate: 1600,
-          description: "Two bedroom corner unit with city view"
-        },
-        {
-          unitNumber: "402D",
-          roomType: "3_bedroom" as const,
-          size: 900,
-          floor: 4,
-          status: "occupied" as const,
-          monthlyRate: 1900,
-          description: "Three bedroom premium apartment with two bathrooms"
-        }
-      ];
       
-      for (const room of roomsToCreate) {
-        await db.insert(rooms).values(room);
-      }
+      // Create individual room entries
+      await db.insert(rooms).values({
+        unitNumber: "101A",
+        floorNumber: 1,
+        roomType: "Standard" as const,
+        status: "vacant" as const,
+        monthlyRent: 800,
+        description: "Standard studio apartment with basic amenities"
+      });
+      
+      await db.insert(rooms).values({
+        unitNumber: "102A",
+        floorNumber: 1,
+        roomType: "Standard" as const,
+        status: "occupied" as const,
+        monthlyRent: 800,
+        description: "Standard studio apartment with basic amenities"
+      });
+      
+      await db.insert(rooms).values({
+        unitNumber: "201B",
+        floorNumber: 2,
+        roomType: "Deluxe" as const,
+        status: "vacant" as const,
+        monthlyRent: 950,
+        description: "Deluxe studio with additional storage space"
+      });
+      
+      await db.insert(rooms).values({
+        unitNumber: "202B",
+        floorNumber: 2,
+        roomType: "Deluxe" as const,
+        status: "occupied" as const,
+        monthlyRent: 1200,
+        description: "One bedroom apartment with separate living room"
+      });
+
       
       console.log("Sample rooms created.");
     } else {
@@ -146,44 +106,49 @@ async function seed() {
           email: "john.smith@example.com",
           phone: "555-123-4567",
           dateOfBirth: new Date("1985-03-15"),
-          idNumber: "ID12345678",
-          address: "Previous address: 123 Main St, Anytown"
+          icNumber: "ID12345678",
+          salesReferral: "caGrand" as const
         },
         {
           fullName: "Maria Garcia",
           email: "maria.garcia@example.com",
           phone: "555-987-6543",
           dateOfBirth: new Date("1990-07-22"),
-          idNumber: "ID23456789",
-          address: "Previous address: 456 Oak Ave, Somewhere City"
+          icNumber: "ID23456789", 
+          salesReferral: "Sales Team" as const
         },
         {
           fullName: "Robert Johnson",
           email: "robert.johnson@example.com",
           phone: "555-555-1234",
           dateOfBirth: new Date("1978-11-30"),
-          idNumber: "ID34567890",
-          address: "Previous address: 789 Pine Rd, Another Town"
+          icNumber: "ID34567890",
+          salesReferral: "Offline Event" as const
         },
         {
           fullName: "Patricia Williams",
           email: "patricia.williams@example.com",
           phone: "555-222-3333",
           dateOfBirth: new Date("1982-05-10"),
-          idNumber: "ID45678901",
-          address: "Previous address: 321 Cedar Ln, Elsewhere"
+          icNumber: "ID45678901",
+          salesReferral: "Other" as const
         }
       ];
       
       // Insert residents and store their IDs
       const residentIds = [];
       for (const resident of residentsToCreate) {
-        const [newResident] = await db.insert(residents).values(resident).returning({ id: residents.id });
-        residentIds.push(newResident.id);
+        await db.insert(residents).values(resident);
+        // Get the resident by IC number since we can't use insertId
+        const newResident = await db.query.residents.findFirst({
+          where: eq(residents.icNumber, resident.icNumber)
+        });
+        const insertId = newResident!.id;
+        residentIds.push(insertId);
         
         // Create next of kin for each resident
         await db.insert(nextOfKin).values({
-          residentId: newResident.id,
+          residentId: insertId,
           fullName: `Family of ${resident.fullName}`,
           relationship: "Family",
           phone: "555-999-8888",
@@ -207,21 +172,28 @@ async function seed() {
           const room = occupiedRooms[i];
           const residentId = residentIds[i];
           
-          const [occupancyRecord] = await db.insert(occupancy).values({
+          await db.insert(occupancy).values({
             roomId: room.id,
             residentId: residentId,
             startDate: today,
             endDate: oneYearLater,
             active: true
-          }).returning();
+          });
+          
+          // Get the occupancy we just created
+          const newOccupancy = await db.query.occupancy.findFirst({
+            where: and(eq(occupancy.roomId, room.id), eq(occupancy.residentId, residentId))
+          });
+          const occupancyId = newOccupancy!.id;
           
           // Create a billing for this occupancy
           const dueDate = new Date();
           dueDate.setDate(dueDate.getDate() + 15 + (i * 5)); // Stagger due dates
           
           await db.insert(billings).values({
-            occupancyId: occupancyRecord.id,
-            amount: room.monthlyRate,
+            residentId: residentId,
+            occupancyId: occupancyId,
+            amount: room.monthlyRent,
             dueDate: dueDate,
             status: 'pending',
             description: `Monthly rent for ${room.unitNumber}`

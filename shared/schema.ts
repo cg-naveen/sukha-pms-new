@@ -1,50 +1,50 @@
-import { pgTable, text, serial, integer, boolean, timestamp, unique, date, pgEnum } from "drizzle-orm/pg-core";
+import { mysqlTable, text, int, boolean, timestamp, unique, date, mysqlEnum } from "drizzle-orm/mysql-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // Enums
-export const roleEnum = pgEnum('role', ['superadmin', 'admin', 'staff', 'user']);
-export const roomTypeEnum = pgEnum('room_type', ['studio', 'studio_deluxe', '1_bedroom', '2_bedroom', '3_bedroom']);
-export const roomStatusEnum = pgEnum('room_status', ['vacant', 'occupied', 'maintenance', 'reserved']);
-export const billingStatusEnum = pgEnum('billing_status', ['paid', 'pending', 'overdue', 'new_invoice']);
-export const visitorStatusEnum = pgEnum('visitor_status', ['pending', 'approved', 'rejected']);
-export const salesReferralEnum = pgEnum('sales_referral', ['caGrand', 'Sales Team', 'Offline Event', 'Other']);
-export const countryCodeEnum = pgEnum('country_code', ['+60', '+65', '+86', '+91', '+1', '+44', '+61', '+81']);
+export const roleEnum = mysqlEnum('role', ['superadmin', 'admin', 'staff', 'user']);
+export const roomTypeEnum = mysqlEnum('room_type', ['studio', 'studio_deluxe', '1_bedroom', '2_bedroom', '3_bedroom']);
+export const roomStatusEnum = mysqlEnum('room_status', ['vacant', 'occupied', 'maintenance', 'reserved']);
+export const billingStatusEnum = mysqlEnum('billing_status', ['paid', 'pending', 'overdue', 'new_invoice']);
+export const visitorStatusEnum = mysqlEnum('visitor_status', ['pending', 'approved', 'rejected']);
+export const salesReferralEnum = mysqlEnum('sales_referral', ['caGrand', 'Sales Team', 'Offline Event', 'Other']);
+export const countryCodeEnum = mysqlEnum('country_code', ['+60', '+65', '+86', '+91', '+1', '+44', '+61', '+81']);
 
 // Users table
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+export const users = mysqlTable("users", {
+  id: int("id").primaryKey().autoincrement(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
   fullName: text("full_name").notNull(),
-  role: roleEnum("role").notNull().default('user'),
+  role: roleEnum.default('user'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Residents table
-export const residents = pgTable("residents", {
-  id: serial("id").primaryKey(),
+export const residents = mysqlTable("residents", {
+  id: int("id").primaryKey().autoincrement(),
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
   phone: text("phone").notNull(),
-  countryCode: countryCodeEnum("country_code").notNull().default('+60'),
+  countryCode: countryCodeEnum.default('+60'),
   dateOfBirth: date("date_of_birth"),
   idNumber: text("id_number").unique(),
   address: text("address"),
   photo: text("photo"),
-  roomId: integer("room_id").references(() => rooms.id),
-  salesReferral: salesReferralEnum("sales_referral").notNull().default('Other'),
+  roomId: int("room_id").references(() => rooms.id),
+  salesReferral: salesReferralEnum.default('Other'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Next of kin table
-export const nextOfKin = pgTable("next_of_kin", {
-  id: serial("id").primaryKey(),
-  residentId: integer("resident_id").references(() => residents.id).notNull(),
+export const nextOfKin = mysqlTable("next_of_kin", {
+  id: int("id").primaryKey().autoincrement(),
+  residentId: int("resident_id").references(() => residents.id).notNull(),
   fullName: text("full_name").notNull(),
   relationship: text("relationship").notNull(),
   phone: text("phone").notNull(),
@@ -55,24 +55,24 @@ export const nextOfKin = pgTable("next_of_kin", {
 });
 
 // Rooms table
-export const rooms = pgTable("rooms", {
-  id: serial("id").primaryKey(),
+export const rooms = mysqlTable("rooms", {
+  id: int("id").primaryKey().autoincrement(),
   unitNumber: text("unit_number").notNull().unique(),
-  roomType: roomTypeEnum("room_type").notNull(),
-  size: integer("size").notNull(), // Size in square feet
-  floor: integer("floor").notNull(),
-  status: roomStatusEnum("status").notNull().default('vacant'),
-  monthlyRate: integer("monthly_rate").notNull(),
+  roomType: roomTypeEnum.notNull(),
+  size: int("size").notNull(), // Size in square feet
+  floor: int("floor").notNull(),
+  status: roomStatusEnum.default('vacant'),
+  monthlyRate: int("monthly_rate").notNull(),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Occupancy table
-export const occupancy = pgTable("occupancy", {
-  id: serial("id").primaryKey(),
-  roomId: integer("room_id").references(() => rooms.id).notNull(),
-  residentId: integer("resident_id").references(() => residents.id).notNull(),
+export const occupancy = mysqlTable("occupancy", {
+  id: int("id").primaryKey().autoincrement(),
+  roomId: int("room_id").references(() => rooms.id).notNull(),
+  residentId: int("resident_id").references(() => residents.id).notNull(),
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
   active: boolean("active").notNull().default(true),
@@ -83,13 +83,13 @@ export const occupancy = pgTable("occupancy", {
 }));
 
 // Billings table
-export const billings = pgTable("billings", {
-  id: serial("id").primaryKey(),
-  residentId: integer("resident_id").references(() => residents.id).notNull(),
-  occupancyId: integer("occupancy_id").references(() => occupancy.id),
-  amount: integer("amount").notNull(),
+export const billings = mysqlTable("billings", {
+  id: int("id").primaryKey().autoincrement(),
+  residentId: int("resident_id").references(() => residents.id).notNull(),
+  occupancyId: int("occupancy_id").references(() => occupancy.id),
+  amount: int("amount").notNull(),
   dueDate: date("due_date").notNull(),
-  status: billingStatusEnum("status").notNull().default('pending'),
+  status: billingStatusEnum.default('pending'),
   description: text("description"),
   invoiceFile: text("invoice_file"), // PDF file path/URL
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -97,18 +97,18 @@ export const billings = pgTable("billings", {
 });
 
 // Visitors table
-export const visitors = pgTable("visitors", {
-  id: serial("id").primaryKey(),
-  residentId: integer("resident_id").references(() => residents.id),
+export const visitors = mysqlTable("visitors", {
+  id: int("id").primaryKey().autoincrement(),
+  residentId: int("resident_id").references(() => residents.id),
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
   phone: text("phone").notNull(),
-  countryCode: countryCodeEnum("country_code").notNull().default('+60'),
+  countryCode: countryCodeEnum.default('+60'),
   purpose: text("purpose"),
   visitDate: date("visit_date").notNull(),
   visitTime: text("visit_time"),
-  status: visitorStatusEnum("status").notNull().default('pending'),
-  approvedById: integer("approved_by_id").references(() => users.id),
+  status: visitorStatusEnum.default('pending'),
+  approvedById: int("approved_by_id").references(() => users.id),
   approvedAt: timestamp("approved_at"),
   qrCode: text("qr_code"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -117,18 +117,18 @@ export const visitors = pgTable("visitors", {
   residentName: text("resident_name"),
   roomNumber: text("room_number"),
   vehicleNumber: text("vehicle_number"),
-  numberOfVisitors: integer("number_of_visitors"),
+  numberOfVisitors: int("number_of_visitors"),
   details: text("details"),
 });
 
 // Notifications table
-export const notifications = pgTable("notifications", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+export const notifications = mysqlTable("notifications", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").references(() => users.id).notNull(),
   title: text("title").notNull(),
   message: text("message").notNull(),
   type: text("type").notNull(), // 'visitor', 'billing', 'resident', 'room'
-  entityId: integer("entity_id"), // ID of related entity
+  entityId: int("entity_id"), // ID of related entity
   read: boolean("read").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
