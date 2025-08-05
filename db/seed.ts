@@ -36,10 +36,8 @@ async function seed() {
       console.log("Admin user already exists, skipping creation.");
     }
 
-    // Check if we have any room types
-    const existingRooms = await db.query.rooms.findMany({
-      limit: 1
-    });
+    // Check if we have any rooms
+    const existingRooms = await db.query.rooms.findMany();
 
     // Seed rooms if none exist
     if (existingRooms.length === 0) {
