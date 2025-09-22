@@ -102,7 +102,7 @@ export default function VisitorRegistrationPage() {
       roomNumber: "",
       vehicleNumber: "",
       numberOfVisitors: 1,
-      purposeOfVisit: "general_visit",
+      purposeOfVisit: "site_visit",
       otherPurpose: "",
     },
   });
@@ -273,6 +273,46 @@ export default function VisitorRegistrationPage() {
                       )}
                     />
                     
+                    <FormField
+                      control={form.control}
+                      name="purposeOfVisit"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Purpose of Visit *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select purpose" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="general_visit">General Visit of Father/Mother/Relative</SelectItem>
+                              <SelectItem value="site_visit">Site Visit</SelectItem>
+                              <SelectItem value="celebration">Celebration</SelectItem>
+                              <SelectItem value="other">Other (specify)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {purposeOfVisit === "other" && (
+                      <FormField
+                        control={form.control}
+                        name="otherPurpose"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Please specify purpose *</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Please describe the purpose of your visit" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                    
                     {purposeOfVisit !== "site_visit" && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
@@ -417,45 +457,6 @@ export default function VisitorRegistrationPage() {
                       />
                     </div>
                     
-                    <FormField
-                      control={form.control}
-                      name="purposeOfVisit"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Purpose of Visit *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select purpose" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="general_visit">General Visit of Father/Mother/Relative</SelectItem>
-                              <SelectItem value="site_visit">Site Visit</SelectItem>
-                              <SelectItem value="celebration">Celebration</SelectItem>
-                              <SelectItem value="other">Other (specify)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    {purposeOfVisit === "other" && (
-                      <FormField
-                        control={form.control}
-                        name="otherPurpose"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Please specify purpose *</FormLabel>
-                            <FormControl>
-                              <Textarea placeholder="Please describe the purpose of your visit" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
                   </div>
                   
                   <Button 
