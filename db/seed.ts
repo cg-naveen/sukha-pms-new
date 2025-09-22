@@ -210,8 +210,8 @@ async function seed() {
           const [occupancyRecord] = await db.insert(occupancy).values({
             roomId: room.id,
             residentId: residentId,
-            startDate: today,
-            endDate: oneYearLater,
+            startDate: today.toISOString().split('T')[0],
+            endDate: oneYearLater.toISOString().split('T')[0],
             active: true
           }).returning();
           
@@ -223,7 +223,7 @@ async function seed() {
             residentId: residentId,
             occupancyId: occupancyRecord.id,
             amount: room.monthlyRate,
-            dueDate: dueDate,
+            dueDate: dueDate.toISOString().split('T')[0],
             status: 'pending',
             description: `Monthly rent for ${room.unitNumber}`
           });
@@ -272,7 +272,11 @@ async function seed() {
         ];
         
         for (const visitor of visitorsToCreate) {
-          await db.insert(visitors).values(visitor);
+          const visitorWithDateString = {
+            ...visitor,
+            visitDate: visitor.visitDate.toISOString().split('T')[0]
+          };
+          await db.insert(visitors).values(visitorWithDateString);
         }
         
         console.log("Sample visitors created.");
