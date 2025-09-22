@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -44,6 +44,7 @@ const visitorRegistrationSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(10, "Please enter a valid phone number"),
+  nricPassport: z.string().min(6, "NRIC/Passport must be at least 6 characters"),
   residentName: z.string().optional(),
   roomNumber: z.string().optional(),
   visitDate: z.date({
@@ -70,6 +71,18 @@ const visitorRegistrationSchema = z.object({
     message: "Please specify the purpose of your visit",
     path: ["otherPurpose"]
   }
+).refine(
+  (data) => {
+    // For non-site visits, require resident name and room number
+    if (data.purpose !== "Site Visit") {
+      return data.residentName && data.residentName.trim() !== "" && data.roomNumber && data.roomNumber.trim() !== "";
+    }
+    return true;
+  },
+  {
+    message: "Resident name and room number are required for this type of visit",
+    path: ["residentName"]
+  }
 );
 
 type VisitorRegistrationFormData = z.infer<typeof visitorRegistrationSchema>;
@@ -84,6 +97,7 @@ export default function VisitorRegistrationPage() {
       fullName: "",
       email: "",
       phone: "",
+      nricPassport: "",
       residentName: "",
       roomNumber: "",
       vehicleNumber: "",
@@ -94,6 +108,14 @@ export default function VisitorRegistrationPage() {
   });
 
   const purpose = form.watch("purpose");
+
+  // Clear resident/room fields when switching to Site Visit
+  useEffect(() => {
+    if (purpose === "Site Visit") {
+      form.setValue("residentName", "");
+      form.setValue("roomNumber", "");
+    }
+  }, [purpose, form]);
 
   const visitTimeslots = [
     "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", 
@@ -182,7 +204,10 @@ export default function VisitorRegistrationPage() {
               <CardDescription>
                 Register your visit to Sukha Senior Resort
                 <div className="mt-2 text-sm text-muted-foreground">
-                  For site visits, please leave the Resident Name / Room Number fields empty
+                  {purpose === "Site Visit" ? 
+                    "Site visit selected - resident information not required" :
+                    "Resident name and room number are required for visits to residents"
+                  }
                 </div>
               </CardDescription>
             </CardHeader>
@@ -234,35 +259,51 @@ export default function VisitorRegistrationPage() {
                       />
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="residentName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Resident Name (optional)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Jane Doe" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="roomNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Room Number (optional)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="A101" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="nricPassport"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>NRIC / Passport Number *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="123456-78-9012 or A12345678" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {purpose !== "Site Visit" && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="residentName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Resident Name *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Jane Doe" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="roomNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Room Number *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="A101" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
