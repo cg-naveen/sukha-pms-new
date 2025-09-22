@@ -1,26 +1,25 @@
 {
-  "version": 2,
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "BREVO_API_KEY": "@brevo_api_key", 
-    "MAILERLITE_API_KEY": "@mailerlite_api_key",
-    "SESSION_SECRET": "@session_secret"
-  },
-  "build": {
-    "env": {
-      "DATABASE_URL": "@database_url",
-      "BREVO_API_KEY": "@brevo_api_key",
-      "MAILERLITE_API_KEY": "@mailerlite_api_key", 
-      "SESSION_SECRET": "@session_secret"
+  "builds": [
+    {
+      "src": "dist/index.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist/public"
+      }
     }
-  },
-  "functions": {
-    "app/api/**/*.ts": {
-      "maxDuration": 30
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/dist/index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/dist/public/$1"
     }
-  }
+  ]
 }
