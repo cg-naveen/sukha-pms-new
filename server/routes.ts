@@ -363,6 +363,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Walk-in registration endpoint - auto-approves visitor
+  app.post("/api/visitors/walk-in", checkRole('admin', 'staff'), async (req, res) => {
+    try {
+      const visitorData = insertVisitorSchema.parse(req.body);
+      const userId = req.user!.id;
+      
+      // Generate QR code for immediate approval
+      const qrCode = randomBytes(16).toString('hex');
+      
+      // Create visitor with approved status
+      const newVisitor = await storage.createVisitor({
+        ...visitorData,
+        status: 'approved',
+        qrCode,
+        approvedById: userId,
+        approvedAt: new Date(),
+      });
+      
+      res.status(201).json({ 
+        message: 'Walk-in visitor registered and approved successfully',
+        visitor: newVisitor
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error('Error creating walk-in visitor:', error);
+      res.status(500).json({ message: 'Failed to register walk-in visitor' });
+    }
+  });
+
   app.post("/api/visitors/:id/approve", checkRole('admin', 'staff'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);

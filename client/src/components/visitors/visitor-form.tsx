@@ -42,10 +42,11 @@ import { z } from "zod";
 interface VisitorFormProps {
   visitor?: Visitor;
   isPublic?: boolean;
+  isWalkIn?: boolean;
   onClose: () => void;
 }
 
-export default function VisitorForm({ visitor, isPublic = false, onClose }: VisitorFormProps) {
+export default function VisitorForm({ visitor, isPublic = false, isWalkIn = false, onClose }: VisitorFormProps) {
   const { toast } = useToast();
 
   // Fetch residents for dropdown
@@ -63,8 +64,9 @@ export default function VisitorForm({ visitor, isPublic = false, onClose }: Visi
       email: visitor?.email || "",
       phone: visitor?.phone || "",
       countryCode: visitor?.countryCode || "+60",
-      purpose: visitor?.purpose || "",
-      visitDate: visitor?.visitDate ? new Date(visitor.visitDate) : new Date(),
+      nricPassport: visitor?.nricPassport || "",
+      purposeOfVisit: visitor?.purposeOfVisit || "general_visit",
+      visitDate: visitor?.visitDate || new Date().toISOString().split('T')[0],
       visitTime: visitor?.visitTime || "",
       residentName: visitor?.residentName || "",
       roomNumber: visitor?.roomNumber || "",
@@ -77,19 +79,27 @@ export default function VisitorForm({ visitor, isPublic = false, onClose }: Visi
   // Create visitor request mutation
   const visitorMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertVisitorSchema>) => {
-      const endpoint = isPublic ? "/api/public/visitor-request" : "/api/visitors";
+      let endpoint = "/api/visitors";
+      if (isPublic) {
+        endpoint = "/api/public/visitor-request";
+      } else if (isWalkIn) {
+        endpoint = "/api/visitors/walk-in";
+      }
       const res = await apiRequest("POST", endpoint, data);
       return res.json();
     },
     onSuccess: () => {
       toast({
-        title: "Visit request submitted",
+        title: isWalkIn ? "Walk-in visitor registered" : "Visit request submitted",
         description: isPublic
           ? "Your request has been submitted. You will be notified when approved."
-          : "Visit request has been created successfully.",
+          : isWalkIn 
+            ? "Walk-in visitor has been registered and automatically approved. QR code is generated."
+            : "Visit request has been created successfully.",
       });
       if (!isPublic) {
         queryClient.invalidateQueries({ queryKey: ["/api/visitors"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       }
       onClose();
     },
@@ -126,11 +136,11 @@ export default function VisitorForm({ visitor, isPublic = false, onClose }: Visi
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {residents?.map((resident: any) => (
+                    {Array.isArray(residents) ? residents.map((resident: any) => (
                       <SelectItem key={resident.id} value={resident.id.toString()}>
                         {resident.fullName} - Room {resident.occupancy?.[0]?.room?.unitNumber || "N/A"}
                       </SelectItem>
-                    ))}
+                    )) : null}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -210,17 +220,39 @@ export default function VisitorForm({ visitor, isPublic = false, onClose }: Visi
         
         <FormField
           control={form.control}
-          name="purpose"
+          name="nricPassport"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>NRIC / Passport Number</FormLabel>
+              <FormControl>
+                <Input placeholder="123456-78-9012 or A12345678" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="purposeOfVisit"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Purpose of Visit</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Enter the purpose of your visit" 
-                  className="resize-none"
-                  {...field} 
-                />
-              </FormControl>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select purpose" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="general_visit">General Visit</SelectItem>
+                  <SelectItem value="site_visit">Site Visit</SelectItem>
+                  <SelectItem value="celebration">Celebration</SelectItem>
+                  <SelectItem value="delivery">Delivery</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -230,35 +262,15 @@ export default function VisitorForm({ visitor, isPublic = false, onClose }: Visi
           control={form.control}
           name="visitDate"
           render={({ field }) => (
-            <FormItem className="flex flex-col">
+            <FormItem>
               <FormLabel>Visit Date</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) =>
-                      date < new Date()
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <FormControl>
+                <Input 
+                  type="date" 
+                  min={isWalkIn ? undefined : new Date().toISOString().split('T')[0]}
+                  {...field} 
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -273,7 +285,7 @@ export default function VisitorForm({ visitor, isPublic = false, onClose }: Visi
               <FormItem>
                 <FormLabel>Visit Time</FormLabel>
                 <FormControl>
-                  <Input type="time" {...field} />
+                  <Input type="time" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -292,6 +304,7 @@ export default function VisitorForm({ visitor, isPublic = false, onClose }: Visi
                     min="1" 
                     max="10" 
                     {...field} 
+                    value={field.value || 1}
                     onChange={(e) => field.onChange(parseInt(e.target.value))}
                   />
                 </FormControl>
@@ -310,7 +323,7 @@ export default function VisitorForm({ visitor, isPublic = false, onClose }: Visi
                 <FormItem>
                   <FormLabel>Resident Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Who are you visiting?" {...field} />
+                    <Input placeholder="Who are you visiting?" {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -324,7 +337,7 @@ export default function VisitorForm({ visitor, isPublic = false, onClose }: Visi
                 <FormItem>
                   <FormLabel>Room Number (if known)</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., 101" {...field} />
+                    <Input placeholder="e.g., 101" {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -340,7 +353,7 @@ export default function VisitorForm({ visitor, isPublic = false, onClose }: Visi
             <FormItem>
               <FormLabel>Vehicle Number (Optional)</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., ABC 1234" {...field} />
+                <Input placeholder="e.g., ABC 1234" {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -357,7 +370,8 @@ export default function VisitorForm({ visitor, isPublic = false, onClose }: Visi
                 <Textarea 
                   placeholder="Any special requirements or additional information" 
                   className="resize-none"
-                  {...field} 
+                  {...field}
+                  value={field.value || ""}
                 />
               </FormControl>
               <FormMessage />

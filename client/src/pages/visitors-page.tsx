@@ -39,10 +39,11 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
-import { Plus, Search, Check, X, QrCode, Loader2, ScanLine } from "lucide-react";
+import { Plus, Search, Check, X, QrCode, Loader2, ScanLine, UserCheck } from "lucide-react";
 
 export default function VisitorsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isWalkInFormOpen, setIsWalkInFormOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all_statuses");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedVisitor, setSelectedVisitor] = useState<any>(null);
@@ -128,6 +129,14 @@ export default function VisitorsPage() {
     setIsFormOpen(false);
   };
 
+  const openWalkInForm = () => {
+    setIsWalkInFormOpen(true);
+  };
+
+  const closeWalkInForm = () => {
+    setIsWalkInFormOpen(false);
+  };
+
   const openApproveDialog = (visitor: any) => {
     setSelectedVisitor(visitor);
     setIsApproveDialogOpen(true);
@@ -181,9 +190,13 @@ export default function VisitorsPage() {
             <ScanLine className="h-5 w-5 mr-1" />
             Verify QR
           </Button>
-          <Button onClick={openForm} className="flex items-center">
+          <Button onClick={openForm} variant="outline" className="flex items-center">
             <Plus className="h-5 w-5 mr-1" />
             Request Visit
+          </Button>
+          <Button onClick={openWalkInForm} className="flex items-center">
+            <UserCheck className="h-5 w-5 mr-1" />
+            Walk-in Registration
           </Button>
         </div>
       </div>
@@ -322,6 +335,19 @@ export default function VisitorsPage() {
             <DialogTitle>Request a Visit</DialogTitle>
           </DialogHeader>
           <VisitorForm onClose={closeForm} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Walk-in Registration Form Dialog */}
+      <Dialog open={isWalkInFormOpen} onOpenChange={setIsWalkInFormOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Walk-in Registration</DialogTitle>
+            <DialogDescription>
+              Register a visitor who is currently at the premises. This visitor will be automatically approved.
+            </DialogDescription>
+          </DialogHeader>
+          <VisitorForm onClose={closeWalkInForm} isWalkIn={true} />
         </DialogContent>
       </Dialog>
       
