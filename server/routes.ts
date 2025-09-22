@@ -267,20 +267,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/billings/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const billing = await storage.getBilling(id);
-      if (!billing) {
-        return res.status(404).json({ message: 'Billing not found' });
-      }
-      res.json(billing);
-    } catch (error) {
-      console.error('Error fetching billing:', error);
-      res.status(500).json({ message: 'Failed to fetch billing' });
-    }
-  });
-
   app.get("/api/billings/upcoming/:days", async (req, res) => {
     try {
       const days = parseInt(req.params.days) || 30;

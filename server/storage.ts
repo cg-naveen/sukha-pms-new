@@ -2,8 +2,7 @@ import { db } from "@db";
 import { eq, and, desc, like, gte, lte, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import session from "express-session";
-import MySQLStoreFactory from "express-mysql-session";
-const MySQLStore = MySQLStoreFactory(session);
+import connectPg from "connect-pg-simple";
 import { pool } from "@db";
 import { 
   users, 
@@ -23,7 +22,7 @@ import {
   InsertVisitor,
 } from "@shared/schema";
 
-
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   // Users
@@ -81,22 +80,16 @@ export interface IStorage {
   deleteNotification(id: number, userId: number): Promise<any>;
   getUnreadNotificationCount(userId: number): Promise<number>;
   
-  sessionStore: MySQLStore;
+  sessionStore: session.SessionStore;
 }
 
 class DatabaseStorage implements IStorage {
-  sessionStore: MySQLStore;
+  sessionStore: session.SessionStore;
 
   constructor() {
-    this.sessionStore = new MySQLStore({
-      host: process.env.MYSQL_HOST,
-      port: parseInt(process.env.MYSQL_PORT || '3306'),
-      user: process.env.MYSQL_USER,
-      password: process.env.MYSQL_PASSWORD,
-      database: process.env.MYSQL_DATABASE,
-      createDatabaseTable: true,
-      clearExpired: true,
-      checkExpirationInterval: 900000
+    this.sessionStore = new PostgresSessionStore({ 
+      pool,
+      createTableIfMissing: true
     });
   }
 
@@ -114,8 +107,8 @@ class DatabaseStorage implements IStorage {
   }
 
   async createUser(userData: InsertUser) {
-    await db.insert(users).values(userData);
-    return await this.getUserByUsername(userData.username);
+    const [user] = await db.insert(users).values(userData).returning();
+    return user;
   }
 
   async getAllUsers() {
@@ -125,11 +118,12 @@ class DatabaseStorage implements IStorage {
   }
 
   async updateUser(id: number, userData: Partial<InsertUser>) {
-    await db
+    const [updatedUser] = await db
       .update(users)
       .set({ ...userData, updatedAt: new Date() })
-      .where(eq(users.id, id));
-    return await this.getUser(id);
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
   }
 
   // Resident methods
@@ -164,25 +158,25 @@ class DatabaseStorage implements IStorage {
   }
 
   async createResident(residentData: InsertResident, nextOfKinData?: InsertNextOfKin) {
-    const result = await db.insert(residents).values(residentData);
-    const insertId = Number(result.insertId);
+    const [resident] = await db.insert(residents).values(residentData).returning();
     
-    if (nextOfKinData && insertId) {
+    if (nextOfKinData && resident.id) {
       await db.insert(nextOfKin).values({
         ...nextOfKinData,
-        residentId: insertId
+        residentId: resident.id
       });
     }
     
-    return await this.getResident(insertId);
+    return resident;
   }
 
   async updateResident(id: number, data: Partial<InsertResident>) {
-    await db
+    const [updatedResident] = await db
       .update(residents)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(residents.id, id));
-    return await this.getResident(id);
+      .where(eq(residents.id, id))
+      .returning();
+    return updatedResident;
   }
 
   // Next of Kin methods
@@ -193,17 +187,17 @@ class DatabaseStorage implements IStorage {
   }
 
   async createNextOfKin(nextOfKinData: InsertNextOfKin) {
-    const result = await db.insert(nextOfKin).values(nextOfKinData);
-    const insertId = Number(result.insertId);
-    return await db.query.nextOfKin.findFirst({ where: eq(nextOfKin.id, insertId) });
+    const [newNextOfKin] = await db.insert(nextOfKin).values(nextOfKinData).returning();
+    return newNextOfKin;
   }
 
   async updateNextOfKin(id: number, data: Partial<InsertNextOfKin>) {
-    await db
+    const [updatedNextOfKin] = await db
       .update(nextOfKin)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(nextOfKin.id, id));
-    return await db.query.nextOfKin.findFirst({ where: eq(nextOfKin.id, id) });
+      .where(eq(nextOfKin.id, id))
+      .returning();
+    return updatedNextOfKin;
   }
 
   // Room methods
@@ -239,17 +233,17 @@ class DatabaseStorage implements IStorage {
   }
 
   async createRoom(roomData: InsertRoom) {
-    const result = await db.insert(rooms).values(roomData);
-    const insertId = Number(result.insertId);
-    return await this.getRoom(insertId);
+    const [room] = await db.insert(rooms).values(roomData).returning();
+    return room;
   }
 
   async updateRoom(id: number, data: Partial<InsertRoom>) {
-    await db
+    const [updatedRoom] = await db
       .update(rooms)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(rooms.id, id));
-    return await this.getRoom(id);
+      .where(eq(rooms.id, id))
+      .returning();
+    return updatedRoom;
   }
 
   // Occupancy methods
@@ -347,8 +341,7 @@ class DatabaseStorage implements IStorage {
       ));
     
     // Then, create the new occupancy
-    const result = await db.insert(occupancy).values(occupancyData);
-    const insertId = Number(result.insertId);
+    const [newOccupancy] = await db.insert(occupancy).values(occupancyData).returning();
     
     // Update the room status to occupied
     await db
@@ -356,14 +349,15 @@ class DatabaseStorage implements IStorage {
       .set({ status: 'occupied', updatedAt: new Date() })
       .where(eq(rooms.id, occupancyData.roomId));
     
-    return await this.getOccupancy(insertId);
+    return newOccupancy;
   }
 
   async updateOccupancy(id: number, data: Partial<InsertOccupancy>) {
-    await db
+    const [updatedOccupancy] = await db
       .update(occupancy)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(occupancy.id, id));
+      .where(eq(occupancy.id, id))
+      .returning();
     
     // If we're deactivating the occupancy, update the room status to vacant
     if (data.active === false) {
@@ -376,7 +370,7 @@ class DatabaseStorage implements IStorage {
       }
     }
     
-    return await this.getOccupancy(id);
+    return updatedOccupancy;
   }
 
   // Billing methods
@@ -384,8 +378,9 @@ class DatabaseStorage implements IStorage {
     return await db.query.billings.findFirst({
       where: eq(billings.id, id),
       with: {
-        resident: {
+        occupancy: {
           with: {
+            resident: true,
             room: true
           }
         }
@@ -426,40 +421,40 @@ class DatabaseStorage implements IStorage {
   }
 
   async getUpcomingBillings(days: number) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date();
     const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + days);
-    const futureDateStr = futureDate.toISOString().split('T')[0];
+    futureDate.setDate(today.getDate() + days);
     
     return await db.query.billings.findMany({
       where: and(
         eq(billings.status, 'pending'),
-        sql`${billings.dueDate} >= ${today}`,
-        sql`${billings.dueDate} <= ${futureDateStr}`
+        gte(billings.dueDate, today),
+        lte(billings.dueDate, futureDate)
       ),
       with: {
-        resident: {
+        occupancy: {
           with: {
+            resident: true,
             room: true
           }
         }
       },
-      orderBy: desc(billings.createdAt)
+      orderBy: [billings.dueDate]
     });
   }
 
   async createBilling(billingData: InsertBilling) {
-    const result = await db.insert(billings).values(billingData);
-    const insertId = Number(result.insertId);
-    return await this.getBilling(insertId);
+    const [billing] = await db.insert(billings).values(billingData).returning();
+    return billing;
   }
 
   async updateBilling(id: number, data: Partial<InsertBilling>) {
-    await db
+    const [updatedBilling] = await db
       .update(billings)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(billings.id, id));
-    return await this.getBilling(id);
+      .where(eq(billings.id, id))
+      .returning();
+    return updatedBilling;
   }
 
   // Visitor methods
@@ -497,21 +492,21 @@ class DatabaseStorage implements IStorage {
   }
 
   async createVisitor(visitorData: InsertVisitor) {
-    const result = await db.insert(visitors).values(visitorData);
-    const insertId = Number(result.insertId);
-    return await this.getVisitor(insertId);
+    const [visitor] = await db.insert(visitors).values(visitorData).returning();
+    return visitor;
   }
 
   async updateVisitor(id: number, data: Partial<InsertVisitor>) {
-    await db
+    const [updatedVisitor] = await db
       .update(visitors)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(visitors.id, id));
-    return await this.getVisitor(id);
+      .where(eq(visitors.id, id))
+      .returning();
+    return updatedVisitor;
   }
 
   async approveVisitor(id: number, userId: number, qrCode: string) {
-    await db
+    const [approvedVisitor] = await db
       .update(visitors)
       .set({ 
         status: 'approved', 
@@ -520,12 +515,13 @@ class DatabaseStorage implements IStorage {
         qrCode,
         updatedAt: new Date() 
       })
-      .where(eq(visitors.id, id));
-    return await this.getVisitor(id);
+      .where(eq(visitors.id, id))
+      .returning();
+    return approvedVisitor;
   }
 
   async rejectVisitor(id: number, userId: number) {
-    await db
+    const [rejectedVisitor] = await db
       .update(visitors)
       .set({ 
         status: 'rejected', 
@@ -533,8 +529,9 @@ class DatabaseStorage implements IStorage {
         approvedAt: new Date(),
         updatedAt: new Date() 
       })
-      .where(eq(visitors.id, id));
-    return await this.getVisitor(id);
+      .where(eq(visitors.id, id))
+      .returning();
+    return rejectedVisitor;
   }
 
   // Notification methods
@@ -546,19 +543,17 @@ class DatabaseStorage implements IStorage {
   }
 
   async createNotification(notificationData: any) {
-    const result = await db.insert(notifications).values(notificationData);
-    const insertId = Number(result.insertId);
-    return await db.query.notifications.findFirst({ where: eq(notifications.id, insertId) });
+    const [notification] = await db.insert(notifications).values(notificationData).returning();
+    return notification;
   }
 
   async markNotificationAsRead(notificationId: number, userId: number) {
-    await db
+    const [updatedNotification] = await db
       .update(notifications)
       .set({ read: true })
-      .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)));
-    return await db.query.notifications.findFirst({ 
-      where: and(eq(notifications.id, notificationId), eq(notifications.userId, userId))
-    });
+      .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)))
+      .returning();
+    return updatedNotification;
   }
 
   async markAllNotificationsAsRead(userId: number) {
