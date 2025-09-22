@@ -55,14 +55,14 @@ const visitorRegistrationSchema = z.object({
   }),
   vehicleNumber: z.string().optional(),
   numberOfVisitors: z.coerce.number().int().min(1, "At least 1 visitor is required").max(10, "Maximum 10 visitors allowed"),
-  purpose: z.enum(["General Visit of Father/Mother/Relative", "Site Visit", "Celebration", "Other"], {
+  purposeOfVisit: z.enum(["general_visit", "site_visit", "celebration", "other"], {
     required_error: "Please select a purpose for your visit",
   }),
   otherPurpose: z.string().optional(),
 }).refine(
   (data) => {
-    // If purpose is 'Other', otherPurpose must be provided and not empty
-    if (data.purpose === "Other") {
+    // If purpose is 'other', otherPurpose must be provided and not empty
+    if (data.purposeOfVisit === "other") {
       return data.otherPurpose !== undefined && data.otherPurpose.trim() !== "";
     }
     return true;
@@ -74,7 +74,7 @@ const visitorRegistrationSchema = z.object({
 ).refine(
   (data) => {
     // For non-site visits, require resident name and room number
-    if (data.purpose !== "Site Visit") {
+    if (data.purposeOfVisit !== "site_visit") {
       return data.residentName && data.residentName.trim() !== "" && data.roomNumber && data.roomNumber.trim() !== "";
     }
     return true;
@@ -102,20 +102,20 @@ export default function VisitorRegistrationPage() {
       roomNumber: "",
       vehicleNumber: "",
       numberOfVisitors: 1,
-      purpose: "General Visit of Father/Mother/Relative",
+      purposeOfVisit: "general_visit",
       otherPurpose: "",
     },
   });
 
-  const purpose = form.watch("purpose");
+  const purposeOfVisit = form.watch("purposeOfVisit");
 
   // Clear resident/room fields when switching to Site Visit
   useEffect(() => {
-    if (purpose === "Site Visit") {
+    if (purposeOfVisit === "site_visit") {
       form.setValue("residentName", "");
       form.setValue("roomNumber", "");
     }
-  }, [purpose, form]);
+  }, [purposeOfVisit, form]);
 
   const visitTimeslots = [
     "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", 
@@ -128,7 +128,7 @@ export default function VisitorRegistrationPage() {
       const formattedData = {
         ...data,
         visitDate: format(data.visitDate, "yyyy-MM-dd"),
-        details: data.purpose === "Other" ? data.otherPurpose : data.purpose,
+        details: data.purposeOfVisit === "other" ? data.otherPurpose : data.purposeOfVisit,
       };
 
       const res = await apiRequest("POST", "/api/public/visitor-registration", formattedData);
@@ -204,7 +204,7 @@ export default function VisitorRegistrationPage() {
               <CardDescription>
                 Register your visit to Sukha Senior Resort
                 <div className="mt-2 text-sm text-muted-foreground">
-                  {purpose === "Site Visit" ? 
+                  {purposeOfVisit === "site_visit" ? 
                     "Site visit selected - resident information not required" :
                     "Resident name and room number are required for visits to residents"
                   }
@@ -273,7 +273,7 @@ export default function VisitorRegistrationPage() {
                       )}
                     />
                     
-                    {purpose !== "Site Visit" && (
+                    {purposeOfVisit !== "site_visit" && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
@@ -419,7 +419,7 @@ export default function VisitorRegistrationPage() {
                     
                     <FormField
                       control={form.control}
-                      name="purpose"
+                      name="purposeOfVisit"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Purpose of Visit *</FormLabel>
@@ -430,10 +430,10 @@ export default function VisitorRegistrationPage() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="General Visit of Father/Mother/Relative">General Visit of Father/Mother/Relative</SelectItem>
-                              <SelectItem value="Site Visit">Site Visit</SelectItem>
-                              <SelectItem value="Celebration">Celebration</SelectItem>
-                              <SelectItem value="Other">Other (specify)</SelectItem>
+                              <SelectItem value="general_visit">General Visit of Father/Mother/Relative</SelectItem>
+                              <SelectItem value="site_visit">Site Visit</SelectItem>
+                              <SelectItem value="celebration">Celebration</SelectItem>
+                              <SelectItem value="other">Other (specify)</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -441,7 +441,7 @@ export default function VisitorRegistrationPage() {
                       )}
                     />
                     
-                    {purpose === "Other" && (
+                    {purposeOfVisit === "other" && (
                       <FormField
                         control={form.control}
                         name="otherPurpose"

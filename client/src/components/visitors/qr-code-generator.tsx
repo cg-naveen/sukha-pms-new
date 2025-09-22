@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Visitor } from "@shared/schema";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2, MessageCircle } from "lucide-react";
 import QRCode from "qrcode";
 
 interface QRCodeGeneratorProps {
@@ -56,6 +56,35 @@ export default function QRCodeGenerator({ visitor }: QRCodeGeneratorProps) {
     document.body.removeChild(downloadLink);
   };
 
+  const shareViaWhatsApp = () => {
+    // Create visitor information message
+    const message = `🏢 *Visitor Pass Approved*
+
+👤 *Visitor:* ${visitor.fullName}
+📧 *Email:* ${visitor.email}
+📞 *Phone:* ${visitor.phone}
+🆔 *NRIC/Passport:* ${visitor.nricPassport || 'Not provided'}
+📅 *Visit Date:* ${format(new Date(visitor.visitDate), "MMMM d, yyyy")}
+⏰ *Visit Time:* ${visitor.visitTime || 'Not specified'}
+👥 *Visiting:* ${(visitor as any).resident?.fullName || 'Unknown'}
+🏠 *Room:* ${(visitor as any).resident?.occupancy?.[0]?.room?.unitNumber || 'N/A'}
+🎯 *Purpose:* ${visitor.purposeOfVisit || visitor.purpose}
+${visitor.details ? `📝 *Details:* ${visitor.details}` : ''}
+👥 *Group Size:* ${visitor.numberOfVisitors || 1} ${visitor.numberOfVisitors === 1 ? 'person' : 'people'}
+
+✅ *Status:* APPROVED
+🔗 *QR Code:* Present this QR code at the entrance for verification.
+
+Please save this information and present the QR code when arriving.`;
+
+    // Create WhatsApp URL with pre-filled message
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+    
+    // Open WhatsApp in a new window/tab
+    window.open(whatsappUrl, '_blank');
+  };
+
   if (!visitor.qrCode) {
     return (
       <Card>
@@ -89,14 +118,23 @@ export default function QRCodeGenerator({ visitor }: QRCodeGeneratorProps) {
             </div>
             <div className="text-center mb-4">
               <p className="font-medium">{visitor.fullName}</p>
-              <p className="text-sm text-gray-500">Visit purpose: {visitor.purpose}</p>
+              <p className="text-sm text-gray-500">Visit purpose: {visitor.purposeOfVisit || visitor.purpose}</p>
             </div>
-            <Button 
-              className="w-full"
-              onClick={downloadQRCode}
-            >
-              <Download className="h-4 w-4 mr-2" /> Download QR Code
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full">
+              <Button 
+                className="flex-1"
+                onClick={downloadQRCode}
+                variant="outline"
+              >
+                <Download className="h-4 w-4 mr-2" /> Download QR
+              </Button>
+              <Button 
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                onClick={shareViaWhatsApp}
+              >
+                <MessageCircle className="h-4 w-4 mr-2" /> Share via WhatsApp
+              </Button>
+            </div>
           </>
         )}
       </CardContent>
