@@ -6,7 +6,8 @@ import {
   rooms, 
   occupancy, 
   billings, 
-  visitors 
+  visitors,
+  documents
 } from "@shared/schema";
 import { hashPassword } from "../server/auth";
 import { eq } from "drizzle-orm";

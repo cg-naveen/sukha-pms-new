@@ -11,6 +11,8 @@ export const billingStatusEnum = pgEnum('billing_status', ['paid', 'pending', 'o
 export const visitorStatusEnum = pgEnum('visitor_status', ['pending', 'approved', 'rejected']);
 export const salesReferralEnum = pgEnum('sales_referral', ['caGrand', 'Sales Team', 'Offline Event', 'Other']);
 export const countryCodeEnum = pgEnum('country_code', ['+60', '+65', '+86', '+91', '+1', '+44', '+61', '+81']);
+export const purposeOfVisitEnum = pgEnum('purpose_of_visit', ['general_visit', 'site_visit', 'celebration', 'delivery', 'maintenance', 'other']);
+export const billingAccountEnum = pgEnum('billing_account', ['sukha_golden', 'care_grand']);
 
 // Users table
 export const users = pgTable("users", {
@@ -92,6 +94,7 @@ export const billings = pgTable("billings", {
   status: billingStatusEnum("status").notNull().default('pending'),
   description: text("description"),
   invoiceFile: text("invoice_file"), // PDF file path/URL
+  billingAccount: billingAccountEnum("billing_account").notNull().default('sukha_golden'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -104,7 +107,9 @@ export const visitors = pgTable("visitors", {
   email: text("email").notNull(),
   phone: text("phone").notNull(),
   countryCode: countryCodeEnum("country_code").notNull().default('+60'),
-  purpose: text("purpose"),
+  nricPassport: text("nric_passport").notNull(), // New field for NRIC/Passport number
+  purposeOfVisit: purposeOfVisitEnum("purpose_of_visit").notNull().default('general_visit'), // Updated to use enum
+  otherPurpose: text("other_purpose"), // For when purpose is 'other'
   visitDate: date("visit_date").notNull(),
   visitTime: text("visit_time"),
   status: visitorStatusEnum("status").notNull().default('pending'),
@@ -119,6 +124,19 @@ export const visitors = pgTable("visitors", {
   vehicleNumber: text("vehicle_number"),
   numberOfVisitors: integer("number_of_visitors"),
   details: text("details"),
+});
+
+// Documents table for resident documents
+export const documents = pgTable("documents", {
+  id: serial("id").primaryKey(),
+  residentId: integer("resident_id").references(() => residents.id).notNull(),
+  title: text("title").notNull(), // e.g. "Tenancy Agreement", "ID Copy", etc.
+  fileName: text("file_name").notNull(),
+  filePath: text("file_path").notNull(),
+  fileSize: integer("file_size"), // Size in bytes
+  mimeType: text("mime_type").notNull(), // e.g. "application/pdf", "image/jpeg"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Notifications table
@@ -143,6 +161,7 @@ export const residentsRelations = relations(residents, ({ one, many }) => ({
   occupancy: many(occupancy),
   visitors: many(visitors),
   billings: many(billings),
+  documents: many(documents),
   room: one(rooms, { fields: [residents.roomId], references: [rooms.id] }),
 }));
 
@@ -166,11 +185,13 @@ export const billingsRelations = relations(billings, ({ one }) => ({
   occupancy: one(occupancy, { fields: [billings.occupancyId], references: [occupancy.id] }),
 }));
 
+export const documentsRelations = relations(documents, ({ one }) => ({
+  resident: one(residents, { fields: [documents.residentId], references: [residents.id] }),
+}));
+
 export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, { fields: [notifications.userId], references: [users.id] }),
 }));
-
-
 
 export const visitorsRelations = relations(visitors, ({ one }) => ({
   resident: one(residents, { fields: [visitors.residentId], references: [residents.id] }),
@@ -205,12 +226,19 @@ export const insertOccupancySchema = createInsertSchema(occupancy).omit({ create
 
 export const insertBillingSchema = createInsertSchema(billings).omit({ createdAt: true, updatedAt: true });
 
+export const insertDocumentSchema = createInsertSchema(documents, {
+  title: (schema) => schema.min(2, "Document title must be at least 2 characters"),
+  fileName: (schema) => schema.min(1, "File name is required"),
+  filePath: (schema) => schema.min(1, "File path is required"),
+}).omit({ createdAt: true, updatedAt: true });
+
 export const insertVisitorSchema = createInsertSchema(visitors, {
   fullName: (schema) => schema.min(2, "Full name must be at least 2 characters"),
   email: (schema) => schema.email("Must provide a valid email"),
   phone: (schema) => schema.min(10, "Phone number must be at least 10 characters"),
+  nricPassport: (schema) => schema.min(5, "NRIC/Passport number must be at least 5 characters"),
   // Make purpose optional for both paths (purpose or details can be used)
-  purpose: (schema) => schema.optional(),
+  otherPurpose: (schema) => schema.optional(),
   details: (schema) => schema.optional(),
 }).omit({ 
   createdAt: true, 
@@ -245,6 +273,9 @@ export type Occupancy = typeof occupancy.$inferSelect;
 export type InsertBilling = z.infer<typeof insertBillingSchema>;
 export type Billing = typeof billings.$inferSelect;
 
+export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+export type Document = typeof documents.$inferSelect;
+
 export type InsertVisitor = z.infer<typeof insertVisitorSchema>;
 export type Visitor = typeof visitors.$inferSelect;
 
@@ -255,18 +286,19 @@ export const publicVisitorRegistrationSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   email: z.string().email("Must provide a valid email"),
   phone: z.string().min(10, "Phone number must be at least 10 characters"),
+  nricPassport: z.string().min(5, "NRIC/Passport number must be at least 5 characters"),
   residentName: z.string().optional().nullable(),
   roomNumber: z.string().optional().nullable(),
   visitDate: z.string(),
   visitTime: z.string(),
   vehicleNumber: z.string().optional().nullable(),
   numberOfVisitors: z.number().min(1, "Number of visitors must be at least 1"),
-  purpose: z.enum(["General Visit of Father/Mother/Relative", "Site Visit", "Celebration", "Other"]),
+  purposeOfVisit: z.enum(["general_visit", "site_visit", "celebration", "delivery", "maintenance", "other"]),
   otherPurpose: z.string().optional(),
 }).refine(
   (data) => {
-    // If purpose is 'Other', otherPurpose must be provided and not empty
-    if (data.purpose === "Other") {
+    // If purpose is 'other', otherPurpose must be provided and not empty
+    if (data.purposeOfVisit === "other") {
       return data.otherPurpose !== undefined && data.otherPurpose.trim() !== "";
     }
     return true;
