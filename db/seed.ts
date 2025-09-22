@@ -220,6 +220,7 @@ async function seed() {
           dueDate.setDate(dueDate.getDate() + 15 + (i * 5)); // Stagger due dates
           
           await db.insert(billings).values({
+            residentId: residentId,
             occupancyId: occupancyRecord.id,
             amount: room.monthlyRate,
             dueDate: dueDate,
