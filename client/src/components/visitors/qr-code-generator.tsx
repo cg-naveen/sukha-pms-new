@@ -17,7 +17,16 @@ export default function QRCodeGenerator({ visitor }: QRCodeGeneratorProps) {
 
   useEffect(() => {
     const generateQRCode = async () => {
-      if (!visitor.qrCode || !canvasRef.current) return;
+      if (!visitor.qrCode) {
+        setIsLoading(false);
+        return;
+      }
+
+      if (!canvasRef.current) {
+        // Retry after a short delay if canvas ref not available
+        setTimeout(() => generateQRCode(), 100);
+        return;
+      }
       
       try {
         // Generate QR code to canvas
@@ -68,7 +77,7 @@ export default function QRCodeGenerator({ visitor }: QRCodeGeneratorProps) {
 ⏰ *Visit Time:* ${visitor.visitTime || 'Not specified'}
 👥 *Visiting:* ${(visitor as any).resident?.fullName || 'Unknown'}
 🏠 *Room:* ${(visitor as any).resident?.occupancy?.[0]?.room?.unitNumber || 'N/A'}
-🎯 *Purpose:* ${visitor.purposeOfVisit || visitor.purpose}
+🎯 *Purpose:* ${visitor.purposeOfVisit || 'Not specified'}
 ${visitor.details ? `📝 *Details:* ${visitor.details}` : ''}
 👥 *Group Size:* ${visitor.numberOfVisitors || 1} ${visitor.numberOfVisitors === 1 ? 'person' : 'people'}
 
@@ -107,18 +116,21 @@ Please save this information and present the QR code when arriving.`;
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center">
-        {isLoading ? (
-          <div className="p-10 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <>
-            <div className="mb-4 p-2 bg-white rounded-lg shadow-sm">
-              <canvas ref={canvasRef} className="mx-auto" />
+        {/* Canvas is always rendered so ref is available */}
+        <div className="mb-4 p-2 bg-white rounded-lg shadow-sm">
+          <canvas ref={canvasRef} className={`mx-auto ${isLoading ? 'hidden' : ''}`} />
+          {isLoading && (
+            <div className="p-10 flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
+          )}
+        </div>
+        
+        {!isLoading && (
+          <>
             <div className="text-center mb-4">
               <p className="font-medium">{visitor.fullName}</p>
-              <p className="text-sm text-gray-500">Visit purpose: {visitor.purposeOfVisit || visitor.purpose}</p>
+              <p className="text-sm text-gray-500">Visit purpose: {visitor.purposeOfVisit || 'Not specified'}</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full">
               <Button 
