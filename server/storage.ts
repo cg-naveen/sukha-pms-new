@@ -13,6 +13,7 @@ import {
   billings,
   visitors,
   notifications,
+  documents,
   InsertUser,
   InsertResident,
   InsertNextOfKin,
@@ -20,6 +21,7 @@ import {
   InsertOccupancy,
   InsertBilling,
   InsertVisitor,
+  InsertDocument,
 } from "@shared/schema";
 
 const PostgresSessionStore = connectPg(session);
@@ -79,6 +81,12 @@ export interface IStorage {
   markAllNotificationsAsRead(userId: number): Promise<any>;
   deleteNotification(id: number, userId: number): Promise<any>;
   getUnreadNotificationCount(userId: number): Promise<number>;
+  
+  // Documents
+  getDocument(id: number): Promise<any>;
+  getDocumentsByResidentId(residentId: number): Promise<any[]>;
+  createDocument(document: InsertDocument): Promise<any>;
+  deleteDocument(id: number): Promise<any>;
   
   sessionStore: session.SessionStore;
 }
@@ -575,6 +583,36 @@ class DatabaseStorage implements IStorage {
       .from(notifications)
       .where(and(eq(notifications.userId, userId), eq(notifications.read, false)));
     return result[0]?.count || 0;
+  }
+
+  // Document methods
+  async getDocument(id: number) {
+    return await db.query.documents.findFirst({
+      where: eq(documents.id, id),
+      with: {
+        resident: true
+      }
+    });
+  }
+
+  async getDocumentsByResidentId(residentId: number) {
+    return await db.query.documents.findMany({
+      where: eq(documents.residentId, residentId),
+      orderBy: [desc(documents.createdAt)]
+    });
+  }
+
+  async createDocument(documentData: InsertDocument) {
+    const [document] = await db.insert(documents).values(documentData).returning();
+    return document;
+  }
+
+  async deleteDocument(id: number) {
+    const [deletedDocument] = await db
+      .delete(documents)
+      .where(eq(documents.id, id))
+      .returning();
+    return deletedDocument;
   }
 }
 

@@ -23,6 +23,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { insertResidentSchema, insertNextOfKinSchema, Resident } from "@shared/schema";
+import DocumentsTab from "./documents-tab";
 
 const salesReferralOptions = [
   'caGrand',
@@ -165,9 +166,10 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Tabs defaultValue="personal" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="personal">Personal Information</TabsTrigger>
             <TabsTrigger value="nextOfKin">Next of Kin</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
           </TabsList>
           
           <TabsContent value="personal" className="space-y-4 py-4">
@@ -454,6 +456,40 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
             
             <div className="flex justify-between pt-2">
               <Button type="button" onClick={() => setActiveTab("personal")}>
+                Previous
+              </Button>
+              <div className="flex gap-2">
+                <Button type="button" onClick={() => setActiveTab("documents")} variant="outline">
+                  Next
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={residentMutation.isPending}
+                >
+                  {residentMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {resident ? "Updating..." : "Creating..."}
+                    </>
+                  ) : (
+                    resident ? "Update Resident" : "Create Resident"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="documents" className="space-y-4 py-4">
+            {resident ? (
+              <DocumentsTab residentId={resident.id} />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Please save the resident first to manage documents.</p>
+              </div>
+            )}
+            
+            <div className="flex justify-between pt-2">
+              <Button type="button" onClick={() => setActiveTab("nextOfKin")}>
                 Previous
               </Button>
               <Button 

@@ -6,6 +6,9 @@ import { setupNotificationRoutes } from "./api/notifications";
 import { setupUploadRoutes } from "./api/upload";
 import { z } from "zod";
 import { randomBytes } from "crypto";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import {
   insertUserSchema,
   insertResidentSchema,
@@ -14,6 +17,7 @@ import {
   insertOccupancySchema,
   insertBillingSchema,
   insertVisitorSchema,
+  insertDocumentSchema,
   publicVisitorRegistrationSchema
 } from "@shared/schema";
 
@@ -788,6 +792,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false,
         message: 'Failed to process visitor registration' 
       });
+    }
+  });
+
+  // ==================== Document Routes ====================
+  // Multer configuration for file uploads
+  const uploadDir = path.join(process.cwd(), 'uploads', 'documents');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+
+  const multerStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+  });
+
+  const upload = multer({
+    storage: multerStorage,
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = /jpeg|jpg|png|pdf/;
+      const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+      const mimetype = allowedTypes.test(file.mimetype);
+      
+      if (mimetype && extname) {
+        return cb(null, true);
+      } else {
+        cb(new Error('Only JPG, PNG, and PDF files are allowed!'));
+      }
+    }
+  });
+
+  // Get documents for a resident
+  app.get("/api/residents/:id/documents", async (req, res) => {
+    try {
+      const residentId = parseInt(req.params.id);
+      const documents = await storage.getDocumentsByResidentId(residentId);
+      res.json(documents);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      res.status(500).json({ message: 'Failed to fetch documents' });
+    }
+  });
+
+  // Upload document
+  app.post("/api/documents/upload", checkWriteAccess('residents'), upload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+
+      const { title, residentId } = req.body;
+      
+      if (!title || !residentId) {
+        return res.status(400).json({ message: 'Title and resident ID are required' });
+      }
+
+      const documentData = {
+        residentId: parseInt(residentId),
+        title,
+        fileName: req.file.originalname,
+        filePath: req.file.path,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype
+      };
+
+      const validatedDocument = insertDocumentSchema.parse(documentData);
+      const newDocument = await storage.createDocument(validatedDocument);
+      
+      res.status(201).json(newDocument);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error('Error uploading document:', error);
+      res.status(500).json({ message: 'Failed to upload document' });
+    }
+  });
+
+  // Download document
+  app.get("/api/documents/:id/download", async (req, res) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const document = await storage.getDocument(documentId);
+      
+      if (!document) {
+        return res.status(404).json({ message: 'Document not found' });
+      }
+
+      if (!fs.existsSync(document.filePath)) {
+        return res.status(404).json({ message: 'File not found on server' });
+      }
+
+      res.download(document.filePath, document.fileName);
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      res.status(500).json({ message: 'Failed to download document' });
+    }
+  });
+
+  // Delete document
+  app.delete("/api/documents/:id", checkWriteAccess('residents'), async (req, res) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const document = await storage.getDocument(documentId);
+      
+      if (!document) {
+        return res.status(404).json({ message: 'Document not found' });
+      }
+
+      // Delete file from filesystem
+      if (fs.existsSync(document.filePath)) {
+        fs.unlinkSync(document.filePath);
+      }
+
+      // Delete from database
+      await storage.deleteDocument(documentId);
+      
+      res.json({ message: 'Document deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      res.status(500).json({ message: 'Failed to delete document' });
     }
   });
 
