@@ -32,7 +32,7 @@ export default function DocumentsTab({ residentId }: DocumentsTabProps) {
   const { toast } = useToast();
 
   // Fetch documents for the resident
-  const { data: documents = [], isLoading } = useQuery({
+  const { data: documents = [], isLoading } = useQuery<Document[]>({
     queryKey: [`/api/residents/${residentId}/documents`],
   });
 
@@ -142,9 +142,9 @@ export default function DocumentsTab({ residentId }: DocumentsTabProps) {
     uploadMutation.mutate({ file, title: uploadTitle.trim() });
   };
 
-  const handleDownload = async (document: Document) => {
+  const handleDownload = async (documentItem: Document) => {
     try {
-      const response = await fetch(`/api/documents/${document.id}/download`, {
+      const response = await fetch(`/api/documents/${documentItem.id}/download`, {
         credentials: 'include',
       });
       
@@ -156,7 +156,7 @@ export default function DocumentsTab({ residentId }: DocumentsTabProps) {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = document.fileName;
+      link.download = documentItem.fileName;
       document.body.appendChild(link);
       link.click();
       link.remove();

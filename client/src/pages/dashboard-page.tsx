@@ -7,14 +7,22 @@ import { useAuth } from "@/hooks/use-auth";
 import { ArrowUp, Users, Home, Calendar, UserPlus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
+type DashboardStats = {
+  residentCount: number
+  occupancyRate: number
+  pendingRenewals: number
+  visitorRequests: number
+  recentActivity: any[]
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   
-  const { data: dashboardStats, isLoading } = useQuery({
+  const { data: dashboardStats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
   });
   
-  const { data: upcomingBillings, isLoading: billingsLoading } = useQuery({
+  const { data: upcomingBillings, isLoading: billingsLoading } = useQuery<any[]>({
     queryKey: ["/api/billings/upcoming/30"],
   });
 
