@@ -6,13 +6,14 @@ import { eq } from 'drizzle-orm'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requireAuth()()
   if (authResult instanceof Response) return authResult
 
   try {
-    const residentId = parseInt(params.id)
+    const resolvedParams = await params
+    const residentId = parseInt(resolvedParams.id)
 
     const [resident] = await db
       .select()
@@ -32,14 +33,15 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requireAuth(['admin', 'staff'])()
   if (authResult instanceof Response) return authResult
 
   try {
     const body = await request.json()
-    const residentId = parseInt(params.id)
+    const resolvedParams = await params
+    const residentId = parseInt(resolvedParams.id)
 
     const [updatedResident] = await db
       .update(residents)
@@ -60,13 +62,14 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requireAuth(['admin'])()
   if (authResult instanceof Response) return authResult
 
   try {
-    const residentId = parseInt(params.id)
+    const resolvedParams = await params
+    const residentId = parseInt(resolvedParams.id)
 
     await db.delete(residents).where(eq(residents.id, residentId))
 

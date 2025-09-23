@@ -6,14 +6,15 @@ import { eq } from 'drizzle-orm'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requireAuth()()
   if (authResult instanceof Response) return authResult
 
   try {
     const body = await request.json()
-    const billingId = parseInt(params.id)
+    const resolvedParams = await params
+    const billingId = parseInt(resolvedParams.id)
 
     const [updatedBilling] = await db
       .update(billings)
@@ -34,13 +35,14 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requireAuth()()
   if (authResult instanceof Response) return authResult
 
   try {
-    const billingId = parseInt(params.id)
+    const resolvedParams = await params
+    const billingId = parseInt(resolvedParams.id)
 
     await db.delete(billings).where(eq(billings.id, billingId))
 

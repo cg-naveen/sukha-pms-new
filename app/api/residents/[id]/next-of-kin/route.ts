@@ -6,13 +6,14 @@ import { eq } from 'drizzle-orm'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requireAuth()()
   if (authResult instanceof Response) return authResult
 
   try {
-    const residentId = parseInt(params.id)
+    const resolvedParams = await params
+    const residentId = parseInt(resolvedParams.id)
 
     const residentNextOfKin = await db
       .select()
@@ -28,14 +29,15 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requireAuth(['admin', 'staff'])()
   if (authResult instanceof Response) return authResult
 
   try {
     const body = await request.json()
-    const residentId = parseInt(params.id)
+    const resolvedParams = await params
+    const residentId = parseInt(resolvedParams.id)
 
     const newNextOfKin = await db
       .insert(nextOfKin)
