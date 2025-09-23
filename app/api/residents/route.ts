@@ -1,33 +1,41 @@
-import { NextRequest } from 'next/server'
-import { requireAuth } from '../../lib/auth'
-import { storage } from '../../server/storage'
-import { insertResidentSchema } from '@shared/schema'
+import { NextRequest, NextResponse } from 'next/server'
+import { db } from '../../../lib/db'
+import { residents } from '../../../shared/schema'
+import { requireAuth } from '../../../lib/auth'
+import { like } from 'drizzle-orm'
 
-export const GET = requireAuth(async (request: NextRequest) => {
+export async function GET(request: NextRequest) {
+  const authResult = await requireAuth()()
+  if (authResult instanceof Response) return authResult
+
   try {
     const { searchParams } = new URL(request.url)
-    const search = searchParams.get('search') || undefined
-    const roomType = searchParams.get('roomType') || undefined
-    const status = searchParams.get('status') || undefined
-
-    const residents = await storage.getAllResidents(search, roomType, status)
-    return Response.json(residents)
+    const search = searchParams.get('search')
+    
+    let query = db.select().from(residents)
+    
+    if (search) {
+      query = query.where(like(residents.fullName, `%${search}%`))
+    }
+    
+    const allResidents = await query
+    return NextResponse.json(allResidents)
   } catch (error) {
-    console.error('Get residents error:', error)
-    return Response.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error fetching residents:', error)
+    return NextResponse.json({ error: 'Failed to fetch residents' }, { status: 500 })
   }
-})
+}
 
-export const POST = requireAuth(async (request: NextRequest) => {
+export async function POST(request: NextRequest) {
+  const authResult = await requireAuth(['admin', 'staff'])()
+  if (authResult instanceof Response) return authResult
+
   try {
     const body = await request.json()
-    const { resident: residentData, nextOfKin } = body
-    const validatedResident = insertResidentSchema.parse(residentData)
-    
-    const resident = await storage.createResident(validatedResident, nextOfKin)
-    return Response.json(resident, { status: 201 })
+    const newResident = await db.insert(residents).values(body).returning()
+    return NextResponse.json(newResident[0], { status: 201 })
   } catch (error) {
-    console.error('Create resident error:', error)
-    return Response.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error creating resident:', error)
+    return NextResponse.json({ error: 'Failed to create resident' }, { status: 500 })
   }
-})
+}

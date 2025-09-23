@@ -1,4 +1,5 @@
-import { useLocation, Link } from "wouter";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
   Home,
@@ -9,10 +10,10 @@ import {
 } from "lucide-react";
 
 export default function MobileNavigation() {
-  const [location] = useLocation();
+  const pathname = usePathname();
   
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: Home },
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Residents', href: '/residents', icon: Users },
     { name: 'Rooms', href: '/rooms', icon: Building2 },
     { name: 'Billing', href: '/billing', icon: DollarSign },
@@ -28,7 +29,7 @@ export default function MobileNavigation() {
             href={item.href === '/more' ? '/visitors' : item.href}
             className={cn(
               "flex flex-col items-center px-3 py-1",
-              location === item.href || (item.href === '/more' && location === '/visitors')
+              pathname === item.href || (item.href === '/more' && location === '/visitors')
                 ? "text-primary-600"
                 : "text-gray-600"
             )}

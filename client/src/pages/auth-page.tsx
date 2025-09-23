@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useLocation, Link } from "wouter";
+import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -29,14 +30,15 @@ import { insertUserSchema, loginSchema } from "@shared/schema";
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
   const { user, loginMutation, registerMutation, isLoading } = useAuth();
-  const [_, navigate] = useLocation();
+  const pathname = usePathname();
+  const router = useRouter();
 
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate("/");
+      router.push("/dashboard");
     }
-  }, [user, navigate]);
+  }, [user, router]);
 
   // Login form
   const loginForm = useForm<z.infer<typeof loginSchema>>({
