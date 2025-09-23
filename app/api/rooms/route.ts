@@ -1,32 +1,13 @@
-import { NextRequest } from 'next/server'
-import { requireAuth } from '../../lib/auth'
-import { storage } from '../../server/storage'
-import { insertRoomSchema } from '@shared/schema'
+import { NextResponse } from 'next/server'
+import { db } from '../../../lib/db'
+import { rooms } from '../../../shared/schema'
 
-export const GET = requireAuth(async (request: NextRequest) => {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url)
-    const search = searchParams.get('search') || undefined
-    const type = searchParams.get('type') || undefined
-    const status = searchParams.get('status') || undefined
-
-    const rooms = await storage.getAllRooms(search, type, status)
-    return Response.json(rooms)
+    const allRooms = await db.select().from(rooms)
+    return NextResponse.json(allRooms)
   } catch (error) {
-    console.error('Get rooms error:', error)
-    return Response.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error fetching rooms:', error)
+    return NextResponse.json({ error: 'Failed to fetch rooms' }, { status: 500 })
   }
-})
-
-export const POST = requireAuth(async (request: NextRequest) => {
-  try {
-    const body = await request.json()
-    const roomData = insertRoomSchema.parse(body)
-    
-    const room = await storage.createRoom(roomData)
-    return Response.json(room, { status: 201 })
-  } catch (error) {
-    console.error('Create room error:', error)
-    return Response.json({ error: 'Internal server error' }, { status: 500 })
-  }
-})
+}

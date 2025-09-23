@@ -1,4 +1,5 @@
-import { useLocation, Link } from "wouter";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -18,16 +19,16 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
-  const [location] = useLocation();
+  const pathname = usePathname();
   const { user } = useAuth();
   
   const isAdmin = user?.role === 'admin';
   
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: Home },
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Residents', href: '/residents', icon: Users },
     { name: 'Rooms', href: '/rooms', icon: Building2 },
-    { name: 'Billing', href: '/billing', icon: Receipt },
+    { name: 'Billing', href: '/billings', icon: Receipt },
     { name: 'Visitors', href: '/visitors', icon: UserPlus },
   ];
   
@@ -74,7 +75,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               href={item.href}
               onClick={onClose}
               className={cn(
-                location === item.href
+                pathname === item.href
                   ? "sidebar-active"
                   : "text-gray-700 hover:bg-gray-100",
                 "flex items-center px-3 py-2.5 text-sm font-medium rounded-md mb-1"
@@ -94,7 +95,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                   href={item.href}
                   onClick={onClose}
                   className={cn(
-                    location === item.href
+                    pathname === item.href
                       ? "sidebar-active"
                       : "text-gray-700 hover:bg-gray-100",
                     "flex items-center px-3 py-2.5 text-sm font-medium rounded-md mb-1"

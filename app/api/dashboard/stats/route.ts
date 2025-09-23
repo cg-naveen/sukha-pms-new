@@ -1,29 +1,45 @@
-import { NextRequest } from 'next/server'
-import { requireAuth } from '../../../lib/auth'
-import { storage } from '../../../server/storage'
+import { NextResponse } from 'next/server'
+import { db } from '../../../../lib/db'
+import { residents, rooms, billings, visitors } from '../../../../shared/schema'
+import { requireAuth } from '../../../../lib/auth'
+import { eq, count } from 'drizzle-orm'
 
-export const GET = requireAuth(async (request: NextRequest) => {
+export async function GET() {
+  const authResult = await requireAuth()()
+  if (authResult instanceof Response) return authResult
+
   try {
-    // Get dashboard statistics
-    const residents = await storage.getAllResidents()
-    const rooms = await storage.getAllRooms()
-    const upcomingBillings = await storage.getUpcomingBillings(30)
-    const visitors = await storage.getAllVisitors('pending')
+    // Get total residents count
+    const [residentCountResult] = await db.select({ count: count() }).from(residents)
+    const residentCount = residentCountResult.count
 
-    const occupiedRooms = rooms.filter((room: any) => room.status === 'occupied')
-    const occupancyRate = rooms.length > 0 ? Math.round((occupiedRooms.length / rooms.length) * 100) : 0
+    // Get room occupancy rate
+    const [totalRoomsResult] = await db.select({ count: count() }).from(rooms)
+    const totalRooms = totalRoomsResult.count
+    
+    const [occupiedRoomsResult] = await db.select({ count: count() }).from(rooms).where(eq(rooms.status, 'occupied'))
+    const occupiedRooms = occupiedRoomsResult.count
+    
+    const occupancyRate = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0
 
-    const stats = {
-      residentCount: residents.length,
+    // Get pending billings count
+    const [pendingBillingsResult] = await db.select({ count: count() }).from(billings).where(eq(billings.status, 'pending'))
+    const pendingBillings = pendingBillingsResult.count
+
+    // Get pending visitors count
+    const [pendingVisitorsResult] = await db.select({ count: count() }).from(visitors).where(eq(visitors.status, 'pending'))
+    const pendingVisitors = pendingVisitorsResult.count
+
+    return NextResponse.json({
+      residentCount,
       occupancyRate,
-      pendingRenewals: upcomingBillings.length,
-      visitorRequests: visitors.length,
-      recentActivity: [] // TODO: Implement activity tracking
-    }
-
-    return Response.json(stats)
+      pendingBillings,
+      pendingVisitors,
+      totalRooms,
+      occupiedRooms
+    })
   } catch (error) {
-    console.error('Dashboard stats error:', error)
-    return Response.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error fetching dashboard stats:', error)
+    return NextResponse.json({ error: 'Failed to fetch dashboard stats' }, { status: 500 })
   }
-})
+}

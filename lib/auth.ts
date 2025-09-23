@@ -1,68 +1,66 @@
 import { NextRequest } from 'next/server'
+import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
-import { scrypt, randomBytes, timingSafeEqual } from 'crypto'
-import { promisify } from 'util'
-import { storage } from '../server/storage'
+import bcrypt from 'bcryptjs'
 
-const scryptAsync = promisify(scrypt)
+const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key')
 
 export async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString('hex')
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer
-  return `${buf.toString('hex')}.${salt}`
+  return await bcrypt.hash(password, 12)
 }
 
-export async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split('.')
-  const hashedBuf = Buffer.from(hashed, 'hex')
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer
-  return timingSafeEqual(hashedBuf, suppliedBuf)
+export async function comparePasswords(password: string, hashedPassword: string) {
+  return await bcrypt.compare(password, hashedPassword)
 }
 
-export async function getCurrentUser(request: NextRequest) {
+export async function createJWT(payload: any) {
+  return await new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime('7d')
+    .sign(secret)
+}
+
+export async function verifyJWT(token: string) {
   try {
-    const cookieStore = cookies()
-    const session = cookieStore.get('session')
-    
-    if (!session) {
-      return null
-    }
-
-    // For simplicity, we'll decode the session token and get user
-    // In production, you'd want to store sessions in a database
-    const userId = await storage.getSessionUser(session.value)
-    if (!userId) {
-      return null
-    }
-
-    return await storage.getUser(userId)
-  } catch (error) {
-    console.error('Auth error:', error)
+    const { payload } = await jwtVerify(token, secret)
+    return payload
+  } catch {
     return null
   }
 }
 
-export function requireAuth(handler: (req: NextRequest, user: any) => Promise<Response>) {
-  return async (request: NextRequest) => {
-    const user = await getCurrentUser(request)
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    return handler(request, user)
+export async function getCurrentUser() {
+  try {
+    const cookieStore = await cookies()
+    const token = cookieStore.get('auth-token')?.value
+    
+    if (!token) return null
+    
+    const payload = await verifyJWT(token)
+    return payload
+  } catch {
+    return null
   }
 }
 
-export function requireRole(roles: string[]) {
-  return (handler: (req: NextRequest, user: any) => Promise<Response>) => {
-    return async (request: NextRequest) => {
-      const user = await getCurrentUser(request)
-      if (!user) {
-        return Response.json({ error: 'Unauthorized' }, { status: 401 })
-      }
-      if (!roles.includes(user.role)) {
-        return Response.json({ error: 'Forbidden' }, { status: 403 })
-      }
-      return handler(request, user)
+export function requireAuth(allowedRoles?: string[]) {
+  return async () => {
+    const user = await getCurrentUser()
+    
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      })
     }
+    
+    if (allowedRoles && !allowedRoles.includes(user.role as string)) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { 
+        status: 403,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+    
+    return user
   }
 }
