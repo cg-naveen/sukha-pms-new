@@ -55,7 +55,7 @@ export default function RoomsPage() {
   const [page, setPage] = useState(1);
 
   // Fetch rooms data
-  const { data: rooms, isLoading } = useQuery({
+  const { data: rooms, isLoading } = useQuery<any[]>({
     queryKey: ["/api/rooms"],
   });
 
@@ -203,7 +203,7 @@ export default function RoomsPage() {
                   </TableRow>
                 ))
               ) : paginatedRooms.length > 0 ? (
-                paginatedRooms.map((room: Room) => {
+                paginatedRooms.map((room: any) => {
                   const resident = room.occupancy?.find((o: any) => o.active)?.resident;
                   
                   return (

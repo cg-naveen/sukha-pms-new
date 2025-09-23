@@ -10,7 +10,10 @@ export async function GET() {
   try {
     const allUsers = await db.select().from(users)
     // Remove passwords from response
-    const usersWithoutPasswords = allUsers.map(({ password, ...user }) => user)
+    const usersWithoutPasswords = allUsers.map((user: any) => {
+      const { password, ...userWithoutPassword } = user
+      return userWithoutPassword
+    })
     return NextResponse.json(usersWithoutPasswords)
   } catch (error) {
     console.error('Error fetching users:', error)
@@ -31,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
     
     const newUser = await db.insert(users).values(body).returning()
-    const { password, ...userWithoutPassword } = newUser[0]
+    const { password, ...userWithoutPassword } = newUser[0] as any
     
     return NextResponse.json(userWithoutPassword, { status: 201 })
   } catch (error) {

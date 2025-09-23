@@ -29,7 +29,7 @@ export default function MobileNavigation() {
             href={item.href === '/more' ? '/visitors' : item.href}
             className={cn(
               "flex flex-col items-center px-3 py-1",
-              pathname === item.href || (item.href === '/more' && location === '/visitors')
+              pathname === item.href || (item.href === '/more' && pathname === '/visitors')
                 ? "text-primary-600"
                 : "text-gray-600"
             )}

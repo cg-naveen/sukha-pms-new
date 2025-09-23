@@ -59,13 +59,13 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
   const { toast } = useToast();
 
   // If editing a resident, fetch additional details like next of kin
-  const { data: residentDetail, isLoading: isLoadingDetail } = useQuery({
-    queryKey: resident ? [`/api/residents/${resident.id}`] : null,
+  const { data: residentDetail, isLoading: isLoadingDetail } = useQuery<any>({
+    queryKey: [`/api/residents/${resident?.id || 0}`],
     enabled: !!resident,
   });
 
   // Fetch available rooms for the dropdown
-  const { data: rooms = [] } = useQuery({
+  const { data: rooms = [] } = useQuery<any[]>({
     queryKey: ['/api/rooms'],
   });
 
@@ -78,7 +78,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
         email: resident?.email || "",
         phone: resident?.phone || "",
         countryCode: resident?.countryCode || "+60",
-        dateOfBirth: resident?.dateOfBirth ? new Date(resident.dateOfBirth) : undefined,
+        dateOfBirth: resident?.dateOfBirth || undefined,
         idNumber: resident?.idNumber || "",
         address: resident?.address || "",
         photo: resident?.photo || "",
@@ -180,7 +180,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                 <FormItem>
                   <FormLabel>Full Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input placeholder="John Doe" {...field} value={field.value || ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -195,7 +195,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="john@example.com" {...field} />
+                      <Input type="email" placeholder="john@example.com" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -235,7 +235,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                 <FormItem>
                   <FormLabel>Phone Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="123456789" {...field} />
+                    <Input placeholder="123456789" {...field} value={field.value || ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -320,7 +320,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value}
+                          selected={field.value ? new Date(field.value) : undefined}
                           onSelect={field.onChange}
                           disabled={(date) =>
                             date > new Date() || date < new Date("1900-01-01")
@@ -341,7 +341,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                   <FormItem>
                     <FormLabel>ID Number</FormLabel>
                     <FormControl>
-                      <Input placeholder="ID123456789" {...field} />
+                       <Input placeholder="ID123456789" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -359,7 +359,8 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                     <Textarea 
                       placeholder="Enter previous address" 
                       className="resize-none"
-                      {...field} 
+                      {...field}
+                      value={field.value || ''}
                     />
                   </FormControl>
                   <FormMessage />
@@ -385,7 +386,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                 <FormItem>
                   <FormLabel>Full Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Jane Doe" {...field} />
+                    <Input placeholder="Jane Doe" {...field} value={field.value || ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -399,7 +400,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                 <FormItem>
                   <FormLabel>Relationship</FormLabel>
                   <FormControl>
-                    <Input placeholder="Spouse, Parent, Sibling, etc." {...field} />
+                    <Input placeholder="Spouse, Parent, Sibling, etc." {...field} value={field.value || ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -414,7 +415,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                   <FormItem>
                     <FormLabel>Phone</FormLabel>
                     <FormControl>
-                      <Input placeholder="(555) 987-6543" {...field} />
+                      <Input placeholder="(555) 987-6543" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -428,7 +429,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="jane@example.com" {...field} />
+                      <Input type="email" placeholder="jane@example.com" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -443,11 +444,12 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                 <FormItem>
                   <FormLabel>Address</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Enter address" 
-                      className="resize-none"
-                      {...field} 
-                    />
+                     <Textarea 
+                       placeholder="Enter address" 
+                       className="resize-none"
+                       {...field}
+                       value={field.value || ''}
+                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
