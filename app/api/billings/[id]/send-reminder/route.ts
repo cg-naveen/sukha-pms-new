@@ -6,13 +6,14 @@ import { eq } from 'drizzle-orm'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requireAuth()()
   if (authResult instanceof Response) return authResult
 
   try {
-    const billingId = parseInt(params.id)
+    const resolvedParams = await params
+    const billingId = parseInt(resolvedParams.id)
 
     // Get billing details with resident information
     const [billing] = await db

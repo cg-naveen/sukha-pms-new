@@ -1,14 +1,7 @@
 {
-  "/api/residents/route": "app/api/residents/route.js",
-  "/api/residents/[id]/route": "app/api/residents/[id]/route.js",
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/dashboard/stats/route": "app/api/dashboard/stats/route.js",
-  "/api/billings/upcoming/30/route": "app/api/billings/upcoming/30/route.js",
-  "/api/rooms/route": "app/api/rooms/route.js",
-  "/api/user/route": "app/api/user/route.js",
-  "/dashboard/page": "app/dashboard/page.js",
+  "/users/page": "app/users/page.js",
   "/settings/page": "app/settings/page.js",
-  "/rooms/page": "app/rooms/page.js",
   "/residents/page": "app/residents/page.js",
-  "/users/page": "app/users/page.js"
+  "/dashboard/page": "app/dashboard/page.js",
+  "/rooms/page": "app/rooms/page.js"
 }
