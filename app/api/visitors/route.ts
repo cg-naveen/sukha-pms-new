@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '../../../lib/db'
 import { visitors } from '../../../shared/schema'
 import { requireAuth } from '../../../lib/auth'
-import { eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth()()
@@ -11,13 +11,15 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
-    
-    let query = db.select().from(visitors)
-    
-    if (status) {
+
+    // Base query: newest first
+    let query = db.select().from(visitors).orderBy(desc(visitors.createdAt))
+
+    // Apply status filter only when not "all_statuses"
+    if (status && status !== 'all_statuses') {
       query = query.where(eq(visitors.status, status as any))
     }
-    
+
     const allVisitors = await query
     return NextResponse.json(allVisitors)
   } catch (error) {

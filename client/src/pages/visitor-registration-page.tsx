@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -89,7 +91,12 @@ type VisitorRegistrationFormData = z.infer<typeof visitorRegistrationSchema>;
 
 export default function VisitorRegistrationPage() {
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const form = useForm<VisitorRegistrationFormData>({
     resolver: zodResolver(visitorRegistrationSchema),
@@ -154,6 +161,25 @@ export default function VisitorRegistrationPage() {
     registerVisitorMutation.mutate(data);
   }
 
+  if (!mounted) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 px-4">
+        <div className="w-full max-w-md mx-auto">
+          <div className="flex items-center justify-center mb-8">
+            <Building2 className="h-10 w-10 text-primary" />
+            <h2 className="ml-2 text-2xl font-bold text-gray-900">Sukha Senior Resort</h2>
+          </div>
+          <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+            <div className="flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="ml-2">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (submissionSuccess) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 px-4">
@@ -203,13 +229,13 @@ export default function VisitorRegistrationPage() {
               <CardTitle>Visitor Registration</CardTitle>
               <CardDescription>
                 Register your visit to Sukha Senior Resort
-                <div className="mt-2 text-sm text-muted-foreground">
-                  {purposeOfVisit === "site_visit" ? 
-                    "Site visit selected - resident information not required" :
-                    "Resident name and room number are required for visits to residents"
-                  }
-                </div>
               </CardDescription>
+              <div className="mt-2 text-sm text-muted-foreground">
+                {purposeOfVisit === "site_visit" ? 
+                  "Site visit selected - resident information not required" :
+                  "Resident name and room number are required for visits to residents"
+                }
+              </div>
             </CardHeader>
             <CardContent>
               <Form {...form}>
