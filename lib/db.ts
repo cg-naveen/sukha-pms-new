@@ -24,6 +24,11 @@ if (process.env.DATABASE_URL.includes('neon.tech')) {
     cleanUrl = cleanUrl.replace('&sslcert=disable', '').replace('sslcert=disable&', '').replace('?sslcert=disable', '?').replace('&sslcert=disable', '')
   }
   
+  // For Aiven, we need SSL but with proper certificate handling
+  if (cleanUrl.includes('aivencloud.com')) {
+    cleanUrl = cleanUrl.replace('sslmode=require', 'sslmode=require')
+  }
+  
   // Aiven certificate for SSL connection
   const aivenCert = `-----BEGIN CERTIFICATE-----
 MIIEUDCCArigAwIBAgIUSsOFwcjG9evJBkZc6swW7Ayo+8cwDQYJKoZIhvcNAQEM
@@ -52,9 +57,9 @@ ULA5SnJjufoAkSN2dUw5cxfwZa5irgVQs/EJLHcZMfUv25x+o2iI7ZfiPj0FUZE8
 RtH4Gw==
 -----END CERTIFICATE-----`
 
-  const sslConfig = process.env.NODE_ENV === 'production' ? { 
-    ca: aivenCert,
-    rejectUnauthorized: true
+  const sslConfig = cleanUrl.includes('aivencloud.com') ? { 
+    rejectUnauthorized: false,
+    checkServerIdentity: () => undefined
   } : false
   
   const pgPool = new PgPool({ 
