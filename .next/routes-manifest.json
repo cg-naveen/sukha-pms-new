@@ -50,6 +50,22 @@
         "nxtPid": "nxtPid"
       },
       "namedRegex": "^/api/residents/(?<nxtPid>[^/]+?)/next\\-of\\-kin(?:/)?$"
+    },
+    {
+      "page": "/api/visitors/[id]/approve",
+      "regex": "^/api/visitors/([^/]+?)/approve(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/visitors/(?<nxtPid>[^/]+?)/approve(?:/)?$"
+    },
+    {
+      "page": "/api/visitors/[id]/reject",
+      "regex": "^/api/visitors/([^/]+?)/reject(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/visitors/(?<nxtPid>[^/]+?)/reject(?:/)?$"
     }
   ],
   "staticRoutes": [
