@@ -17,12 +17,21 @@ if (process.env.DATABASE_URL.includes('neon.tech')) {
   // Local PostgreSQL for development or Aiven
   const { Pool: PgPool } = require('pg')
   const { drizzle: pgDrizzle } = require('drizzle-orm/node-postgres')
+  
+  // Clean connection string by removing problematic SSL parameters
+  let cleanUrl = process.env.DATABASE_URL
+  if (cleanUrl.includes('sslcert=disable')) {
+    cleanUrl = cleanUrl.replace('&sslcert=disable', '').replace('sslcert=disable&', '').replace('?sslcert=disable', '?').replace('&sslcert=disable', '')
+  }
+  
+  const sslConfig = process.env.NODE_ENV === 'production' ? { 
+    rejectUnauthorized: false,
+    checkServerIdentity: () => undefined
+  } : false
+  
   const pgPool = new PgPool({ 
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { 
-      rejectUnauthorized: false,
-      checkServerIdentity: () => undefined
-    } : false // Allow self-signed certs for Aiven
+    connectionString: cleanUrl,
+    ssl: sslConfig
   })
   db = pgDrizzle(pgPool, { schema })
 }
