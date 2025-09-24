@@ -1,5 +1,5 @@
-import { drizzle } from 'drizzle-orm/neon-serverless'
-import { Pool } from '@neondatabase/serverless'
+import { drizzle as neonDrizzle } from 'drizzle-orm/neon-serverless'
+import { Pool as NeonPool } from '@neondatabase/serverless'
 import * as schema from '../shared/schema'
 
 if (!process.env.DATABASE_URL) {

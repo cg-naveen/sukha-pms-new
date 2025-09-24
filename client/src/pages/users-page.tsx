@@ -42,7 +42,7 @@ export default function UsersPage() {
   const { toast } = useToast();
 
   // Fetch users data
-  const { data: users, isLoading } = useQuery({
+  const { data: users, isLoading } = useQuery<any[]>({
     queryKey: ["/api/users"],
     enabled: currentUser?.role === 'admin',
   });

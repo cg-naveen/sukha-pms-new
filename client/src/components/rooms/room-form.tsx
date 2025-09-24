@@ -246,7 +246,8 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
                 <Textarea 
                   placeholder="Enter room description" 
                   className="resize-none"
-                  {...field} 
+                  {...field}
+                  value={field.value || ''}
                 />
               </FormControl>
               <FormMessage />

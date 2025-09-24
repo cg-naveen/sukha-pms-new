@@ -35,7 +35,7 @@ export default function BillingForm({ billing, onClose }: BillingFormProps) {
   const { toast } = useToast();
 
   // Fetch residents for the dropdown
-  const { data: residents = [] } = useQuery({
+  const { data: residents = [] } = useQuery<any[]>({
     queryKey: ['/api/residents'],
   });
 
@@ -265,7 +265,8 @@ export default function BillingForm({ billing, onClose }: BillingFormProps) {
                 <Textarea 
                   placeholder="Enter billing description" 
                   className="resize-none"
-                  {...field} 
+                  {...field}
+                  value={field.value || ''}
                 />
               </FormControl>
               <FormMessage />

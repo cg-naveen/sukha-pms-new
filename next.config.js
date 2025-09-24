@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: ['@neondatabase/serverless'],
+  output: 'standalone',
   env: {
     DATABASE_URL: process.env.DATABASE_URL,
     BREVO_API_KEY: process.env.BREVO_API_KEY,

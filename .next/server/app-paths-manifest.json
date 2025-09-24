@@ -1,7 +1,7 @@
 {
-  "/users/page": "app/users/page.js",
-  "/settings/page": "app/settings/page.js",
-  "/residents/page": "app/residents/page.js",
+  "/api/notifications/route": "app/api/notifications/route.js",
+  "/api/users/route": "app/api/users/route.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/rooms/page": "app/rooms/page.js"
+  "/users/page": "app/users/page.js",
+  "/auth/page": "app/auth/page.js"
 }

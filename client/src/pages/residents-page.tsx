@@ -55,7 +55,7 @@ export default function ResidentsPage() {
   const [page, setPage] = useState(1);
 
   // Fetch residents data
-  const { data: residents, isLoading } = useQuery({
+  const { data: residents, isLoading } = useQuery<any[]>({
     queryKey: ["/api/residents"],
   });
 

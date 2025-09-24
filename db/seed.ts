@@ -9,7 +9,7 @@ import {
   visitors,
   documents
 } from "@shared/schema";
-import { hashPassword } from "../server/auth";
+import { hashPassword } from "../lib/auth";
 import { eq } from "drizzle-orm";
 
 async function seed() {
@@ -18,7 +18,7 @@ async function seed() {
 
     // Check if admin user exists
     const existingAdmin = await db.query.users.findFirst({
-      where: (users) => eq(users.username, "admin")
+      where: eq(users.username, "admin")
     });
 
     // Create admin user if it doesn't exist
@@ -195,7 +195,7 @@ async function seed() {
       
       // Now get some rooms to assign to residents
       const occupiedRooms = await db.query.rooms.findMany({
-        where: (rooms) => eq(rooms.status, "occupied")
+        where: eq(rooms.status, "occupied")
       });
       
       // Create occupancies for occupied rooms
@@ -246,14 +246,14 @@ async function seed() {
       console.log("Creating sample visitors...");
       
       // Get resident IDs
-      const residents = await db.query.residents.findMany({
+      const residentsList = await db.query.residents.findMany({
         columns: { id: true }
       });
       
-      if (residents.length > 0) {
+      if (residentsList.length > 0) {
         const visitorsToCreate = [
           {
-            residentId: residents[0].id,
+            residentId: residentsList[0].id,
             fullName: "Sarah Johnson",
             email: "sarah.johnson@example.com",
             phone: "555-111-2222",
@@ -262,7 +262,7 @@ async function seed() {
             status: "pending" as const
           },
           {
-            residentId: residents.length > 1 ? residents[1].id : residents[0].id,
+            residentId: residentsList.length > 1 ? residentsList[1].id : residentsList[0].id,
             fullName: "Michael Brown",
             email: "michael.brown@example.com",
             phone: "555-333-4444",
