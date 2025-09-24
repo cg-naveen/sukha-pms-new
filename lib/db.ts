@@ -58,8 +58,7 @@ RtH4Gw==
 -----END CERTIFICATE-----`
 
   const sslConfig = cleanUrl.includes('aivencloud.com') ? { 
-    rejectUnauthorized: false,
-    checkServerIdentity: () => undefined
+    rejectUnauthorized: false
   } : false
   
   const pgPool = new PgPool({ 
