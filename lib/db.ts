@@ -6,6 +6,11 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL must be set')
 }
 
+// Disable SSL verification for Aiven in production
+if (process.env.DATABASE_URL.includes('aivencloud.com') && process.env.NODE_ENV === 'production') {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+}
+
 // Use Neon for production, regular pg for local development
 let db: any
 
@@ -58,7 +63,8 @@ RtH4Gw==
 -----END CERTIFICATE-----`
 
   const sslConfig = cleanUrl.includes('aivencloud.com') ? { 
-    rejectUnauthorized: false
+    rejectUnauthorized: false,
+    checkServerIdentity: () => undefined
   } : false
   
   const pgPool = new PgPool({ 
