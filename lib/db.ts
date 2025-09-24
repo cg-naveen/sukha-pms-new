@@ -10,14 +10,17 @@ if (!process.env.DATABASE_URL) {
 let db: any
 
 if (process.env.DATABASE_URL.includes('neon.tech')) {
-  // Use Neon serverless only when the URL points to Neon
-  const pool = new NeonPool({ connectionString: process.env.DATABASE_URL })
-  db = neonDrizzle(pool, { schema })
+  // Neon serverless for production
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+  db = drizzle(pool, { schema })
 } else {
-  // Use node-postgres for non-Neon databases (works in dev and production)
+  // Local PostgreSQL for development or Aiven
   const { Pool: PgPool } = require('pg')
   const { drizzle: pgDrizzle } = require('drizzle-orm/node-postgres')
-  const pgPool = new PgPool({ connectionString: process.env.DATABASE_URL })
+  const pgPool = new PgPool({ 
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false // Allow self-signed certs for Aiven
+  })
   db = pgDrizzle(pgPool, { schema })
 }
 
