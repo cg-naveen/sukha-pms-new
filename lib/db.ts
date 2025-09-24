@@ -24,10 +24,7 @@ if (process.env.DATABASE_URL.includes('neon.tech')) {
     cleanUrl = cleanUrl.replace('&sslcert=disable', '').replace('sslcert=disable&', '').replace('?sslcert=disable', '?').replace('&sslcert=disable', '')
   }
   
-  const sslConfig = process.env.NODE_ENV === 'production' ? { 
-    rejectUnauthorized: false,
-    checkServerIdentity: () => undefined
-  } : false
+  const sslConfig = false // Disable SSL for now to test connection
   
   const pgPool = new PgPool({ 
     connectionString: cleanUrl,
