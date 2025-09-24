@@ -19,7 +19,10 @@ if (process.env.DATABASE_URL.includes('neon.tech')) {
   const { drizzle: pgDrizzle } = require('drizzle-orm/node-postgres')
   const pgPool = new PgPool({ 
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false // Allow self-signed certs for Aiven
+    ssl: process.env.NODE_ENV === 'production' ? { 
+      rejectUnauthorized: false,
+      checkServerIdentity: () => undefined
+    } : false // Allow self-signed certs for Aiven
   })
   db = pgDrizzle(pgPool, { schema })
 }
