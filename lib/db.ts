@@ -11,8 +11,8 @@ let db: any
 
 if (process.env.DATABASE_URL.includes('neon.tech')) {
   // Neon serverless for production
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL })
-  db = drizzle(pool, { schema })
+  const pool = new NeonPool({ connectionString: process.env.DATABASE_URL })
+  db = neonDrizzle(pool, { schema })
 } else {
   // Local PostgreSQL for development or Aiven
   const { Pool: PgPool } = require('pg')
