@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Loader2, Download, FileText, FileImage } from "lucide-react";
+import { Loader2, Download, FileText, FileImage, Receipt, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { Resident } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,15 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface ResidentViewModalProps {
   resident: Resident | null;
@@ -47,10 +56,11 @@ export default function ResidentViewModal({
           </div>
         ) : (
           <Tabs defaultValue="personal" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="personal">Personal Information</TabsTrigger>
               <TabsTrigger value="nextOfKin">Next of Kin</TabsTrigger>
               <TabsTrigger value="documents">Documents</TabsTrigger>
+              <TabsTrigger value="paymentHistory">Payment History</TabsTrigger>
             </TabsList>
 
             <TabsContent value="personal" className="space-y-4 mt-4">
@@ -150,6 +160,10 @@ export default function ResidentViewModal({
 
             <TabsContent value="documents" className="space-y-4 mt-4">
               <DocumentsViewTab residentId={resident.id} />
+            </TabsContent>
+
+            <TabsContent value="paymentHistory" className="space-y-4 mt-4">
+              <PaymentHistoryTab residentId={resident.id} />
             </TabsContent>
           </Tabs>
         )}
@@ -261,6 +275,167 @@ function DocumentsViewTab({ residentId }: DocumentsViewTabProps) {
                 </Button>
               </div>
             ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Payment History Component
+interface PaymentHistoryTabProps {
+  residentId: number;
+}
+
+function PaymentHistoryTab({ residentId }: PaymentHistoryTabProps) {
+  const { data: billings = [], isLoading } = useQuery<any[]>({
+    queryKey: [`/api/billings`, residentId],
+    queryFn: async () => {
+      const res = await fetch(`/api/billings?residentId=${residentId}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error("Failed to fetch billings");
+      return res.json();
+    },
+  });
+
+  const handleDownloadReceipt = async (billing: any) => {
+    if (!billing.invoiceFile) {
+      return;
+    }
+
+    try {
+      // Check if it's a OneDrive URL or local path
+      if (billing.invoiceFile.startsWith('http')) {
+        // OneDrive URL - open in new tab
+        window.open(billing.invoiceFile, '_blank');
+      } else {
+        // Local file - download via API
+        const filePath = billing.invoiceFile.startsWith('/') 
+          ? billing.invoiceFile 
+          : `/${billing.invoiceFile}`;
+        
+        const response = await fetch(`/api/documents/download?path=${encodeURIComponent(filePath)}`, {
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          throw new Error('Download failed');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `receipt-${billing.id}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch(status) {
+      case 'paid':
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'pending':
+        return <Clock className="h-4 w-4 text-yellow-600" />;
+      case 'overdue':
+        return <AlertCircle className="h-4 w-4 text-red-600" />;
+      case 'new_invoice':
+        return <Receipt className="h-4 w-4 text-blue-600" />;
+      default:
+        return <Receipt className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  const sortedBillings = [...billings].sort((a, b) => {
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Receipt className="h-5 w-5" />
+          Payment History ({billings.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {billings.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Receipt className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
+            <p>No payment history available.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date / Due Date</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Receipt</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedBillings.map((billing: any) => (
+                  <TableRow key={billing.id}>
+                    <TableCell>
+                      <div className="text-sm">
+                        <div className="font-medium">
+                          {format(new Date(billing.createdAt), "MMM d, yyyy")}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Due: {format(new Date(billing.dueDate), "MMM d, yyyy")}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">
+                        RM {billing.amount.toLocaleString()}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm max-w-[200px] truncate">
+                        {billing.description || "N/A"}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {getStatusIcon(billing.status)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {billing.status === 'paid' && billing.invoiceFile ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadReceipt(billing)}
+                          className="gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          Receipt
+                        </Button>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
       </CardContent>
