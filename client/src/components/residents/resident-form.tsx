@@ -168,13 +168,13 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
       if (residentDetail.nextOfKin && residentDetail.nextOfKin.length > 0) {
         const nextOfKinData = residentDetail.nextOfKin[0];
         console.log('Loading next of kin data:', nextOfKinData);
-        form.setValue("nextOfKin", {
+      form.setValue("nextOfKin", {
           fullName: nextOfKinData.fullName || "",
           relationship: nextOfKinData.relationship || "",
           phone: nextOfKinData.phone || "",
           email: nextOfKinData.email || "",
           address: nextOfKinData.address || "",
-        });
+      });
       } else {
         console.log('No next of kin data found for resident');
       }
@@ -335,7 +335,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
     console.log('✅ Form submitted with data:', data);
     console.log('✅ Starting mutation...');
     try {
-      residentMutation.mutate(data);
+    residentMutation.mutate(data);
     } catch (error) {
       console.error('❌ Error in onSubmit:', error);
     }
@@ -456,30 +456,30 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                   });
 
                   return (
-                    <FormItem>
-                      <FormLabel>Assigned Room</FormLabel>
-                      <Select onValueChange={(value) => field.onChange(value === "no_room" ? undefined : parseInt(value))} defaultValue={field.value?.toString() || "no_room"}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select room (optional)" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="no_room">No room assigned</SelectItem>
+                  <FormItem>
+                    <FormLabel>Assigned Room</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(value === "no_room" ? undefined : parseInt(value))} defaultValue={field.value?.toString() || "no_room"}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select room (optional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="no_room">No room assigned</SelectItem>
                           {roomsWithAvailability
                             .filter((room: any) => room.isAvailable)
                             .map((room: any) => (
-                              <SelectItem key={room.id} value={room.id.toString()}>
+                          <SelectItem key={room.id} value={room.id.toString()}>
                                 {room.unitNumber} - {room.roomType.replace('_', ' ')} 
                                 {room.availableBeds !== undefined && ` (${room.availableBeds}/${room.numberOfBeds || 1} beds available)`}
                                 {room.availableBeds === undefined && ` (${room.numberOfBeds || 1} beds)`}
                                 {' '}(RM {room.monthlyRate})
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
                   );
                 }}
               />

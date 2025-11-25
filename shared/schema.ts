@@ -154,6 +154,27 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Settings table - single row table for system settings
+export const settings = pgTable("settings", {
+  id: serial("id").primaryKey(),
+  // General settings
+  propertyName: text("property_name").notNull().default("Sukha Senior Resort"),
+  address: text("address").notNull().default(""),
+  contactEmail: text("contact_email").notNull().default(""),
+  contactPhone: text("contact_phone").notNull().default(""),
+  // Notification settings
+  enableEmailNotifications: boolean("enable_email_notifications").notNull().default(true),
+  enableSmsNotifications: boolean("enable_sms_notifications").notNull().default(false),
+  billingReminderDays: integer("billing_reminder_days").notNull().default(7),
+  visitorApprovalNotification: boolean("visitor_approval_notification").notNull().default(true),
+  // Job scheduling settings
+  billingGenerationEnabled: boolean("billing_generation_enabled").notNull().default(true),
+  billingGenerationHour: integer("billing_generation_hour").notNull().default(2), // 0-23 (24-hour format)
+  billingGenerationMinute: integer("billing_generation_minute").notNull().default(0), // 0-59
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   approvedVisitors: many(visitors),
@@ -252,6 +273,15 @@ export const insertVisitorSchema = createInsertSchema(visitors, {
   qrCode: true 
 });
 
+export const insertSettingsSchema = createInsertSchema(settings, {
+  propertyName: (schema) => schema.min(2, "Property name must be at least 2 characters"),
+  contactEmail: (schema) => schema.email("Must provide a valid email"),
+  contactPhone: (schema) => schema.min(10, "Phone number must be at least 10 characters"),
+  billingReminderDays: (schema) => schema.int().min(1).max(30),
+  billingGenerationHour: (schema) => schema.int().min(0).max(23),
+  billingGenerationMinute: (schema) => schema.int().min(0).max(59),
+}).omit({ id: true, createdAt: true, updatedAt: true }).partial();
+
 export const loginSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -281,6 +311,9 @@ export type Document = typeof documents.$inferSelect;
 
 export type InsertVisitor = z.infer<typeof insertVisitorSchema>;
 export type Visitor = typeof visitors.$inferSelect;
+
+export type InsertSettings = z.infer<typeof insertSettingsSchema>;
+export type Settings = typeof settings.$inferSelect;
 
 export type Login = z.infer<typeof loginSchema>;
 

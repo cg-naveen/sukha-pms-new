@@ -1,12 +1,10 @@
 {
   "/api/notifications/route": "app/api/notifications/route.js",
   "/api/user/route": "app/api/user/route.js",
-  "/api/residents/route": "app/api/residents/route.js",
+  "/api/settings/route": "app/api/settings/route.js",
   "/_not-found/page": "app/_not-found/page.js",
-  "/api/residents/[id]/route": "app/api/residents/[id]/route.js",
-  "/api/billings/route": "app/api/billings/route.js",
-  "/api/rooms/route": "app/api/rooms/route.js",
   "/billings/page": "app/billings/page.js",
+  "/settings/page": "app/settings/page.js",
   "/residents/page": "app/residents/page.js",
   "/rooms/page": "app/rooms/page.js"
 }

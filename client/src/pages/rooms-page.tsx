@@ -43,8 +43,13 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Download, Upload, Loader2 } from "lucide-react";
 import { Room } from "@shared/schema";
+import { exportToCSV } from "@/lib/csv-utils";
+import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
+import { useRef } from "react";
 
 export default function RoomsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -53,11 +58,99 @@ export default function RoomsPage() {
   const [typeFilter, setTypeFilter] = useState<string>("all_types");
   const [statusFilter, setStatusFilter] = useState<string>("all_statuses");
   const [page, setPage] = useState(1);
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch rooms data
   const { data: rooms, isLoading } = useQuery<any[]>({
     queryKey: ["/api/rooms"],
   });
+
+  // Export function
+  const handleExport = () => {
+    if (!rooms || rooms.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "There are no rooms to export",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const exportData = rooms.map((r: any) => ({
+      unit_number: r.unitNumber,
+      room_type: r.roomType,
+      size: r.size,
+      floor: r.floor,
+      number_of_beds: r.numberOfBeds || 1,
+      status: r.status,
+      monthly_rate: r.monthlyRate,
+      description: r.description || '',
+    }));
+
+    exportToCSV(exportData, 'rooms');
+    toast({
+      title: "Export successful",
+      description: "Rooms data exported to CSV",
+    });
+  };
+
+  // Import mutation
+  const importMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/rooms/import', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Import failed');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Import successful",
+        description: data.message || "Rooms imported successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Import failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleImport = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.csv')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a CSV file",
+          variant: "destructive",
+        });
+        return;
+      }
+      importMutation.mutate(file);
+    }
+  };
 
   // Filter data based on search and filters
   const filteredRooms = rooms
@@ -112,12 +205,39 @@ export default function RoomsPage() {
 
   return (
     <MainLayout title="Room Management">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Room Management</h1>
-        <Button onClick={() => openForm()} className="flex items-center">
-          <Plus className="h-5 w-5 mr-1" />
-          Add Room
-        </Button>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={handleExport} className="flex items-center flex-1 sm:flex-initial">
+            <Download className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
+          <Button variant="outline" onClick={handleImport} className="flex items-center flex-1 sm:flex-initial" disabled={importMutation.isPending}>
+            {importMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <span className="hidden sm:inline">Importing...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Import</span>
+              </>
+            )}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          <Button onClick={() => openForm()} className="flex items-center flex-1 sm:flex-initial">
+            <Plus className="h-5 w-5 mr-1" />
+            <span className="hidden sm:inline">Add Room</span>
+            <span className="sm:hidden">Add</span>
+          </Button>
+        </div>
       </div>
       
       {/* Filters and search */}

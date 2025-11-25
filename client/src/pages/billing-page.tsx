@@ -35,7 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Plus, AlertCircle, Loader2, Eye, Edit, Trash2, Upload, FileText } from "lucide-react";
+import { Plus, AlertCircle, Loader2, Eye, Edit, Trash2, Upload, Download, FileText } from "lucide-react";
 import BillingForm from "@/components/billings/billing-form";
 
 export default function BillingPage() {
@@ -49,7 +49,92 @@ export default function BillingPage() {
   const [selectedBilling, setSelectedBilling] = useState<any>(null);
   const [selectedReceiptFile, setSelectedReceiptFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const importFileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Export function
+  const handleExport = () => {
+    if (!billings || billings.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "There are no billings to export",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const exportData = billings.map((b: any) => ({
+      resident_id: b.residentId,
+      amount: b.amount,
+      due_date: b.dueDate,
+      status: b.status,
+      description: b.description || '',
+      billing_account: b.billingAccount,
+    }));
+
+    exportToCSV(exportData, 'billings');
+    toast({
+      title: "Export successful",
+      description: "Billings data exported to CSV",
+    });
+  };
+
+  // Import mutation
+  const importMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/billings/import', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Import failed');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Import successful",
+        description: data.message || "Billings imported successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/billings"] });
+      if (importFileInputRef.current) {
+        importFileInputRef.current.value = '';
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Import failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleImport = () => {
+    importFileInputRef.current?.click();
+  };
+
+  const handleImportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.csv')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a CSV file",
+          variant: "destructive",
+        });
+        return;
+      }
+      importMutation.mutate(file);
+    }
+  };
 
   // Fetch billing data
   const { data: rawBillings = [], isLoading } = useQuery({
@@ -238,18 +323,45 @@ export default function BillingPage() {
 
   return (
     <MainLayout title="Billing Management">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Billing Management</h1>
-        <Button 
-          className="flex items-center"
-          onClick={() => {
-            setSelectedBilling(null);
-            setIsBillingFormOpen(true);
-          }}
-        >
-          <Plus className="h-5 w-5 mr-1" />
-          Create Billing
-        </Button>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={handleExport} className="flex items-center flex-1 sm:flex-initial">
+            <Download className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
+          <Button variant="outline" onClick={handleImport} className="flex items-center flex-1 sm:flex-initial" disabled={importMutation.isPending}>
+            {importMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <span className="hidden sm:inline">Importing...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Import</span>
+              </>
+            )}
+          </Button>
+          <input
+            ref={importFileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleImportFileChange}
+            className="hidden"
+          />
+          <Button 
+            className="flex items-center flex-1 sm:flex-initial"
+            onClick={() => {
+              setSelectedBilling(null);
+              setIsBillingFormOpen(true);
+            }}
+          >
+            <Plus className="h-5 w-5 mr-1" />
+            <span className="hidden sm:inline">Create Billing</span>
+            <span className="sm:hidden">Create</span>
+          </Button>
+        </div>
       </div>
       
       {/* Filters */}

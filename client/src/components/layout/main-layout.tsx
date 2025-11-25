@@ -25,7 +25,7 @@ export default function MainLayout({ children, title }: MainLayoutProps) {
         <TopBar title={title} onMenuClick={toggleSidebar} />
         
         {/* Page Content */}
-        <div className="p-6">
+        <div className="p-6 pb-20 md:pb-6">
           {children}
         </div>
       </div>

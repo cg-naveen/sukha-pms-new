@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +32,7 @@ import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const generalSettingsSchema = z.object({
   propertyName: z.string().min(2, {
@@ -55,18 +56,68 @@ const notificationSettingsSchema = z.object({
   visitorApprovalNotification: z.boolean().default(true),
 });
 
+const jobSchedulingSchema = z.object({
+  billingGenerationEnabled: z.boolean().default(true),
+  billingGenerationHour: z.coerce.number().int().min(0).max(23),
+  billingGenerationMinute: z.coerce.number().int().min(0).max(59),
+});
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("general");
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch settings
+  const { data: settingsData, isLoading } = useQuery({
+    queryKey: ["/api/settings"],
+    queryFn: async () => {
+      const response = await fetch("/api/settings", {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch settings");
+      return response.json();
+    },
+  });
+
+  // Update settings mutation
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update settings");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      toast({
+        title: "Settings saved",
+        description: "Your settings have been saved successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
   
   const generalForm = useForm<z.infer<typeof generalSettingsSchema>>({
     resolver: zodResolver(generalSettingsSchema),
     defaultValues: {
-      propertyName: "Sukha Senior Resort",
-      address: "123 Main Street, Anytown, USA",
-      contactEmail: "admin@sukhasenior.com",
-      contactPhone: "(555) 123-4567",
+      propertyName: "",
+      address: "",
+      contactEmail: "",
+      contactPhone: "",
     },
   });
   
@@ -79,23 +130,49 @@ export default function SettingsPage() {
       visitorApprovalNotification: true,
     },
   });
+
+  const jobSchedulingForm = useForm<z.infer<typeof jobSchedulingSchema>>({
+    resolver: zodResolver(jobSchedulingSchema),
+    defaultValues: {
+      billingGenerationEnabled: true,
+      billingGenerationHour: 2,
+      billingGenerationMinute: 0,
+    },
+  });
+
+  // Update form values when settings are loaded
+  useEffect(() => {
+    if (settingsData) {
+      generalForm.reset({
+        propertyName: settingsData.propertyName || "",
+        address: settingsData.address || "",
+        contactEmail: settingsData.contactEmail || "",
+        contactPhone: settingsData.contactPhone || "",
+      });
+      notificationForm.reset({
+        enableEmailNotifications: settingsData.enableEmailNotifications ?? true,
+        enableSmsNotifications: settingsData.enableSmsNotifications ?? false,
+        billingReminderDays: settingsData.billingReminderDays ?? 7,
+        visitorApprovalNotification: settingsData.visitorApprovalNotification ?? true,
+      });
+      jobSchedulingForm.reset({
+        billingGenerationEnabled: settingsData.billingGenerationEnabled ?? true,
+        billingGenerationHour: settingsData.billingGenerationHour ?? 2,
+        billingGenerationMinute: settingsData.billingGenerationMinute ?? 0,
+      });
+    }
+  }, [settingsData, generalForm, notificationForm, jobSchedulingForm]);
   
   const onSubmitGeneral = (data: z.infer<typeof generalSettingsSchema>) => {
-    // In a real app, this would save to the backend
-    toast({
-      title: "Settings saved",
-      description: "Your general settings have been saved successfully",
-    });
-    console.log(data);
+    updateSettingsMutation.mutate(data);
   };
   
   const onSubmitNotifications = (data: z.infer<typeof notificationSettingsSchema>) => {
-    // In a real app, this would save to the backend
-    toast({
-      title: "Settings saved",
-      description: "Your notification settings have been saved successfully",
-    });
-    console.log(data);
+    updateSettingsMutation.mutate(data);
+  };
+
+  const onSubmitJobScheduling = (data: z.infer<typeof jobSchedulingSchema>) => {
+    updateSettingsMutation.mutate(data);
   };
   
   return (
@@ -104,12 +181,17 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold text-gray-800">System Settings</h1>
       </div>
       
-      <Tabs defaultValue="general" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="backup">Backup & Restore</TabsTrigger>
-        </TabsList>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      ) : (
+        <Tabs defaultValue="general" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="jobs">Job Scheduling</TabsTrigger>
+          </TabsList>
         
         <TabsContent value="general">
           <Card>
@@ -192,8 +274,8 @@ export default function SettingsPage() {
                     />
                   </div>
                   
-                  <Button type="submit" disabled={generalForm.formState.isSubmitting}>
-                    {generalForm.formState.isSubmitting ? (
+                  <Button type="submit" disabled={updateSettingsMutation.isPending}>
+                    {updateSettingsMutation.isPending ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Saving...
@@ -310,8 +392,8 @@ export default function SettingsPage() {
                     )}
                   />
                   
-                  <Button type="submit" disabled={notificationForm.formState.isSubmitting}>
-                    {notificationForm.formState.isSubmitting ? (
+                  <Button type="submit" disabled={updateSettingsMutation.isPending}>
+                    {updateSettingsMutation.isPending ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Saving...
@@ -326,55 +408,122 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
         
-        <TabsContent value="backup">
+        <TabsContent value="jobs">
           <Card>
             <CardHeader>
-              <CardTitle>Backup and Restore</CardTitle>
+              <CardTitle>Job Scheduling</CardTitle>
               <CardDescription>
-                Manage system backups and restore from previous backups.
+                Configure automated job schedules for system tasks.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="rounded-lg border p-4">
-                <h3 className="text-lg font-medium mb-2">Create Backup</h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  Create a complete backup of all system data including residents, rooms, billings, and visitor records.
-                </p>
-                <Button>Create Backup</Button>
-              </div>
-              
-              <div className="rounded-lg border p-4">
-                <h3 className="text-lg font-medium mb-2">Restore from Backup</h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  Restore your system from a previous backup file. This will replace all current data.
-                </p>
-                <div className="flex items-center gap-4">
-                  <Input type="file" />
-                  <Button variant="outline">Restore</Button>
-                </div>
-              </div>
-              
-              <div className="rounded-lg border p-4">
-                <h3 className="text-lg font-medium mb-2">Scheduled Backups</h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  Configure automated backups to run on a schedule.
-                </p>
-                <div className="flex items-center gap-2 mb-4">
-                  <Switch id="auto-backup" />
-                  <label htmlFor="auto-backup" className="text-sm font-medium">
-                    Enable automated backups
-                  </label>
-                </div>
-                <Input
-                  type="text" 
-                  placeholder="Weekly on Sunday at 2:00 AM"
-                  disabled
-                />
-              </div>
+            <CardContent>
+              <Form {...jobSchedulingForm}>
+                <form onSubmit={jobSchedulingForm.handleSubmit(onSubmitJobScheduling)} className="space-y-6">
+                  <FormField
+                    control={jobSchedulingForm.control}
+                    name="billingGenerationEnabled"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">
+                            Enable Automated Billing Generation
+                          </FormLabel>
+                          <FormDescription>
+                            Automatically generate monthly billings for residents based on their billing date.
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {jobSchedulingForm.watch("billingGenerationEnabled") && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 rounded-lg border p-4">
+                      <FormField
+                        control={jobSchedulingForm.control}
+                        name="billingGenerationHour"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Hour (24-hour format)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                {...field} 
+                                min="0"
+                                max="23"
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Hour of day to run billing generation (0-23).
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={jobSchedulingForm.control}
+                        name="billingGenerationMinute"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Minute</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                {...field} 
+                                min="0"
+                                max="59"
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Minute of hour to run billing generation (0-59).
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+                  
+                  {jobSchedulingForm.watch("billingGenerationEnabled") && (
+                    <div className="rounded-lg bg-blue-50 p-4 text-sm text-blue-800">
+                      <p className="font-medium mb-1">Current Schedule:</p>
+                      <p>
+                        Billing generation will run daily at{" "}
+                        {String(jobSchedulingForm.watch("billingGenerationHour") || 0).padStart(2, "0")}:
+                        {String(jobSchedulingForm.watch("billingGenerationMinute") || 0).padStart(2, "0")}{" "}
+                        (UTC timezone)
+                      </p>
+                      <p className="mt-2 text-xs text-blue-600">
+                        Note: The cron job must be configured in your deployment platform (e.g., Vercel) to match this schedule.
+                      </p>
+                    </div>
+                  )}
+                  
+                  <Button type="submit" disabled={updateSettingsMutation.isPending}>
+                    {updateSettingsMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </Button>
+                </form>
+              </Form>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+      )}
     </MainLayout>
   );
 }

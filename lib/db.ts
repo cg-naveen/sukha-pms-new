@@ -7,21 +7,21 @@ if (!process.env.DATABASE_URL) {
 }
 
 // Supabase PostgreSQL connection
-// Clean connection string by removing problematic SSL parameters
-let cleanUrl = process.env.DATABASE_URL
-if (cleanUrl.includes('sslcert=disable')) {
-  cleanUrl = cleanUrl.replace('&sslcert=disable', '').replace('sslcert=disable&', '').replace('?sslcert=disable', '?').replace('&sslcert=disable', '')
-}
-
+  // Clean connection string by removing problematic SSL parameters
+  let cleanUrl = process.env.DATABASE_URL
+  if (cleanUrl.includes('sslcert=disable')) {
+    cleanUrl = cleanUrl.replace('&sslcert=disable', '').replace('sslcert=disable&', '').replace('?sslcert=disable', '?').replace('&sslcert=disable', '')
+  }
+  
 // Supabase requires SSL
 const sslConfig = {
   rejectUnauthorized: false
 }
-
+  
 const pgPool = new Pool({ 
-  connectionString: cleanUrl,
-  ssl: sslConfig
-})
+    connectionString: cleanUrl,
+    ssl: sslConfig
+  })
 
 const db = drizzle(pgPool, { schema })
 

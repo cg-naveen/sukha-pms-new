@@ -44,6 +44,9 @@ ONEDRIVE_CLIENT_SECRET="..."
 ONEDRIVE_TENANT_ID="..."  # Optional, defaults to 'common'
 ONEDRIVE_REFRESH_TOKEN="..."
 ONEDRIVE_ROOT_FOLDER="SukhaPMS/Documents"  # Optional
+
+# Cron Job Configuration (Required for automated billing generation)
+CRON_SECRET="your-secure-random-string-here"  # Generate with: openssl rand -base64 32
 ```
 
 See `SUPABASE_SETUP.md` for detailed Supabase setup instructions.
