@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '../../../../db/index'
-import { residents } from '../../../../shared/schema'
+import { db } from '../../../../lib/db'
+import { residents, nextOfKin } from '../../../../shared/schema'
 import { requireAuth } from '../../../../lib/auth'
+import { insertResidentSchema } from '../../../../shared/schema'
 import { eq } from 'drizzle-orm'
+import { z } from 'zod'
 
 export async function GET(
   request: NextRequest,
@@ -24,7 +26,17 @@ export async function GET(
       return NextResponse.json({ error: 'Resident not found' }, { status: 404 })
     }
 
-    return NextResponse.json(resident)
+    // Fetch next of kin for this resident
+    const nextOfKinList = await db
+      .select()
+      .from(nextOfKin)
+      .where(eq(nextOfKin.residentId, residentId))
+
+    // Return resident with next of kin
+    return NextResponse.json({
+      ...resident,
+      nextOfKin: nextOfKinList
+    })
   } catch (error) {
     console.error('Error fetching resident:', error)
     return NextResponse.json({ error: 'Failed to fetch resident' }, { status: 500 })
@@ -43,9 +55,12 @@ export async function PUT(
     const resolvedParams = await params
     const residentId = parseInt(resolvedParams.id)
 
+    // Validate with schema (partial update allowed)
+    const validatedData = insertResidentSchema.partial().parse(body)
+
     const [updatedResident] = await db
       .update(residents)
-      .set(body)
+      .set({ ...validatedData, updatedAt: new Date() })
       .where(eq(residents.id, residentId))
       .returning()
 
@@ -55,6 +70,12 @@ export async function PUT(
 
     return NextResponse.json(updatedResident)
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ 
+        error: 'Validation failed', 
+        details: error.errors 
+      }, { status: 400 })
+    }
     console.error('Error updating resident:', error)
     return NextResponse.json({ error: 'Failed to update resident' }, { status: 500 })
   }

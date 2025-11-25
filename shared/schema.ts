@@ -39,6 +39,8 @@ export const residents = pgTable("residents", {
   photo: text("photo"),
   roomId: integer("room_id").references(() => rooms.id),
   salesReferral: salesReferralEnum("sales_referral").notNull().default('Other'),
+  billingDate: integer("billing_date").notNull().default(1), // Day of month for billing (1-31)
+  numberOfBeds: integer("number_of_beds").notNull().default(1), // Number of beds required by the resident
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -63,6 +65,7 @@ export const rooms = pgTable("rooms", {
   roomType: roomTypeEnum("room_type").notNull(),
   size: integer("size").notNull(), // Size in square feet
   floor: integer("floor").notNull(),
+  numberOfBeds: integer("number_of_beds").notNull().default(1), // Number of beds in the room
   status: roomStatusEnum("status").notNull().default('vacant'),
   monthlyRate: integer("monthly_rate").notNull(),
   description: text("description"),

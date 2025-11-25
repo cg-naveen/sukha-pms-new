@@ -53,6 +53,7 @@ async function seed() {
           roomType: "studio" as const,
           size: 300,
           floor: 1,
+          numberOfBeds: 1,
           status: "vacant" as const,
           monthlyRate: 800,
           description: "Standard studio apartment with basic amenities"
@@ -62,6 +63,7 @@ async function seed() {
           roomType: "studio" as const,
           size: 300,
           floor: 1,
+          numberOfBeds: 1,
           status: "occupied" as const,
           monthlyRate: 800,
           description: "Standard studio apartment with basic amenities"
@@ -71,6 +73,7 @@ async function seed() {
           roomType: "studio_deluxe" as const,
           size: 400,
           floor: 2,
+          numberOfBeds: 1,
           status: "vacant" as const,
           monthlyRate: 950,
           description: "Deluxe studio with additional storage space"
@@ -80,6 +83,7 @@ async function seed() {
           roomType: "1_bedroom" as const,
           size: 500,
           floor: 2,
+          numberOfBeds: 1,
           status: "occupied" as const,
           monthlyRate: 1200,
           description: "One bedroom apartment with separate living room"
@@ -89,6 +93,7 @@ async function seed() {
           roomType: "1_bedroom" as const,
           size: 550,
           floor: 3,
+          numberOfBeds: 1,
           status: "vacant" as const,
           monthlyRate: 1250,
           description: "One bedroom apartment with balcony"
@@ -98,6 +103,7 @@ async function seed() {
           roomType: "2_bedroom" as const,
           size: 700,
           floor: 3,
+          numberOfBeds: 2,
           status: "occupied" as const,
           monthlyRate: 1500,
           description: "Two bedroom apartment with modern kitchen"
@@ -107,6 +113,7 @@ async function seed() {
           roomType: "2_bedroom" as const,
           size: 750,
           floor: 4,
+          numberOfBeds: 2,
           status: "vacant" as const,
           monthlyRate: 1600,
           description: "Two bedroom corner unit with city view"
@@ -116,6 +123,7 @@ async function seed() {
           roomType: "3_bedroom" as const,
           size: 900,
           floor: 4,
+          numberOfBeds: 3,
           status: "occupied" as const,
           monthlyRate: 1900,
           description: "Three bedroom premium apartment with two bathrooms"
@@ -148,7 +156,8 @@ async function seed() {
           phone: "555-123-4567",
           dateOfBirth: new Date("1985-03-15"),
           idNumber: "ID12345678",
-          address: "Previous address: 123 Main St, Anytown"
+          address: "Previous address: 123 Main St, Anytown",
+          billingDate: 1
         },
         {
           fullName: "Maria Garcia",
@@ -156,7 +165,8 @@ async function seed() {
           phone: "555-987-6543",
           dateOfBirth: new Date("1990-07-22"),
           idNumber: "ID23456789",
-          address: "Previous address: 456 Oak Ave, Somewhere City"
+          address: "Previous address: 456 Oak Ave, Somewhere City",
+          billingDate: 5
         },
         {
           fullName: "Robert Johnson",
@@ -164,7 +174,8 @@ async function seed() {
           phone: "555-555-1234",
           dateOfBirth: new Date("1978-11-30"),
           idNumber: "ID34567890",
-          address: "Previous address: 789 Pine Rd, Another Town"
+          address: "Previous address: 789 Pine Rd, Another Town",
+          billingDate: 10
         },
         {
           fullName: "Patricia Williams",
@@ -172,7 +183,8 @@ async function seed() {
           phone: "555-222-3333",
           dateOfBirth: new Date("1982-05-10"),
           idNumber: "ID45678901",
-          address: "Previous address: 321 Cedar Ln, Elsewhere"
+          address: "Previous address: 321 Cedar Ln, Elsewhere",
+          billingDate: 15
         }
       ];
       
@@ -257,7 +269,8 @@ async function seed() {
             fullName: "Sarah Johnson",
             email: "sarah.johnson@example.com",
             phone: "555-111-2222",
-            purpose: "Family visit",
+            nricPassport: "NRIC123456",
+            purposeOfVisit: "general_visit" as const,
             visitDate: new Date(Date.now() + 86400000 * 2), // 2 days in the future
             status: "pending" as const
           },
@@ -266,7 +279,8 @@ async function seed() {
             fullName: "Michael Brown",
             email: "michael.brown@example.com",
             phone: "555-333-4444",
-            purpose: "Business meeting",
+            nricPassport: "NRIC789012",
+            purposeOfVisit: "general_visit" as const,
             visitDate: new Date(Date.now() + 86400000 * 5), // 5 days in the future
             status: "pending" as const
           }

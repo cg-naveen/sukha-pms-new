@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '../../../lib/db'
 import { residents } from '../../../shared/schema'
 import { requireAuth } from '../../../lib/auth'
+import { insertResidentSchema } from '../../../shared/schema'
 import { like } from 'drizzle-orm'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth()()
@@ -32,9 +34,19 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const newResident = await db.insert(residents).values(body).returning()
+    
+    // Validate with schema
+    const validatedData = insertResidentSchema.parse(body)
+    
+    const newResident = await db.insert(residents).values(validatedData).returning()
     return NextResponse.json(newResident[0], { status: 201 })
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ 
+        error: 'Validation failed', 
+        details: error.errors 
+      }, { status: 400 })
+    }
     console.error('Error creating resident:', error)
     return NextResponse.json({ error: 'Failed to create resident' }, { status: 500 })
   }

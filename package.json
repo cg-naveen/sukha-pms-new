@@ -8,13 +8,13 @@
     "start": "next start",
     "check": "tsc",
     "db:push": "drizzle-kit push --force --config=./drizzle.config.ts",
-    "db:seed": "tsx db/seed.ts"
+    "db:seed": "tsx db/seed.ts",
+    "db:migrate": "tsx db/migrate-add-columns.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@mailerlite/mailerlite-nodejs": "^1.4.0",
-    "@neondatabase/serverless": "^0.10.4",
     "@radix-ui/react-accordion": "^1.2.1",
     "@radix-ui/react-alert-dialog": "^1.1.2",
     "@radix-ui/react-aspect-ratio": "^1.1.0",

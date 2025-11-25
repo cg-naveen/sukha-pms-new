@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '../../../lib/db'
-import { visitors } from '../../../shared/schema'
+import { visitors, insertVisitorSchema } from '../../../shared/schema'
 import { requireAuth } from '../../../lib/auth'
 import { and, desc, eq } from 'drizzle-orm'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth()()
@@ -34,9 +35,19 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const newVisitor = await db.insert(visitors).values(body).returning()
+    
+    // Validate with schema
+    const validatedData = insertVisitorSchema.parse(body)
+    
+    const newVisitor = await db.insert(visitors).values(validatedData).returning()
     return NextResponse.json(newVisitor[0], { status: 201 })
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ 
+        error: 'Validation failed', 
+        details: error.errors 
+      }, { status: 400 })
+    }
     console.error('Error creating visitor:', error)
     return NextResponse.json({ error: 'Failed to create visitor' }, { status: 500 })
   }

@@ -15,7 +15,7 @@ A comprehensive property management system built with Next.js 15.4.4 for managin
 
 - **Frontend**: Next.js 15.4.4, React 18, TypeScript
 - **Backend**: Next.js API Routes
-- **Database**: PostgreSQL with Drizzle ORM
+- **Database**: Supabase PostgreSQL with Drizzle ORM
 - **Authentication**: Session-based with Next.js middleware
 - **UI**: Radix UI + shadcn/ui + Tailwind CSS
 - **Email**: Brevo/SendGrid integration
@@ -26,11 +26,28 @@ A comprehensive property management system built with Next.js 15.4.4 for managin
 Copy `.env.example` to `.env.local` and configure:
 
 ```bash
-DATABASE_URL="postgresql://..."
+# Supabase Database Configuration
+DATABASE_URL="postgresql://postgres.[project-ref]:[password]@[host]:[port]/postgres"
+SUPABASE_URL="https://[project-ref].supabase.co"
+SUPABASE_ANON_KEY="your-supabase-anon-key"
+
+# Session Secret
+SESSION_SECRET="your-secret-key-change-in-production"
+
+# Email Configuration (Optional)
 BREVO_API_KEY="..."
 MAILERLITE_API_KEY="..."
-SESSION_SECRET="..."
+
+# OneDrive Integration (Optional - falls back to local storage if not set)
+ONEDRIVE_CLIENT_ID="..."
+ONEDRIVE_CLIENT_SECRET="..."
+ONEDRIVE_TENANT_ID="..."  # Optional, defaults to 'common'
+ONEDRIVE_REFRESH_TOKEN="..."
+ONEDRIVE_ROOT_FOLDER="SukhaPMS/Documents"  # Optional
 ```
+
+See `SUPABASE_SETUP.md` for detailed Supabase setup instructions.
+See `ONEDRIVE_SETUP.md` for detailed OneDrive setup instructions.
 
 ## Local Development
 

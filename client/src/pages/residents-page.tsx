@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import MainLayout from "@/components/layout/main-layout";
 import ResidentForm from "@/components/residents/resident-form";
+import ResidentViewModal from "@/components/residents/resident-view-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -48,6 +49,7 @@ import { insertResidentSchema, Resident } from "@shared/schema";
 
 export default function ResidentsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedResident, setSelectedResident] = useState<Resident | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [roomTypeFilter, setRoomTypeFilter] = useState<string>("all_room_types");
@@ -98,6 +100,21 @@ export default function ResidentsPage() {
   const closeForm = () => {
     setSelectedResident(null);
     setIsFormOpen(false);
+  };
+
+  const openView = (resident: Resident) => {
+    setSelectedResident(resident);
+    setIsViewOpen(true);
+  };
+
+  const closeView = () => {
+    setSelectedResident(null);
+    setIsViewOpen(false);
+  };
+
+  const handleEditFromView = () => {
+    setIsViewOpen(false);
+    setIsFormOpen(true);
   };
 
   return (
@@ -243,7 +260,7 @@ export default function ResidentsPage() {
                       </TableCell>
                       <TableCell className="text-right text-sm font-medium">
                         <button 
-                          onClick={() => openForm(resident)}
+                          onClick={() => openView(resident)}
                           className="text-primary-600 hover:text-primary-900 mr-3"
                         >
                           View
@@ -349,6 +366,14 @@ export default function ResidentsPage() {
         )}
       </Card>
       
+      {/* Resident View Modal */}
+      <ResidentViewModal
+        resident={selectedResident}
+        isOpen={isViewOpen}
+        onClose={closeView}
+        onEdit={handleEditFromView}
+      />
+
       {/* Resident Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-[600px]">

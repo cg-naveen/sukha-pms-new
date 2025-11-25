@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '../../../../../db/index'
-import { nextOfKin } from '../../../../../shared/schema'
+import { db } from '../../../../../lib/db'
+import { nextOfKin, insertNextOfKinSchema } from '../../../../../shared/schema'
 import { requireAuth } from '../../../../../lib/auth'
 import { eq } from 'drizzle-orm'
+import { z } from 'zod'
 
 export async function GET(
   request: NextRequest,
@@ -39,13 +40,26 @@ export async function POST(
     const resolvedParams = await params
     const residentId = parseInt(resolvedParams.id)
 
+    console.log('Creating next of kin for resident:', residentId, 'with data:', body)
+
+    // Validate with schema
+    const validatedData = insertNextOfKinSchema.parse({ ...body, residentId })
+
     const newNextOfKin = await db
       .insert(nextOfKin)
-      .values({ ...body, residentId })
+      .values(validatedData)
       .returning()
 
+    console.log('Next of kin created successfully:', newNextOfKin[0])
     return NextResponse.json(newNextOfKin[0], { status: 201 })
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      console.error('Validation error creating next of kin:', error.errors)
+      return NextResponse.json({ 
+        error: 'Validation failed', 
+        details: error.errors 
+      }, { status: 400 })
+    }
     console.error('Error creating next of kin:', error)
     return NextResponse.json({ error: 'Failed to create next of kin' }, { status: 500 })
   }
