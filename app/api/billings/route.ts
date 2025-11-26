@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '../../../lib/db'
 import { billings } from '../../../shared/schema'
 import { requireAuth } from '../../../lib/auth'
-import { eq } from 'drizzle-orm'
+import { insertBillingSchema } from '../../../shared/schema'
+import { eq, and, desc } from 'drizzle-orm'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth()()
@@ -13,17 +15,24 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const residentId = searchParams.get('residentId')
     
-    let query = db.select().from(billings)
+    const conditions = []
     
-    if (status) {
-      query = query.where(eq(billings.status, status as any))
+    if (status && status !== 'all_statuses') {
+      conditions.push(eq(billings.status, status as any))
     }
     
     if (residentId) {
-      query = query.where(eq(billings.residentId, parseInt(residentId)))
+      conditions.push(eq(billings.residentId, parseInt(residentId)))
     }
     
-    const allBillings = await query
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined
+    
+    const allBillings = await db
+      .select()
+      .from(billings)
+      .where(whereClause)
+      .orderBy(desc(billings.createdAt))
+    
     return NextResponse.json(allBillings)
   } catch (error) {
     console.error('Error fetching billings:', error)
@@ -37,9 +46,19 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const newBilling = await db.insert(billings).values(body).returning()
+    
+    // Validate with schema
+    const validatedData = insertBillingSchema.parse(body)
+    
+    const newBilling = await db.insert(billings).values(validatedData).returning()
     return NextResponse.json(newBilling[0], { status: 201 })
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ 
+        error: 'Validation failed', 
+        details: error.errors 
+      }, { status: 400 })
+    }
     console.error('Error creating billing:', error)
     return NextResponse.json({ error: 'Failed to create billing' }, { status: 500 })
   }

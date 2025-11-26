@@ -41,6 +41,7 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
       roomType: room?.roomType || "studio",
       size: room?.size || 0,
       floor: room?.floor || 1,
+      numberOfBeds: room?.numberOfBeds || 1,
       status: room?.status || "vacant",
       monthlyRate: room?.monthlyRate || 0,
       description: room?.description || "",
@@ -165,7 +166,7 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
           />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="size"
@@ -205,6 +206,32 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
                       field.onChange(parseInt(value, 10));
                     }}
                     value={field.value || ""}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="numberOfBeds"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Number of Beds</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    placeholder="1" 
+                    min="1"
+                    {...field}
+                    onChange={(e) => {
+                      const value = e.target.value === "" ? "1" : e.target.value;
+                      field.onChange(parseInt(value, 10));
+                    }}
+                    value={field.value || 1}
                   />
                 </FormControl>
                 <FormMessage />

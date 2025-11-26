@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import MainLayout from "@/components/layout/main-layout";
 import ResidentForm from "@/components/residents/resident-form";
+import ResidentViewModal from "@/components/residents/resident-view-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -42,12 +43,17 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UserPlus, Search } from "lucide-react";
+import { UserPlus, Search, Download, Upload, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { insertResidentSchema, Resident } from "@shared/schema";
+import { exportToCSV } from "@/lib/csv-utils";
+import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function ResidentsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedResident, setSelectedResident] = useState<Resident | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [roomTypeFilter, setRoomTypeFilter] = useState<string>("all_room_types");
@@ -100,14 +106,156 @@ export default function ResidentsPage() {
     setIsFormOpen(false);
   };
 
+  const openView = (resident: Resident) => {
+    setSelectedResident(resident);
+    setIsViewOpen(true);
+  };
+
+  const closeView = () => {
+    setSelectedResident(null);
+    setIsViewOpen(false);
+  };
+
+  const handleEditFromView = () => {
+    setIsViewOpen(false);
+    setIsFormOpen(true);
+  };
+
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+
+  // Export function
+  const handleExport = () => {
+    if (!residents || residents.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "There are no residents to export",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const exportData = residents.map((r: any) => ({
+      full_name: r.fullName,
+      email: r.email,
+      phone: r.phone,
+      country_code: r.countryCode,
+      date_of_birth: r.dateOfBirth || '',
+      id_number: r.idNumber || '',
+      address: r.address || '',
+      sales_referral: r.salesReferral,
+      billing_date: r.billingDate || 1,
+      number_of_beds: r.numberOfBeds || 1,
+    }));
+
+    exportToCSV(exportData, 'residents');
+    toast({
+      title: "Export successful",
+      description: "Residents data exported to CSV",
+    });
+  };
+
+  // Import mutation
+  const importMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/residents/import', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Import failed');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.results && data.results.failed > 0) {
+        toast({
+          title: "Import completed with errors",
+          description: `${data.message}. ${data.results.errors && data.results.errors.length > 0 ? data.results.errors.slice(0, 3).join('; ') : ''}${data.results.errors && data.results.errors.length > 3 ? ` (and ${data.results.errors.length - 3} more...)` : ''}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Import successful",
+          description: data.message || "Residents imported successfully",
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/residents"] });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Import failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleImport = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.csv')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a CSV file",
+          variant: "destructive",
+        });
+        return;
+      }
+      importMutation.mutate(file);
+    }
+  };
+
   return (
     <MainLayout title="Resident Management">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Resident Management</h1>
-        <Button onClick={() => openForm()} className="flex items-center">
-          <UserPlus className="h-5 w-5 mr-1" />
-          Add Resident
-        </Button>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={handleExport} className="flex items-center flex-1 sm:flex-initial">
+            <Download className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
+          <Button variant="outline" onClick={handleImport} className="flex items-center flex-1 sm:flex-initial" disabled={importMutation.isPending}>
+            {importMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <span className="hidden sm:inline">Importing...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Import</span>
+              </>
+            )}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          <Button onClick={() => openForm()} className="flex items-center flex-1 sm:flex-initial">
+            <UserPlus className="h-5 w-5 mr-1" />
+            <span className="hidden sm:inline">Add Resident</span>
+            <span className="sm:hidden">Add</span>
+          </Button>
+        </div>
       </div>
       
       {/* Filters and search */}
@@ -243,7 +391,7 @@ export default function ResidentsPage() {
                       </TableCell>
                       <TableCell className="text-right text-sm font-medium">
                         <button 
-                          onClick={() => openForm(resident)}
+                          onClick={() => openView(resident)}
                           className="text-primary-600 hover:text-primary-900 mr-3"
                         >
                           View
@@ -349,6 +497,14 @@ export default function ResidentsPage() {
         )}
       </Card>
       
+      {/* Resident View Modal */}
+      <ResidentViewModal
+        resident={selectedResident}
+        isOpen={isViewOpen}
+        onClose={closeView}
+        onEdit={handleEditFromView}
+      />
+
       {/* Resident Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-[600px]">

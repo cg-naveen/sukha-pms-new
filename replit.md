@@ -41,9 +41,9 @@ Preferred communication style: Simple, everyday language.
 - **API Design**: RESTful Next.js API routes with role-based access control
 
 ### Data Storage Solutions
-- **Primary Database**: PostgreSQL via Neon serverless
+- **Primary Database**: PostgreSQL via Supabase
 - **ORM**: Drizzle ORM with type-safe queries
-- **Connection Management**: Connection pooling with neon serverless
+- **Connection Management**: Connection pooling with Supabase PostgreSQL
 - **Schema Management**: Drizzle migrations and schema definitions
 - **Session Storage**: PostgreSQL-backed sessions using connect-pg-simple
 

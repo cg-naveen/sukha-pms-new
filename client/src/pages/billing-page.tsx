@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Plus, AlertCircle, Loader2, Eye, Edit, Trash2 } from "lucide-react";
+import { Plus, AlertCircle, Loader2, Eye, Edit, Trash2, Upload, Download, FileText } from "lucide-react";
 import BillingForm from "@/components/billings/billing-form";
 
 export default function BillingPage() {
@@ -47,7 +47,94 @@ export default function BillingPage() {
   const [isMarkPaidDialogOpen, setIsMarkPaidDialogOpen] = useState(false);
   const [isBillingFormOpen, setIsBillingFormOpen] = useState(false);
   const [selectedBilling, setSelectedBilling] = useState<any>(null);
+  const [selectedReceiptFile, setSelectedReceiptFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const importFileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Export function
+  const handleExport = () => {
+    if (!billings || billings.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "There are no billings to export",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const exportData = billings.map((b: any) => ({
+      resident_id: b.residentId,
+      amount: b.amount,
+      due_date: b.dueDate,
+      status: b.status,
+      description: b.description || '',
+      billing_account: b.billingAccount,
+    }));
+
+    exportToCSV(exportData, 'billings');
+    toast({
+      title: "Export successful",
+      description: "Billings data exported to CSV",
+    });
+  };
+
+  // Import mutation
+  const importMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/billings/import', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Import failed');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Import successful",
+        description: data.message || "Billings imported successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/billings"] });
+      if (importFileInputRef.current) {
+        importFileInputRef.current.value = '';
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Import failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleImport = () => {
+    importFileInputRef.current?.click();
+  };
+
+  const handleImportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.csv')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a CSV file",
+          variant: "destructive",
+        });
+        return;
+      }
+      importMutation.mutate(file);
+    }
+  };
 
   // Fetch billing data
   const { data: rawBillings = [], isLoading } = useQuery({
@@ -84,21 +171,37 @@ export default function BillingPage() {
     }
   });
 
-  // Mutation to mark billing as paid
+  // Mutation to mark billing as paid with receipt upload
   const markPaidMutation = useMutation({
-    mutationFn: async (billingId: number) => {
-      return await apiRequest("PUT", `/api/billings/${billingId}`, {
-        status: "paid"
+    mutationFn: async ({ billingId, receiptFile }: { billingId: number; receiptFile: File }) => {
+      const formData = new FormData();
+      formData.append('receipt', receiptFile);
+
+      const response = await fetch(`/api/billings/${billingId}/mark-paid`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to mark billing as paid');
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       toast({
         title: "Payment recorded",
-        description: "The billing has been marked as paid",
+        description: "The billing has been marked as paid and receipt uploaded",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/billings"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       setIsMarkPaidDialogOpen(false);
+      setSelectedReceiptFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -134,11 +237,49 @@ export default function BillingPage() {
   const openMarkPaidDialog = (billingId: number) => {
     setSelectedBillingId(billingId);
     setIsMarkPaidDialogOpen(true);
+    setSelectedReceiptFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleMarkPaid = () => {
-    if (selectedBillingId) {
-      markPaidMutation.mutate(selectedBillingId);
+    if (selectedBillingId && selectedReceiptFile) {
+      markPaidMutation.mutate({ 
+        billingId: selectedBillingId, 
+        receiptFile: selectedReceiptFile 
+      });
+    } else {
+      toast({
+        title: "Receipt required",
+        description: "Please upload a receipt PDF to mark this billing as paid",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a PDF file",
+          variant: "destructive",
+        });
+        e.target.value = '';
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        toast({
+          title: "File too large",
+          description: "Please upload a PDF file smaller than 10MB",
+          variant: "destructive",
+        });
+        e.target.value = '';
+        return;
+      }
+      setSelectedReceiptFile(file);
     }
   };
 
@@ -182,18 +323,45 @@ export default function BillingPage() {
 
   return (
     <MainLayout title="Billing Management">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Billing Management</h1>
-        <Button 
-          className="flex items-center"
-          onClick={() => {
-            setSelectedBilling(null);
-            setIsBillingFormOpen(true);
-          }}
-        >
-          <Plus className="h-5 w-5 mr-1" />
-          Create Billing
-        </Button>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={handleExport} className="flex items-center flex-1 sm:flex-initial">
+            <Download className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
+          <Button variant="outline" onClick={handleImport} className="flex items-center flex-1 sm:flex-initial" disabled={importMutation.isPending}>
+            {importMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <span className="hidden sm:inline">Importing...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Import</span>
+              </>
+            )}
+          </Button>
+          <input
+            ref={importFileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleImportFileChange}
+            className="hidden"
+          />
+          <Button 
+            className="flex items-center flex-1 sm:flex-initial"
+            onClick={() => {
+              setSelectedBilling(null);
+              setIsBillingFormOpen(true);
+            }}
+          >
+            <Plus className="h-5 w-5 mr-1" />
+            <span className="hidden sm:inline">Create Billing</span>
+            <span className="sm:hidden">Create</span>
+          </Button>
+        </div>
       </div>
       
       {/* Filters */}
@@ -376,30 +544,71 @@ export default function BillingPage() {
       </Card>
       
       {/* Mark as Paid Dialog */}
-      <Dialog open={isMarkPaidDialogOpen} onOpenChange={setIsMarkPaidDialogOpen}>
+      <Dialog open={isMarkPaidDialogOpen} onOpenChange={(open) => {
+        setIsMarkPaidDialogOpen(open);
+        if (!open) {
+          setSelectedReceiptFile(null);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Mark as Paid</DialogTitle>
             <DialogDescription>
-              Are you sure you want to mark this billing as paid? This action cannot be undone.
+              Upload the receipt PDF to mark this billing as paid. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex items-center gap-2 py-3">
-            <AlertCircle className="h-6 w-6 text-yellow-500" />
-            <p className="text-sm text-gray-700">
-              This will update the billing status and the resident's payment history.
-            </p>
+          
+          <div className="space-y-4 py-4">
+            <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <AlertCircle className="h-5 w-5 text-yellow-600" />
+              <p className="text-sm text-yellow-800">
+                Please upload a receipt PDF to confirm payment.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Receipt PDF *</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  onChange={handleFileSelect}
+                  className="flex-1"
+                />
+                {selectedReceiptFile && (
+                  <div className="flex items-center gap-2 text-sm text-green-600">
+                    <FileText className="h-4 w-4" />
+                    <span>{selectedReceiptFile.name}</span>
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-gray-500">
+                Only PDF files are allowed. Maximum file size: 10MB
+              </p>
+            </div>
           </div>
+
           <DialogFooter>
             <Button 
               variant="outline" 
-              onClick={() => setIsMarkPaidDialogOpen(false)}
+              onClick={() => {
+                setIsMarkPaidDialogOpen(false);
+                setSelectedReceiptFile(null);
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = '';
+                }
+              }}
+              disabled={markPaidMutation.isPending}
             >
               Cancel
             </Button>
             <Button 
               onClick={handleMarkPaid}
-              disabled={markPaidMutation.isPending}
+              disabled={markPaidMutation.isPending || !selectedReceiptFile}
             >
               {markPaidMutation.isPending ? (
                 <>
@@ -407,7 +616,10 @@ export default function BillingPage() {
                   Processing...
                 </>
               ) : (
-                "Confirm Payment"
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Mark as Paid
+                </>
               )}
             </Button>
           </DialogFooter>

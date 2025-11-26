@@ -42,7 +42,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       {/* Mobile sidebar backdrop */}
       {open && (
         <div 
-          className="fixed inset-0 z-20 bg-black bg-opacity-50 md:hidden"
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden"
           onClick={onClose}
         />
       )}
@@ -50,7 +50,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       {/* Sidebar */}
       <div 
         className={cn(
-          "sidebar bg-white w-64 h-full fixed left-0 shadow-lg z-30 transform transition-transform duration-200 ease-in-out",
+          "sidebar bg-white w-64 h-full fixed left-0 top-0 shadow-lg z-50 transform transition-transform duration-200 ease-in-out",
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >

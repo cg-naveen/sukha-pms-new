@@ -42,11 +42,14 @@ export default function TopBar({ title, onMenuClick }: TopBarProps) {
   };
 
   return (
-    <div className="bg-white shadow-sm px-6 py-3 flex items-center justify-between">
+    <div className="bg-white shadow-sm px-6 py-3 flex items-center justify-between relative z-30">
       <div className="flex items-center">
+        {/* Burger menu only on desktop (md and up) */}
         <button 
-          className="text-gray-500 hover:text-gray-700 mr-4 md:hidden"
+          type="button"
+          className="text-gray-500 hover:text-gray-700 mr-4 hidden md:block cursor-pointer"
           onClick={onMenuClick}
+          aria-label="Toggle menu"
         >
           <Menu className="h-6 w-6" />
         </button>

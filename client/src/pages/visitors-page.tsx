@@ -39,7 +39,9 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
-import { Plus, Search, Check, X, QrCode, Loader2, ScanLine, UserCheck } from "lucide-react";
+import { Plus, Search, Check, X, QrCode, Loader2, ScanLine, UserCheck, Download, Upload } from "lucide-react";
+import { exportToCSV } from "@/lib/csv-utils";
+import { useRef } from "react";
 
 export default function VisitorsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -53,6 +55,95 @@ export default function VisitorsPage() {
   const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Export function
+  const handleExport = () => {
+    if (!visitors || visitors.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "There are no visitors to export",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const exportData = visitors.map((v: any) => ({
+      full_name: v.fullName,
+      email: v.email,
+      phone: v.phone,
+      country_code: v.countryCode,
+      nric_passport: v.nricPassport,
+      purpose_of_visit: v.purposeOfVisit,
+      visit_date: v.visitDate,
+      visit_time: v.visitTime || '',
+      status: v.status,
+      resident_id: v.residentId || '',
+    }));
+
+    exportToCSV(exportData, 'visitors');
+    toast({
+      title: "Export successful",
+      description: "Visitors data exported to CSV",
+    });
+  };
+
+  // Import mutation
+  const importMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/visitors/import', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Import failed');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Import successful",
+        description: data.message || "Visitors imported successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/visitors"] });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Import failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleImport = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.csv')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a CSV file",
+          variant: "destructive",
+        });
+        return;
+      }
+      importMutation.mutate(file);
+    }
+  };
 
   // Fetch visitors data
   const { data: visitors, isLoading } = useQuery({
@@ -179,24 +270,51 @@ export default function VisitorsPage() {
 
   return (
     <MainLayout title="Visitor Management">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Visitor Management</h1>
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={handleExport} className="flex items-center flex-1 sm:flex-initial">
+            <Download className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
+          <Button variant="outline" onClick={handleImport} className="flex items-center flex-1 sm:flex-initial" disabled={importMutation.isPending}>
+            {importMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <span className="hidden sm:inline">Importing...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Import</span>
+              </>
+            )}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleFileChange}
+            className="hidden"
+          />
           <Button 
             variant="outline" 
             onClick={() => setIsQrScannerOpen(true)} 
-            className="flex items-center"
+            className="flex items-center flex-1 sm:flex-initial"
           >
             <ScanLine className="h-5 w-5 mr-1" />
-            Verify QR
+            <span className="hidden sm:inline">Verify QR</span>
+            <span className="sm:hidden">QR</span>
           </Button>
-          <Button onClick={openForm} variant="outline" className="flex items-center">
+          <Button onClick={openForm} variant="outline" className="flex items-center flex-1 sm:flex-initial">
             <Plus className="h-5 w-5 mr-1" />
-            Request Visit
+            <span className="hidden sm:inline">Request Visit</span>
+            <span className="sm:hidden">Request</span>
           </Button>
-          <Button onClick={openWalkInForm} className="flex items-center">
+          <Button onClick={openWalkInForm} className="flex items-center flex-1 sm:flex-initial">
             <UserCheck className="h-5 w-5 mr-1" />
-            Walk-in Registration
+            <span className="hidden sm:inline">Walk-in Registration</span>
+            <span className="sm:hidden">Walk-in</span>
           </Button>
         </div>
       </div>
