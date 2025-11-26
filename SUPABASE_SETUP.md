@@ -2,7 +2,7 @@
 
 ## Getting Your Database Connection String
 
-1. Go to your Supabase project: https://mtsqyhkzkdlgvlpflhxk.supabase.co
+1. Go to your Supabase project: https://dqxvknzvufbvajftvvcm.supabase.co
 2. Navigate to **Settings** → **Database**
 3. Find the **Connection string** section
 4. Copy the **Connection pooling** connection string (recommended) or **Direct connection** string
@@ -12,12 +12,12 @@
 
 The connection string should look like:
 ```
-postgresql://postgres.mtsqyhkzkdlgvlpflhxk:[YOUR-PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+postgresql://postgres.dqxvknzvufbvajftvvcm:[YOUR-PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
 ```
 
 Or for direct connection:
 ```
-postgresql://postgres.mtsqyhkzkdlgvlpflhxk:[YOUR-PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+postgresql://postgres.dqxvknzvufbvajftvvcm:[YOUR-PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
 ```
 
 ## After Setting Up

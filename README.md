@@ -71,8 +71,10 @@ npm run dev
 ## Deployment to Vercel
 
 1. Connect your GitHub repository to Vercel
-2. Configure environment variables in Vercel dashboard
+2. Configure environment variables in Vercel dashboard (see `VERCEL_DEPLOYMENT.md` for details)
 3. Deploy automatically on push to main branch
+
+See `VERCEL_DEPLOYMENT.md` for complete Vercel deployment instructions including environment variable setup.
 
 ## Currency Display
 

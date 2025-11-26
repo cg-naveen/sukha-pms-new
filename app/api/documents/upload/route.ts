@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '../../../lib/auth'
-import { uploadToOneDrive } from '../../../lib/onedrive'
+import { requireAuth } from '../../../../lib/auth'
+import { uploadToOneDrive } from '../../../../lib/onedrive'
 
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth(['admin', 'staff'])()
@@ -64,8 +64,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Save document metadata to database
-    const { db } = await import('../../../lib/db')
-    const { documents, insertDocumentSchema } = await import('../../../shared/schema')
+    const { db } = await import('../../../../lib/db')
+    const { documents, insertDocumentSchema } = await import('../../../../shared/schema')
     
     const documentData = {
       residentId: parseInt(residentId),

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '../../../lib/auth'
-import { downloadFromOneDrive } from '../../../lib/onedrive'
+import { requireAuth } from '../../../../lib/auth'
+import { downloadFromOneDrive } from '../../../../lib/onedrive'
 import fs from 'fs'
 import path from 'path'
 

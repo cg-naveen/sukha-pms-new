@@ -1,5 +1,5 @@
 -- Run this SQL in Supabase SQL Editor
--- Go to: https://mtsqyhkzkdlgvlpflhxk.supabase.co/project/_/sql/new
+-- Go to: https://dqxvknzvufbvajftvvcm.supabase.co/project/_/sql/new
 
 -- Add numberOfBeds column to rooms table
 ALTER TABLE rooms 

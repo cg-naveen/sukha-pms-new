@@ -35,6 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { exportToCSV } from "@/lib/csv-utils";
 import { Plus, AlertCircle, Loader2, Eye, Edit, Trash2, Upload, Download, FileText } from "lucide-react";
 import BillingForm from "@/components/billings/billing-form";
 
