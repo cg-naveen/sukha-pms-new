@@ -41,7 +41,9 @@ if (cleanUrl.includes('sslcert=disable')) {
   cleanUrl = cleanUrl.replace('&sslcert=disable', '').replace('sslcert=disable&', '').replace('?sslcert=disable', '?').replace('&sslcert=disable', '')
 }
 
-// Try to parse and use connection parameters directly to avoid URL encoding issues
+// Try to parse and extract password to avoid URL encoding issues
+// But if password has special chars, we'll use connection string directly
+let useConnectionString = true
 let poolConfig: any = {
   ssl: { rejectUnauthorized: false },
   // Optimize for serverless: smaller connection pool, faster timeouts
@@ -52,29 +54,33 @@ let poolConfig: any = {
 }
 
 try {
-  // Try parsing as URL to extract components
   const dbUrl = new URL(cleanUrl)
+  const password = dbUrl.password
   
-  // Use individual connection parameters instead of connection string
-  // This avoids URL encoding issues with passwords
-  poolConfig = {
-    ...poolConfig,
-    host: dbUrl.hostname,
-    port: parseInt(dbUrl.port) || 5432,
-    database: dbUrl.pathname.replace('/', '') || 'postgres',
-    user: dbUrl.username,
-    password: dbUrl.password, // Password used directly, no encoding needed!
+  // If password contains special characters that might need encoding, use connection string directly
+  // Otherwise, extract components to avoid any encoding issues
+  if (password && (password.includes('@') || password.includes('#') || password.includes('%') || password.includes(':'))) {
+    // Password has special chars - use connection string as-is (Supabase handles it)
+    useConnectionString = true
+  } else {
+    // Password is simple - can extract components
+    poolConfig = {
+      ...poolConfig,
+      host: dbUrl.hostname,
+      port: parseInt(dbUrl.port) || 5432,
+      database: dbUrl.pathname.replace('/', '') || 'postgres',
+      user: dbUrl.username,
+      password: password,
+    }
+    useConnectionString = false
   }
-  
-  // Clean URL is not needed when using individual params
-  cleanUrl = undefined as any
-} catch {
-  // If parsing fails, fall back to connection string
-  cleanUrl = prepareConnectionString(cleanUrl)
+} catch (error) {
+  // If parsing fails, use connection string directly
+  useConnectionString = true
 }
 
 // Pool configuration optimized for both local and serverless (Vercel) environments
-const pgPool = new Pool(cleanUrl ? { 
+const pgPool = new Pool(useConnectionString ? { 
   connectionString: cleanUrl,
   ...poolConfig
 } : poolConfig)
@@ -108,7 +114,9 @@ export async function testConnection() {
     } else if (errorCode === 'ETIMEDOUT' || errorCode === 'ECONNREFUSED') {
       diagnostic = 'Connection timeout or refused. Verify DATABASE_URL and check if Supabase project is active.'
     } else if (errorMessage.includes('password authentication failed')) {
-      diagnostic = 'Password authentication failed. Check if DATABASE_URL password is correct and URL-encoded if needed.'
+      diagnostic = 'Password authentication failed. Check if DATABASE_URL password is correct.'
+    } else if (errorMessage.includes('Tenant or user not found') || errorCode === 'XX000') {
+      diagnostic = 'Authentication failed - username or tenant not found. For Supabase pooler connections, username should be "postgres.[PROJECT-REF]" (e.g., postgres.dqxvknzvufbvajftvvcm) for port 6543, or just "postgres" for port 5432. Check your connection string format.'
     }
     
     console.error('Database connection test failed:', {

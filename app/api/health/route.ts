@@ -39,9 +39,20 @@ export async function GET() {
         try {
           const url = new URL(process.env.DATABASE_URL)
           health.database.hostname = url.hostname
+          health.database.port = url.port || '5432'
+          health.database.username = url.username // Show username to help debug
           // Check for common incorrect hostname pattern
           if (url.hostname.includes('db.') && url.hostname.includes('.supabase.co') && !url.hostname.includes('pooler')) {
             health.database.diagnostic = '⚠️ Incorrect hostname format detected. Supabase connection strings should use pooler.supabase.com, not db.[project].supabase.co. Get the correct connection string from Supabase dashboard: Settings → Database → Connection string'
+          }
+          // Check username format for pooler connections
+          if (url.hostname.includes('pooler.supabase.com')) {
+            const port = parseInt(url.port) || 5432
+            if (port === 6543 && !url.username.includes('.')) {
+              health.database.diagnostic = '⚠️ For connection pooling (port 6543), username should be "postgres.[PROJECT-REF]" (e.g., postgres.dqxvknzvufbvajftvvcm), not just "postgres"'
+            } else if (port === 5432 && url.username.includes('.')) {
+              health.database.diagnostic = '⚠️ For direct connection (port 5432), username should be just "postgres", not "postgres.[PROJECT-REF]"'
+            }
           }
         } catch {
           // Invalid URL format
