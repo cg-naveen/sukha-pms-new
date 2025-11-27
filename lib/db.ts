@@ -15,16 +15,16 @@ let connectionString: string
 if (process.env.DATABASE_URL) {
   // Use DATABASE_URL if provided (for backward compatibility)
   connectionString = process.env.DATABASE_URL
-} else if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  // Construct from Supabase URL and service role key
+} else if (process.env.SUPABASE_URL && process.env.SUPABASE_DB_PASSWORD) {
+  // Construct from Supabase URL and database password
   // Extract project ref from SUPABASE_URL (e.g., https://dqxvknzvufbvajftvvcm.supabase.co -> dqxvknzvufbvajftvvcm)
   const supabaseUrl = process.env.SUPABASE_URL.replace('https://', '').replace('.supabase.co', '')
   // For direct connection (not pooler), use db.[PROJECT-REF].supabase.co
-  // Use service role key as password (URL encode if needed)
-  const password = encodeURIComponent(process.env.SUPABASE_SERVICE_ROLE_KEY)
+  // URL encode password if it contains special characters
+  const password = encodeURIComponent(process.env.SUPABASE_DB_PASSWORD)
   connectionString = `postgresql://postgres.${supabaseUrl}:${password}@db.${supabaseUrl}.supabase.co:5432/postgres`
 } else {
-  throw new Error('Either DATABASE_URL or (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY) must be set')
+  throw new Error('Either DATABASE_URL or (SUPABASE_URL and SUPABASE_DB_PASSWORD) must be set. Get SUPABASE_DB_PASSWORD from Supabase Settings > Database > Connection string')
 }
 
 const pgPool = new Pool({ 
