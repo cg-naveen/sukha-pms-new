@@ -19,10 +19,11 @@ if (process.env.DATABASE_URL) {
   // Construct from Supabase URL and database password
   // Extract project ref from SUPABASE_URL (e.g., https://dqxvknzvufbvajftvvcm.supabase.co -> dqxvknzvufbvajftvvcm)
   const supabaseUrl = process.env.SUPABASE_URL.replace('https://', '').replace('.supabase.co', '')
-  // For direct connection (not pooler), use db.[PROJECT-REF].supabase.co
+  // For direct connection, use pooler hostname with port 5432 and username 'postgres'
+  // The pooler hostname works for both pooling (6543) and direct (5432) connections
   // URL encode password if it contains special characters
   const password = encodeURIComponent(process.env.SUPABASE_DB_PASSWORD)
-  connectionString = `postgresql://postgres.${supabaseUrl}:${password}@db.${supabaseUrl}.supabase.co:5432/postgres`
+  connectionString = `postgresql://postgres:${password}@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres`
 } else {
   throw new Error('Either DATABASE_URL or (SUPABASE_URL and SUPABASE_DB_PASSWORD) must be set. Get SUPABASE_DB_PASSWORD from Supabase Settings > Database > Connection string')
 }
