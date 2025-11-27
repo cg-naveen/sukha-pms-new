@@ -14,22 +14,7 @@ if (!process.env.DATABASE_URL) {
 }
 
 
-// Supabase PostgreSQL connection
-// Fix username format for pooler hostname on port 5432
-let dbUrl = process.env.DATABASE_URL
-try {
-  const url = new URL(dbUrl)
-  // If using pooler hostname with port 5432, username must be just "postgres"
-  if (url.hostname.includes('pooler.supabase.com') && (url.port === '5432' || !url.port)) {
-    if (url.username.includes('.')) {
-      // Replace postgres.[PROJECT-REF] with just postgres for port 5432
-      url.username = 'postgres'
-      dbUrl = url.toString()
-    }
-  }
-} catch {
-  // If URL parsing fails, use as-is
-}
+// Supabase PostgreSQL connection - use connection string exactly as provided
 
 const pgPool = new Pool({ 
   connectionString: dbUrl,
