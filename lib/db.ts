@@ -5,34 +5,30 @@ import dotenv from 'dotenv'
 
 // Load environment variables from .env.local (only in development)
 // In production (Vercel), environment variables are provided directly
-if (process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL) {
+if (process.env.NODE_ENV !== 'production' && !process.env.SUPABASE_URL) {
   dotenv.config({ path: '.env.local' })
 }
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL must be set. Please configure your Supabase connection string in .env.local')
-}
+// Construct connection string from Supabase URL
+let connectionString: string
 
-
-// Supabase PostgreSQL connection
-// Fix username format for pooler hostname on port 5432
-let dbUrl = process.env.DATABASE_URL
-try {
-  const url = new URL(dbUrl)
-  // If using pooler hostname with port 5432, username must be just "postgres"
-  if (url.hostname.includes('pooler.supabase.com') && (url.port === '5432' || !url.port)) {
-    if (url.username.includes('.')) {
-      // Replace postgres.[PROJECT-REF] with just postgres for port 5432
-      url.username = 'postgres'
-      dbUrl = url.toString()
-    }
-  }
-} catch {
-  // If URL parsing fails, use as-is
+if (process.env.DATABASE_URL) {
+  // Use DATABASE_URL if provided (for backward compatibility)
+  connectionString = process.env.DATABASE_URL
+} else if (process.env.SUPABASE_URL && process.env.SUPABASE_DB_PASSWORD) {
+  // Construct from Supabase URL and database password
+  // Extract project ref from SUPABASE_URL (e.g., https://dqxvknzvufbvajftvvcm.supabase.co -> dqxvknzvufbvajftvvcm)
+  const supabaseUrl = process.env.SUPABASE_URL.replace('https://', '').replace('.supabase.co', '')
+  // For direct connection (not pooler), use db.[PROJECT-REF].supabase.co
+  // URL encode password if it contains special characters
+  const password = encodeURIComponent(process.env.SUPABASE_DB_PASSWORD)
+  connectionString = `postgresql://postgres.${supabaseUrl}:${password}@db.${supabaseUrl}.supabase.co:5432/postgres`
+} else {
+  throw new Error('Either DATABASE_URL or (SUPABASE_URL and SUPABASE_DB_PASSWORD) must be set. Get SUPABASE_DB_PASSWORD from Supabase Settings > Database > Connection string')
 }
 
 const pgPool = new Pool({ 
-  connectionString: dbUrl,
+  connectionString: connectionString,
   ssl: { rejectUnauthorized: false },
   max: process.env.NODE_ENV === 'production' ? 5 : 10,
   idleTimeoutMillis: 30000,
