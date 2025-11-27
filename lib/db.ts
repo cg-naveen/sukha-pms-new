@@ -5,19 +5,30 @@ import dotenv from 'dotenv'
 
 // Load environment variables from .env.local (only in development)
 // In production (Vercel), environment variables are provided directly
-if (process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL) {
+if (process.env.NODE_ENV !== 'production' && !process.env.SUPABASE_URL) {
   dotenv.config({ path: '.env.local' })
 }
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL must be set. Please configure your Supabase connection string in .env.local')
+// Construct connection string from Supabase URL
+let connectionString: string
+
+if (process.env.DATABASE_URL) {
+  // Use DATABASE_URL if provided (for backward compatibility)
+  connectionString = process.env.DATABASE_URL
+} else if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  // Construct from Supabase URL and service role key
+  // Extract project ref from SUPABASE_URL (e.g., https://dqxvknzvufbvajftvvcm.supabase.co -> dqxvknzvufbvajftvvcm)
+  const supabaseUrl = process.env.SUPABASE_URL.replace('https://', '').replace('.supabase.co', '')
+  // For direct connection (not pooler), use db.[PROJECT-REF].supabase.co
+  // Use service role key as password (URL encode if needed)
+  const password = encodeURIComponent(process.env.SUPABASE_SERVICE_ROLE_KEY)
+  connectionString = `postgresql://postgres.${supabaseUrl}:${password}@db.${supabaseUrl}.supabase.co:5432/postgres`
+} else {
+  throw new Error('Either DATABASE_URL or (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY) must be set')
 }
 
-
-// Supabase PostgreSQL connection - use connection string exactly as provided
-
 const pgPool = new Pool({ 
-  connectionString: process.env.DATABASE_URL,
+  connectionString: connectionString,
   ssl: { rejectUnauthorized: false },
   max: process.env.NODE_ENV === 'production' ? 5 : 10,
   idleTimeoutMillis: 30000,
