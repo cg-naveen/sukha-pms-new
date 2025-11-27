@@ -7,11 +7,12 @@ To deploy to Vercel, you need to configure the following environment variables i
 ### Required Environment Variables
 
 1. **DATABASE_URL**
-   ```
-   postgresql://postgres:Sukha123@@PMS@db.dqxvknzvufbvajftvvcm.supabase.co:5432/postgres
-   ```
-   - This is the direct connection string to your Supabase database
-   - Works reliably in both local and Vercel/serverless environments
+   - **IMPORTANT**: Get the correct connection string from your Supabase dashboard
+   - Go to: **Settings** → **Database** → **Connection string**
+   - Use the **Connection pooling** string (port 6543) or **Direct connection** string (port 5432)
+   - Format should be: `postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:[PORT]/postgres`
+   - Example: `postgresql://postgres.dqxvknzvufbvajftvvcm:[PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres`
+   - **DO NOT use** `db.[PROJECT-REF].supabase.co` - this hostname does not exist!
 
 2. **SUPABASE_URL**
    ```
@@ -26,6 +27,12 @@ To deploy to Vercel, you need to configure the following environment variables i
 4. **SESSION_SECRET**
    - Generate a secure random string: `openssl rand -base64 32`
    - Use the same value for all environments (production, preview, development)
+
+5. **JWT_SECRET**
+   - Generate a secure random string: `openssl rand -base64 32`
+   - Used for JWT token signing and verification
+   - Use the same value for all environments (production, preview, development)
+   - **Important**: This is required for authentication to work
 
 ### Optional Environment Variables
 
@@ -96,14 +103,45 @@ If you encounter connection errors on Vercel:
 
 ## Connection String Format
 
-For Supabase direct connection:
+**⚠️ CRITICAL**: Always get your connection string from the Supabase dashboard. Do not construct it manually.
+
+### Correct Format (from Supabase Dashboard)
+
+1. Go to your Supabase project dashboard
+2. Navigate to **Settings** → **Database**
+3. Find the **Connection string** section
+4. Copy either:
+   - **Connection pooling** (recommended for serverless): Port 6543
+   - **Direct connection**: Port 5432
+
+The connection string will look like:
 ```
-postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
+postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:[PORT]/postgres
 ```
 
-Replace:
-- `[PASSWORD]` with your database password
-- `[PROJECT-REF]` with your Supabase project reference (e.g., `dqxvknzvufbvajftvvcm`)
+Example:
+```
+postgresql://postgres.dqxvknzvufbvajftvvcm:[PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+```
+
+### Common Mistakes to Avoid
+
+❌ **WRONG**: `postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres`
+- The hostname `db.[PROJECT-REF].supabase.co` does NOT exist
+- This will cause `ENOTFOUND` DNS errors
+
+✅ **CORRECT**: Use the connection string from Supabase dashboard with `pooler.supabase.com` hostname
+
+### Password Encoding
+
+If your password contains special characters, URL-encode them:
+- `@` → `%40`
+- `#` → `%23`
+- `%` → `%25`
+- `/` → `%2F`
+- `:` → `%3A`
+
+Example: If your password is `pass@word`, use `pass%40word` in the connection string.
 
 ## Notes
 

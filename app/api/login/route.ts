@@ -9,8 +9,30 @@ export async function POST(request: NextRequest) {
   try {
     const { username, password } = await request.json()
     
+    // Check if DATABASE_URL is configured
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL is not set')
+      return NextResponse.json({ 
+        message: 'Database configuration error',
+        error: 'DATABASE_URL environment variable is missing'
+      }, { status: 500 })
+    }
+    
     // Find user
-    const user = await db.select().from(users).where(eq(users.username, username)).limit(1)
+    let user
+    try {
+      user = await db.select().from(users).where(eq(users.username, username)).limit(1)
+    } catch (dbError: any) {
+      console.error('Database query error:', {
+        message: dbError?.message,
+        code: dbError?.code,
+        stack: dbError?.stack
+      })
+      return NextResponse.json({ 
+        message: 'Database connection error',
+        error: dbError?.message || 'Failed to connect to database'
+      }, { status: 500 })
+    }
     
     if (!user.length) {
       return NextResponse.json({ message: 'Invalid username or password' }, { status: 401 })
@@ -20,6 +42,15 @@ export async function POST(request: NextRequest) {
     const isValid = await comparePasswords(password, user[0].password)
     if (!isValid) {
       return NextResponse.json({ message: 'Invalid username or password' }, { status: 401 })
+    }
+    
+    // Check if JWT_SECRET is configured
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not set')
+      return NextResponse.json({ 
+        message: 'Authentication configuration error',
+        error: 'JWT_SECRET environment variable is missing'
+      }, { status: 500 })
     }
     
     // Create JWT
@@ -43,8 +74,16 @@ export async function POST(request: NextRequest) {
     const { password: _, ...userWithoutPassword } = user[0]
     return NextResponse.json(userWithoutPassword)
     
-  } catch (error) {
-    console.error('Login error:', error)
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Login error:', {
+      message: error?.message,
+      name: error?.name,
+      code: error?.code,
+      stack: error?.stack
+    })
+    return NextResponse.json({ 
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error?.message : undefined
+    }, { status: 500 })
   }
 }
