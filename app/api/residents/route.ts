@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '../../../lib/db'
-import { residents } from '../../../shared/schema'
+import { residents, occupancy, rooms, insertOccupancySchema } from '../../../shared/schema'
 import { requireAuth } from '../../../lib/auth'
 import { insertResidentSchema } from '../../../shared/schema'
-import { like } from 'drizzle-orm'
+import { like, eq, and, count } from 'drizzle-orm'
 import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
@@ -33,12 +33,52 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    
+
     // Validate with schema
     const validatedData = insertResidentSchema.parse(body)
-    
-    const newResident = await db.insert(residents).values(validatedData).returning()
-    return NextResponse.json(newResident[0], { status: 201 })
+
+    // Destructure roomId so we can handle occupancy separately
+    const { roomId, ...residentData } = validatedData as typeof validatedData & {
+      roomId?: number | null
+    }
+
+    // Create resident first
+    const [newResident] = await db.insert(residents).values({
+      ...residentData,
+      roomId: roomId ?? null,
+    }).returning()
+
+    // If a room is assigned, create an active occupancy record and update room status
+    if (roomId) {
+      const today = new Date()
+      const oneYearLater = new Date(today)
+      oneYearLater.setFullYear(today.getFullYear() + 1)
+
+      const occupancyData = insertOccupancySchema.parse({
+        roomId,
+        residentId: newResident.id,
+        startDate: today,
+        endDate: oneYearLater,
+        active: true,
+      })
+
+      // Deactivate any existing active occupancy for that room (safety)
+      await db
+        .update(occupancy)
+        .set({ active: false, updatedAt: new Date() })
+        .where(and(eq(occupancy.roomId, roomId), eq(occupancy.active, true)))
+
+      // Create new occupancy
+      await db.insert(occupancy).values(occupancyData)
+
+      // Mark room as occupied
+      await db
+        .update(rooms)
+        .set({ status: 'occupied', updatedAt: new Date() })
+        .where(eq(rooms.id, roomId))
+    }
+
+    return NextResponse.json(newResident, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ 
