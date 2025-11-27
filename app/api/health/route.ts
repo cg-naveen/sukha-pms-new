@@ -29,8 +29,7 @@ export async function GET() {
       health.database = { 
         status: 'error', 
         error: connectionTest.error,
-        code: connectionTest.code,
-        diagnostic: connectionTest.diagnostic
+        code: connectionTest.code
       }
       health.status = 'error'
       
