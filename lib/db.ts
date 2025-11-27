@@ -13,26 +13,6 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL must be set. Please configure your Supabase connection string in .env.local')
 }
 
-// Function to automatically handle password encoding in connection string
-function prepareConnectionString(url: string): string {
-  try {
-    // Parse the connection string
-    const dbUrl = new URL(url)
-    
-    // If password contains special characters that aren't already encoded, encode them
-    const password = dbUrl.password
-    if (password && !password.includes('%')) {
-      // Password might need encoding - but let's try without first
-      // Only encode if connection fails
-      return url
-    }
-    
-    return url
-  } catch {
-    // If URL parsing fails, return as-is
-    return url
-  }
-}
 
 // Supabase PostgreSQL connection
 // Clean connection string by removing problematic SSL parameters
@@ -41,49 +21,18 @@ if (cleanUrl.includes('sslcert=disable')) {
   cleanUrl = cleanUrl.replace('&sslcert=disable', '').replace('sslcert=disable&', '').replace('?sslcert=disable', '?').replace('&sslcert=disable', '')
 }
 
-// Try to parse and extract password to avoid URL encoding issues
-// But if password has special chars, we'll use connection string directly
-let useConnectionString = true
-let poolConfig: any = {
+// Pool configuration optimized for both local and serverless (Vercel) environments
+// Use connection string directly - Supabase provides it in the correct format
+// This avoids any parsing issues with usernames, passwords, or special characters
+const pgPool = new Pool({ 
+  connectionString: cleanUrl,
   ssl: { rejectUnauthorized: false },
   // Optimize for serverless: smaller connection pool, faster timeouts
   max: process.env.NODE_ENV === 'production' ? 5 : 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
   allowExitOnIdle: true
-}
-
-try {
-  const dbUrl = new URL(cleanUrl)
-  const password = dbUrl.password
-  
-  // If password contains special characters that might need encoding, use connection string directly
-  // Otherwise, extract components to avoid any encoding issues
-  if (password && (password.includes('@') || password.includes('#') || password.includes('%') || password.includes(':'))) {
-    // Password has special chars - use connection string as-is (Supabase handles it)
-    useConnectionString = true
-  } else {
-    // Password is simple - can extract components
-    poolConfig = {
-      ...poolConfig,
-      host: dbUrl.hostname,
-      port: parseInt(dbUrl.port) || 5432,
-      database: dbUrl.pathname.replace('/', '') || 'postgres',
-      user: dbUrl.username,
-      password: password,
-    }
-    useConnectionString = false
-  }
-} catch (error) {
-  // If parsing fails, use connection string directly
-  useConnectionString = true
-}
-
-// Pool configuration optimized for both local and serverless (Vercel) environments
-const pgPool = new Pool(useConnectionString ? { 
-  connectionString: cleanUrl,
-  ...poolConfig
-} : poolConfig)
+})
 
 // Add error handlers to the pool
 pgPool.on('error', (err) => {
@@ -116,7 +65,7 @@ export async function testConnection() {
     } else if (errorMessage.includes('password authentication failed')) {
       diagnostic = 'Password authentication failed. Check if DATABASE_URL password is correct.'
     } else if (errorMessage.includes('Tenant or user not found') || errorCode === 'XX000') {
-      diagnostic = 'Authentication failed - username or tenant not found. For Supabase pooler connections, username should be "postgres.[PROJECT-REF]" (e.g., postgres.dqxvknzvufbvajftvvcm) for port 6543, or just "postgres" for port 5432. Check your connection string format.'
+      diagnostic = 'Authentication failed - username or tenant not found. IMPORTANT: When using pooler.supabase.com hostname, you MUST use the EXACT connection string from Supabase dashboard. For pooler hostname, try using Connection Pooling (port 6543) with username format: postgres.[PROJECT-REF]. Or get the Direct Connection string from Supabase dashboard which will have the correct format.'
     }
     
     console.error('Database connection test failed:', {
