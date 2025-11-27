@@ -17,7 +17,7 @@ if (!process.env.DATABASE_URL) {
 // Supabase PostgreSQL connection - use connection string exactly as provided
 
 const pgPool = new Pool({ 
-  connectionString: dbUrl,
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
   max: process.env.NODE_ENV === 'production' ? 5 : 10,
   idleTimeoutMillis: 30000,
