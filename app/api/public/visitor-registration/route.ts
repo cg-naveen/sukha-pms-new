@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       email,
       phone,
       nricPassport,
-      visitDate: new Date(visitDate),
+      visitDate: visitDate, // Keep as string (YYYY-MM-DD format)
       visitTime,
       numberOfVisitors: parseInt(numberOfVisitors),
       purposeOfVisit,

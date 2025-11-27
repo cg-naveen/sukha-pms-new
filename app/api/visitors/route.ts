@@ -14,14 +14,18 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
 
     // Base query: newest first
-    let query = db.select().from(visitors).orderBy(desc(visitors.createdAt))
-
+    let allVisitors
+    
     // Apply status filter only when not "all_statuses"
     if (status && status !== 'all_statuses') {
-      query = query.where(eq(visitors.status, status as any))
+      allVisitors = await db.select().from(visitors)
+        .where(eq(visitors.status, status as any))
+        .orderBy(desc(visitors.createdAt))
+    } else {
+      allVisitors = await db.select().from(visitors)
+        .orderBy(desc(visitors.createdAt))
     }
 
-    const allVisitors = await query
     return NextResponse.json(allVisitors)
   } catch (error) {
     console.error('Error fetching visitors:', error)

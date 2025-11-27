@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '../../../../lib/db'
-import { documents } from '../../../../shared/schema'
-import { requireAuth } from '../../../../lib/auth'
+import { db } from '../../../../../lib/db'
+import { documents } from '../../../../../shared/schema'
+import { requireAuth } from '../../../../../lib/auth'
 import { eq } from 'drizzle-orm'
-import { downloadFromOneDrive } from '../../../../lib/onedrive'
+import { downloadFromOneDrive } from '../../../../../lib/onedrive'
 import fs from 'fs'
 import path from 'path'
 

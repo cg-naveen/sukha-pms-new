@@ -14,13 +14,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')
     
-    let query = db.select().from(residents)
-    
     if (search) {
-      query = query.where(like(residents.fullName, `%${search}%`))
+      const allResidents = await db.select().from(residents).where(like(residents.fullName, `%${search}%`))
+      return NextResponse.json(allResidents)
     }
     
-    const allResidents = await query
+    const allResidents = await db.select().from(residents)
     return NextResponse.json(allResidents)
   } catch (error) {
     console.error('Error fetching residents:', error)

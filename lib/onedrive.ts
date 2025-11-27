@@ -74,6 +74,10 @@ async function getAccessToken(): Promise<string> {
     // Set expiry to 5 minutes before actual expiry for safety
     tokenExpiry = Date.now() + (data.expires_in - 300) * 1000;
 
+    if (!accessToken) {
+      throw new Error('Failed to get access token: token is null');
+    }
+
     return accessToken;
   } catch (error: any) {
     console.error('Error getting OneDrive access token:', error);

@@ -1,4 +1,8 @@
 import { Pool } from 'pg'
+import dotenv from 'dotenv'
+
+// Load environment variables from .env.local
+dotenv.config({ path: '.env.local' })
 
 if (!process.env.DATABASE_URL) {
   console.error('Error: DATABASE_URL environment variable is not set')

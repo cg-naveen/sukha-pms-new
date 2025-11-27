@@ -122,19 +122,30 @@ Then create a pull request on GitHub to merge into your main branch.
 After merging:
 1. Connect your GitHub repository to Vercel
 2. Add environment variables in Vercel dashboard:
-   - `DATABASE_URL`
-   - `BREVO_API_KEY`
-   - `MAILERLITE_API_KEY`
-   - `SESSION_SECRET`
+   - `DATABASE_URL` - Supabase database connection string
+   - `SUPABASE_URL` - Supabase project URL
+   - `SUPABASE_ANON_KEY` - Supabase anonymous key
+   - `SESSION_SECRET` - Secure session secret
+   - `BREVO_API_KEY` (optional)
+   - `MAILERLITE_API_KEY` (optional)
 3. Deploy will happen automatically
 
-## Environment Variables Required
+## Environment Variables Required for Vercel
 ```
-DATABASE_URL=postgresql://...
+# Supabase Configuration
+DATABASE_URL=postgresql://postgres:Sukha123@@PMS@db.dqxvknzvufbvajftvvcm.supabase.co:5432/postgres
+SUPABASE_URL=https://dqxvknzvufbvajftvvcm.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxeHZrbnp2dWZidmFqZnR2dmNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwOTMxMzAsImV4cCI6MjA3OTY2OTEzMH0.866f2UBDqaaMcxwGTPYjd1g0BfKoqlaZknz4t_8d2Rg
+
+# Session Secret (generate with: openssl rand -base64 32)
+SESSION_SECRET=your-secure-secret
+
+# Optional
 BREVO_API_KEY=xkeysib-...
 MAILERLITE_API_KEY=...
-SESSION_SECRET=your-secure-secret
 ```
+
+See `VERCEL_DEPLOYMENT.md` for detailed Vercel deployment instructions.
 
 ## Features Included
 - ✅ User management with role-based access
