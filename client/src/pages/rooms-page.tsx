@@ -188,6 +188,13 @@ export default function RoomsPage() {
     return type.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
   };
 
+  const getBedSharingLabel = (beds: number) => {
+    if (beds === 1) return 'Single';
+    if (beds === 2) return 'Twin Sharing';
+    if (beds === 3) return 'Triple Sharing';
+    return `${beds} Beds`;
+  };
+
   const renderStatusBadge = (status: string) => {
     switch(status) {
       case 'vacant':
@@ -266,9 +273,6 @@ export default function RoomsPage() {
                     <SelectItem value="all_types">All Types</SelectItem>
                     <SelectItem value="studio">Studio</SelectItem>
                     <SelectItem value="studio_deluxe">Studio Deluxe</SelectItem>
-                    <SelectItem value="1_bedroom">1-Bedroom</SelectItem>
-                    <SelectItem value="2_bedroom">2-Bedroom</SelectItem>
-                    <SelectItem value="3_bedroom">3-Bedroom</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -300,6 +304,7 @@ export default function RoomsPage() {
               <TableRow>
                 <TableHead>Unit Number</TableHead>
                 <TableHead>Type</TableHead>
+                <TableHead>Bed Configuration</TableHead>
                 <TableHead>Size</TableHead>
                 <TableHead>Floor</TableHead>
                 <TableHead>Status</TableHead>
@@ -330,6 +335,12 @@ export default function RoomsPage() {
                     <TableRow key={room.id}>
                       <TableCell className="font-medium">{room.unitNumber}</TableCell>
                       <TableCell>{formatRoomType(room.roomType)}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{getBedSharingLabel(room.numberOfBeds || 1)}</span>
+                          <span className="text-xs text-gray-500">({room.numberOfBeds || 1} bed{room.numberOfBeds !== 1 ? 's' : ''})</span>
+                        </div>
+                      </TableCell>
                       <TableCell>{room.size} sq ft</TableCell>
                       <TableCell>{room.floor}</TableCell>
                       <TableCell>{renderStatusBadge(room.status)}</TableCell>
@@ -360,7 +371,7 @@ export default function RoomsPage() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-6 text-gray-500">
+                  <TableCell colSpan={9} className="text-center py-6 text-gray-500">
                     No rooms found matching filters
                   </TableCell>
                 </TableRow>

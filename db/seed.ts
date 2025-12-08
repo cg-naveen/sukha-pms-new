@@ -80,53 +80,53 @@ async function seed() {
         },
         {
           unitNumber: "202B",
-          roomType: "1_bedroom" as const,
+          roomType: "studio_deluxe" as const,
           size: 500,
           floor: 2,
           numberOfBeds: 1,
           status: "occupied" as const,
           monthlyRate: 1200,
-          description: "One bedroom apartment with separate living room"
+          description: "Studio deluxe - single room"
         },
         {
           unitNumber: "301C",
-          roomType: "1_bedroom" as const,
+          roomType: "studio_deluxe" as const,
           size: 550,
           floor: 3,
           numberOfBeds: 1,
           status: "vacant" as const,
           monthlyRate: 1250,
-          description: "One bedroom apartment with balcony"
+          description: "Studio deluxe - single room"
         },
         {
           unitNumber: "302C",
-          roomType: "2_bedroom" as const,
+          roomType: "studio_deluxe" as const,
           size: 700,
           floor: 3,
           numberOfBeds: 2,
           status: "occupied" as const,
           monthlyRate: 1500,
-          description: "Two bedroom apartment with modern kitchen"
+          description: "Studio deluxe - twin sharing"
         },
         {
           unitNumber: "401D",
-          roomType: "2_bedroom" as const,
+          roomType: "studio_deluxe" as const,
           size: 750,
           floor: 4,
           numberOfBeds: 2,
           status: "vacant" as const,
           monthlyRate: 1600,
-          description: "Two bedroom corner unit with city view"
+          description: "Studio deluxe - twin sharing"
         },
         {
           unitNumber: "402D",
-          roomType: "3_bedroom" as const,
+          roomType: "studio_deluxe" as const,
           size: 900,
           floor: 4,
           numberOfBeds: 3,
           status: "occupied" as const,
           monthlyRate: 1900,
-          description: "Three bedroom premium apartment with two bathrooms"
+          description: "Studio deluxe - triple sharing"
         }
       ];
       

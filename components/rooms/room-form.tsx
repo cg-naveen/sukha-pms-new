@@ -127,9 +127,6 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
                   <SelectContent>
                     <SelectItem value="studio">Studio</SelectItem>
                     <SelectItem value="studio_deluxe">Studio Deluxe</SelectItem>
-                    <SelectItem value="1_bedroom">1 Bedroom</SelectItem>
-                    <SelectItem value="2_bedroom">2 Bedroom</SelectItem>
-                    <SelectItem value="3_bedroom">3 Bedroom</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

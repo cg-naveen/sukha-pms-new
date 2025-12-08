@@ -285,9 +285,6 @@ export default function ResidentsPage() {
                     <SelectItem value="all_room_types">All Room Types</SelectItem>
                     <SelectItem value="studio">Studio</SelectItem>
                     <SelectItem value="studio_deluxe">Studio Deluxe</SelectItem>
-                    <SelectItem value="1_bedroom">1-Bedroom</SelectItem>
-                    <SelectItem value="2_bedroom">2-Bedroom</SelectItem>
-                    <SelectItem value="3_bedroom">3-Bedroom</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -368,7 +365,13 @@ export default function ResidentsPage() {
                           <>
                             <div className="text-sm text-gray-900">{currentOccupancy.room.unitNumber}</div>
                             <div className="text-sm text-gray-500">
-                              {currentOccupancy.room.roomType.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                              {(() => {
+                                const beds = currentOccupancy.room.numberOfBeds || 1;
+                                if (beds === 1) return 'Single';
+                                if (beds === 2) return 'Twin Sharing';
+                                if (beds === 3) return 'Triple Sharing';
+                                return `${beds} Beds`;
+                              })()}
                             </div>
                           </>
                         ) : (

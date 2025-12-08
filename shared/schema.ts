@@ -5,7 +5,7 @@ import { relations } from "drizzle-orm";
 
 // Enums
 export const roleEnum = pgEnum('role', ['superadmin', 'admin', 'staff', 'user']);
-export const roomTypeEnum = pgEnum('room_type', ['studio', 'studio_deluxe', '1_bedroom', '2_bedroom', '3_bedroom']);
+export const roomTypeEnum = pgEnum('room_type', ['studio', 'studio_deluxe']);
 export const roomStatusEnum = pgEnum('room_status', ['vacant', 'occupied', 'maintenance', 'reserved']);
 export const billingStatusEnum = pgEnum('billing_status', ['paid', 'pending', 'overdue', 'new_invoice']);
 export const visitorStatusEnum = pgEnum('visitor_status', ['pending', 'approved', 'rejected']);
