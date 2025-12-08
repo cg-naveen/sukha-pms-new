@@ -32,6 +32,12 @@ const salesReferralOptions = [
   'Other'
 ];
 
+const classificationOptions = [
+  { value: 'independent', label: 'Independent' },
+  { value: 'dependent', label: 'Dependent' },
+  { value: 'memory_care', label: 'Memory Care' },
+];
+
 const countryCodeOptions = [
   { value: '+60', label: '+60 (Malaysia)' },
   { value: '+65', label: '+65 (Singapore)' },
@@ -115,6 +121,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
         salesReferral: resident?.salesReferral || "Other",
         billingDate: resident?.billingDate || 1,
         numberOfBeds: resident?.numberOfBeds || 1,
+        classification: resident?.classification || "independent",
       },
       nextOfKin: {
         fullName: "",
@@ -162,6 +169,9 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
       }
       if (residentDetail.numberOfBeds !== undefined) {
         form.setValue("resident.numberOfBeds", residentDetail.numberOfBeds);
+      }
+      if (residentDetail.classification) {
+        form.setValue("resident.classification", residentDetail.classification);
       }
 
       // Update next of kin data if it exists
@@ -505,6 +515,36 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                       </SelectContent>
                     </Select>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="resident.classification"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Classification</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value || 'independent'}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select classification" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {classificationOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    <p className="text-xs text-muted-foreground">
+                      Resident care classification
+                    </p>
                   </FormItem>
                 )}
               />

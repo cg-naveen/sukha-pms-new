@@ -13,6 +13,7 @@ export const salesReferralEnum = pgEnum('sales_referral', ['caGrand', 'Sales Tea
 export const countryCodeEnum = pgEnum('country_code', ['+60', '+65', '+86', '+91', '+1', '+44', '+61', '+81']);
 export const purposeOfVisitEnum = pgEnum('purpose_of_visit', ['general_visit', 'site_visit', 'celebration', 'delivery', 'maintenance', 'other']);
 export const billingAccountEnum = pgEnum('billing_account', ['sukha_golden', 'care_grand']);
+export const residentClassificationEnum = pgEnum('resident_classification', ['independent', 'dependent', 'memory_care']);
 
 // Users table
 export const users = pgTable("users", {
@@ -41,6 +42,7 @@ export const residents = pgTable("residents", {
   salesReferral: salesReferralEnum("sales_referral").notNull().default('Other'),
   billingDate: integer("billing_date").notNull().default(1), // Day of month for billing (1-31)
   numberOfBeds: integer("number_of_beds").notNull().default(1), // Number of beds required by the resident
+  classification: residentClassificationEnum("classification").notNull().default('independent'), // Resident classification: independent, dependent, or memory_care
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

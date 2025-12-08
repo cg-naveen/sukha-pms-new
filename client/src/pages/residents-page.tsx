@@ -147,6 +147,7 @@ export default function ResidentsPage() {
       sales_referral: r.salesReferral,
       billing_date: r.billingDate || 1,
       number_of_beds: r.numberOfBeds || 1,
+      classification: r.classification || 'independent',
     }));
 
     exportToCSV(exportData, 'residents');
@@ -315,6 +316,7 @@ export default function ResidentsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead>Classification</TableHead>
                 <TableHead>Room</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Contract End</TableHead>
@@ -327,6 +329,7 @@ export default function ResidentsPage() {
                 Array(5).fill(0).map((_, i) => (
                   <TableRow key={i}>
                     <TableCell><Skeleton className="h-8 w-[200px]" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-[120px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[120px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[100px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[120px]" /></TableCell>
@@ -351,6 +354,14 @@ export default function ResidentsPage() {
                             <div className="text-sm text-gray-500">ID: R-{resident.id.toString().padStart(5, '0')}</div>
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {resident.classification === 'independent' ? 'Independent' : 
+                           resident.classification === 'dependent' ? 'Dependent' : 
+                           resident.classification === 'memory_care' ? 'Memory Care' : 
+                           'N/A'}
+                        </span>
                       </TableCell>
                       <TableCell>
                         {currentOccupancy ? (
@@ -408,7 +419,7 @@ export default function ResidentsPage() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-6 text-gray-500">
+                  <TableCell colSpan={7} className="text-center py-6 text-gray-500">
                     No residents found matching filters
                   </TableCell>
                 </TableRow>

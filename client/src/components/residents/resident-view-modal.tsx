@@ -100,6 +100,20 @@ export default function ResidentViewModal({
                   </p>
                 </div>
                 <div>
+                  <label className="text-sm font-medium text-gray-500">Classification</label>
+                  <p className="text-sm text-gray-900 mt-1">
+                    <Badge variant="outline" className="mt-1">
+                      {residentDetail?.classification === 'independent' ? 'Independent' : 
+                       residentDetail?.classification === 'dependent' ? 'Dependent' : 
+                       residentDetail?.classification === 'memory_care' ? 'Memory Care' : 
+                       resident?.classification === 'independent' ? 'Independent' : 
+                       resident?.classification === 'dependent' ? 'Dependent' : 
+                       resident?.classification === 'memory_care' ? 'Memory Care' : 
+                       'N/A'}
+                    </Badge>
+                  </p>
+                </div>
+                <div>
                   <label className="text-sm font-medium text-gray-500">Billing Date</label>
                   <p className="text-sm text-gray-900 mt-1">
                     Day {residentDetail?.billingDate || resident.billingDate || 1} of each month
