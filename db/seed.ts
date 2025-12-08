@@ -7,7 +7,8 @@ import {
   occupancy, 
   billings, 
   visitors,
-  documents
+  documents,
+  settings
 } from "@shared/schema";
 import { hashPassword } from "../lib/auth";
 import { eq } from "drizzle-orm";
@@ -298,6 +299,63 @@ async function seed() {
       }
     } else {
       console.log("Visitors already exist, skipping creation.");
+    }
+
+    // Seed settings with default message templates if they don't exist
+    const existingSettings = await db.query.settings.findFirst();
+    if (existingSettings) {
+      // Update existing settings with message templates if they're empty
+      if (!existingSettings.visitorApprovalMessageTemplate || !existingSettings.visitorRejectionMessageTemplate) {
+        console.log("Updating settings with default message templates...");
+        await db.update(settings)
+          .set({
+            visitorApprovalMessageTemplate: existingSettings.visitorApprovalMessageTemplate || `Hello {visitorName},
+
+Your visit request to {residentName} on {visitDate} at {visitTime} has been approved.
+
+Please present the QR code at the entrance for verification.`,
+            visitorRejectionMessageTemplate: existingSettings.visitorRejectionMessageTemplate || `Hello {visitorName},
+
+We regret to inform you that your visit request to {residentName} on {visitDate} at {visitTime} has been rejected.
+
+Please contact us for more information.
+
+Thank you.`,
+            wabotApiBaseUrl: existingSettings.wabotApiBaseUrl || 'https://app.wabot.my/api',
+          })
+          .where(eq(settings.id, existingSettings.id));
+        console.log("Message templates updated.");
+      }
+    } else {
+      // Create default settings with message templates
+      console.log("Creating default settings with message templates...");
+      await db.insert(settings).values({
+        propertyName: 'Sukha Senior Resort',
+        address: '',
+        contactEmail: '',
+        contactPhone: '',
+        enableEmailNotifications: true,
+        enableSmsNotifications: false,
+        billingReminderDays: 7,
+        visitorApprovalNotification: true,
+        billingGenerationEnabled: true,
+        billingGenerationHour: 2,
+        billingGenerationMinute: 0,
+        wabotApiBaseUrl: 'https://app.wabot.my/api',
+        visitorApprovalMessageTemplate: `Hello {visitorName},
+
+Your visit request to {residentName} on {visitDate} at {visitTime} has been approved.
+
+Please present the QR code at the entrance for verification.`,
+        visitorRejectionMessageTemplate: `Hello {visitorName},
+
+We regret to inform you that your visit request to {residentName} on {visitDate} at {visitTime} has been rejected.
+
+Please contact us for more information.
+
+Thank you.`,
+      });
+      console.log("Default settings with message templates created.");
     }
 
     console.log("Database seeding completed successfully.");

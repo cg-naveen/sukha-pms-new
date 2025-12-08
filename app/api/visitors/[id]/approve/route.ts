@@ -3,8 +3,9 @@ import { db } from '../../../../../lib/db'
 import { visitors, settings } from '../../../../../shared/schema'
 import { requireAuth } from '../../../../../lib/auth'
 import { eq } from 'drizzle-orm'
-import { sendWabotMessage, replaceTemplateVariables } from '../../../../../lib/wabot'
+import { sendWabotMessage, sendWabotMedia, replaceTemplateVariables } from '../../../../../lib/wabot'
 import { format } from 'date-fns'
+import QRCode from 'qrcode'
 
 export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const authResult = await requireAuth(['admin', 'staff'])()
@@ -50,32 +51,60 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
           ? `https://${process.env.VERCEL_URL}` 
           : 'http://localhost:3000'
-        const qrCodeUrl = `${baseUrl}/api/public/visitors/verify/${qrCode}`
+        const qrCodeVerifyUrl = `${baseUrl}/api/public/visitors/verify/${qrCode}`
 
-        // Replace template variables
-        const message = replaceTemplateVariables(
+        // Replace template variables (remove qrCodeUrl from template since we'll send image)
+        const textMessage = replaceTemplateVariables(
           settingsData.visitorApprovalMessageTemplate,
           {
             visitorName: updated.fullName || 'Visitor',
             residentName: updated.residentName || 'Resident',
             visitDate: updated.visitDate ? format(new Date(updated.visitDate), 'dd MMM yyyy') : 'N/A',
             visitTime: updated.visitTime || 'N/A',
-            qrCodeUrl: qrCodeUrl,
           }
         )
 
-        // Send WhatsApp message
-        const wabotResult = await sendWabotMessage(
+        // Send first message (text)
+        const textResult = await sendWabotMessage(
           updated.phone,
-          message,
+          textMessage,
           settingsData.wabotApiBaseUrl
         )
 
-        if (!wabotResult.success) {
-          console.error('Failed to send WhatsApp approval notification:', wabotResult.error)
-          // Don't fail the approval if WhatsApp fails
+        if (!textResult.success) {
+          console.error('Failed to send WhatsApp text message:', textResult.error)
         } else {
-          console.log('WhatsApp approval notification sent successfully')
+          console.log('WhatsApp text message sent successfully')
+        }
+
+        // Generate QR code as data URL (base64 image)
+        try {
+          const qrCodeDataUrl = await QRCode.toDataURL(qrCodeVerifyUrl, {
+            errorCorrectionLevel: 'H',
+            margin: 1,
+            scale: 8,
+            color: {
+              dark: '#000000',
+              light: '#FFFFFF'
+            }
+          })
+
+          // Send second message (QR code image)
+          const mediaResult = await sendWabotMedia(
+            updated.phone,
+            'Your QR code for entry:',
+            qrCodeDataUrl,
+            settingsData.wabotApiBaseUrl
+          )
+
+          if (!mediaResult.success) {
+            console.error('Failed to send WhatsApp QR code image:', mediaResult.error)
+          } else {
+            console.log('WhatsApp QR code image sent successfully')
+          }
+        } catch (qrError) {
+          console.error('Error generating QR code:', qrError)
+          // Don't fail the approval if QR code generation fails
         }
       }
     } catch (whatsappError) {

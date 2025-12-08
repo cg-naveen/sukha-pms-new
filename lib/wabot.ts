@@ -114,6 +114,84 @@ function formatPhoneNumber(phone: string): string {
 }
 
 /**
+ * Send a WhatsApp message with media (image) via Wabot API
+ * Based on Wabot API documentation for media messages
+ */
+export async function sendWabotMedia(
+  phone: string,
+  message: string,
+  mediaUrl: string,
+  apiBaseUrl?: string,
+  instanceId?: string,
+  accessToken?: string
+): Promise<WabotResponse> {
+  try {
+    const baseUrl = apiBaseUrl || process.env.WABOT_API_BASE_URL || 'https://app.wabot.my/api';
+    const instance = instanceId || process.env.WABOT_INSTANCE_ID;
+    const token = accessToken || process.env.WABOT_ACCESS_TOKEN;
+
+    if (!instance || !token) {
+      console.error('Wabot credentials not configured');
+      return {
+        success: false,
+        error: 'Wabot credentials not configured. Please set WABOT_INSTANCE_ID and WABOT_ACCESS_TOKEN in environment variables.',
+      };
+    }
+
+    // Format phone number (remove + and spaces, ensure it's just digits)
+    const formattedPhone = formatPhoneNumber(phone);
+    // Convert to integer as per API docs
+    const phoneNumber = parseInt(formattedPhone, 10);
+    
+    if (isNaN(phoneNumber)) {
+      return {
+        success: false,
+        error: 'Invalid phone number format',
+      };
+    }
+
+    // Wabot API endpoint for sending media
+    const url = `${baseUrl}/send`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        number: phoneNumber,
+        type: 'media',
+        message: message,
+        media_url: mediaUrl,
+        instance_id: instance,
+        access_token: token,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Wabot API error:', errorData);
+      return {
+        success: false,
+        error: errorData.message || `Wabot API returned status ${response.status}`,
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      message: 'Media message sent successfully',
+    };
+  } catch (error: any) {
+    console.error('Error sending Wabot media message:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to send WhatsApp media message',
+    };
+  }
+}
+
+/**
  * Replace template variables in message
  */
 export function replaceTemplateVariables(
