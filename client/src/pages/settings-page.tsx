@@ -205,9 +205,9 @@ export default function SettingsPage() {
         visitorTermsAndConditions: settingsData.visitorTermsAndConditions || "",
       });
       integrationSettingsForm.reset({
-        wabotApiBaseUrl: settingsData.wabotApiBaseUrl || "https://app.wabot.my/api",
-        visitorApprovalMessageTemplate: settingsData.visitorApprovalMessageTemplate || "",
-        visitorRejectionMessageTemplate: settingsData.visitorRejectionMessageTemplate || "",
+        wabotApiBaseUrl: settingsData.wabotApiBaseUrl || settingsData.wabot_api_base_url || "https://app.wabot.my/api",
+        visitorApprovalMessageTemplate: settingsData.visitorApprovalMessageTemplate || settingsData.visitor_approval_message_template || "",
+        visitorRejectionMessageTemplate: settingsData.visitorRejectionMessageTemplate || settingsData.visitor_rejection_message_template || "",
       });
     }
   }, [settingsData, generalForm, notificationForm, jobSchedulingForm, contentManagementForm, integrationSettingsForm]);

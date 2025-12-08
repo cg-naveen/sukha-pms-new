@@ -47,9 +47,8 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 
       if (settingsData?.visitorApprovalMessageTemplate && settingsData.wabotApiBaseUrl) {
         // Generate QR code URL for verification
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
-          ? `https://${process.env.VERCEL_URL}` 
-          : 'http://localhost:3000'
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
         const qrCodeVerifyUrl = `${baseUrl}/api/public/visitors/verify/${qrCode}`
 
         // Replace template variables (remove qrCodeUrl from template since we'll send image)
@@ -76,12 +75,18 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
           console.log('WhatsApp text message sent successfully')
         }
 
-        // Generate QR code image URL (using API endpoint)
+        // Generate QR code image URL (using public API endpoint - must be publicly accessible for Wabot)
         try {
-          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
-            ? `https://${process.env.VERCEL_URL}` 
-            : 'http://localhost:3000'
-          const qrCodeImageUrl = `${baseUrl}/api/visitors/qr/${qrCode}/image`
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+          const qrCodeImageUrl = `${baseUrl}/api/public/visitors/qr/${qrCode}/image`
+          
+          console.log('QR Code Image URL:', qrCodeImageUrl) // Debug log
+          
+          // Verify URL is accessible (basic check)
+          if (!qrCodeImageUrl.startsWith('http')) {
+            throw new Error('Invalid QR code image URL format')
+          }
 
           // Send second message (QR code image)
           const mediaResult = await sendWabotMedia(
