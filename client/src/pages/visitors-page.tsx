@@ -475,21 +475,21 @@ export default function VisitorsPage() {
       
       {/* Approve Visitor Dialog */}
       <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="p-0">
+          <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle>Approve Visitor</DialogTitle>
             <DialogDescription>
               Are you sure you want to approve this visitor request? This will generate a QR code for entry.
             </DialogDescription>
           </DialogHeader>
           {selectedVisitor && (
-            <div className="py-4">
+            <div className="px-6 py-4">
               <p><span className="font-medium">Visitor:</span> {selectedVisitor.fullName}</p>
               <p><span className="font-medium">Visiting:</span> {selectedVisitor.resident?.fullName}</p>
               <p><span className="font-medium">Date:</span> {format(new Date(selectedVisitor.visitDate), "MMMM d, yyyy")}</p>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="px-6 pb-6">
             <Button 
               variant="outline" 
               onClick={() => setIsApproveDialogOpen(false)}
@@ -516,21 +516,21 @@ export default function VisitorsPage() {
       
       {/* Reject Visitor Dialog */}
       <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="p-0">
+          <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle>Reject Visitor</DialogTitle>
             <DialogDescription>
               Are you sure you want to reject this visitor request?
             </DialogDescription>
           </DialogHeader>
           {selectedVisitor && (
-            <div className="py-4">
+            <div className="px-6 py-4">
               <p><span className="font-medium">Visitor:</span> {selectedVisitor.fullName}</p>
               <p><span className="font-medium">Visiting:</span> {selectedVisitor.resident?.fullName}</p>
               <p><span className="font-medium">Date:</span> {format(new Date(selectedVisitor.visitDate), "MMMM d, yyyy")}</p>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="px-6 pb-6">
             <Button 
               variant="outline" 
               onClick={() => setIsRejectDialogOpen(false)}
@@ -557,23 +557,27 @@ export default function VisitorsPage() {
       
       {/* QR Code Dialog */}
       <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="p-0">
+          <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle>Visitor QR Code</DialogTitle>
           </DialogHeader>
-          {selectedVisitor && (
-            <QRCodeGenerator visitor={selectedVisitor} />
-          )}
+          <div className="px-6 pb-6">
+            {selectedVisitor && (
+              <QRCodeGenerator visitor={selectedVisitor} />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
       
       {/* QR Scanner Dialog */}
       <Dialog open={isQrScannerOpen} onOpenChange={setIsQrScannerOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[500px] p-0">
+          <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle>Verify Visitor QR Code</DialogTitle>
           </DialogHeader>
-          <QrCodeScanner onClose={() => setIsQrScannerOpen(false)} />
+          <div className="px-6 pb-6">
+            <QrCodeScanner onClose={() => setIsQrScannerOpen(false)} />
+          </div>
         </DialogContent>
       </Dialog>
     </MainLayout>

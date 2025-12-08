@@ -554,15 +554,15 @@ export default function BillingPage() {
           }
         }
       }}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="p-0">
+          <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle>Mark as Paid</DialogTitle>
             <DialogDescription>
               Upload the receipt PDF to mark this billing as paid. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="px-6 space-y-4">
             <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
               <AlertCircle className="h-5 w-5 text-yellow-600" />
               <p className="text-sm text-yellow-800">
@@ -593,7 +593,7 @@ export default function BillingPage() {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="px-6 pb-6">
             <Button 
               variant="outline" 
               onClick={() => {

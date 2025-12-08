@@ -49,7 +49,7 @@ export default function ResidentViewModal({
         <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle>View Resident Details</DialogTitle>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto px-6">
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">

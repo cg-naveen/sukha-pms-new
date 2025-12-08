@@ -224,26 +224,28 @@ export default function UsersPage() {
       
       {/* Reset Password Dialog */}
       <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="p-0">
+          <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle>Reset Password</DialogTitle>
             <DialogDescription>
               Are you sure you want to reset the password for this user?
             </DialogDescription>
           </DialogHeader>
-          <div className="flex items-center gap-2 py-3">
-            <AlertCircle className="h-6 w-6 text-yellow-500" />
-            <p className="text-sm text-gray-700">
-              The password will be reset to <strong>default123</strong>
-            </p>
-          </div>
-          {selectedUser && (
-            <div className="py-2">
-              <p><span className="font-medium">User:</span> {selectedUser.fullName}</p>
-              <p><span className="font-medium">Username:</span> {selectedUser.username}</p>
+          <div className="px-6">
+            <div className="flex items-center gap-2 py-3">
+              <AlertCircle className="h-6 w-6 text-yellow-500" />
+              <p className="text-sm text-gray-700">
+                The password will be reset to <strong>default123</strong>
+              </p>
             </div>
-          )}
-          <DialogFooter>
+            {selectedUser && (
+              <div className="py-2">
+                <p><span className="font-medium">User:</span> {selectedUser.fullName}</p>
+                <p><span className="font-medium">Username:</span> {selectedUser.username}</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="px-6 pb-6">
             <Button 
               variant="outline" 
               onClick={() => setIsResetPasswordDialogOpen(false)}

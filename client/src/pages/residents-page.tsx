@@ -527,7 +527,7 @@ export default function ResidentsPage() {
               {selectedResident ? 'Edit Resident' : 'Add New Resident'}
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto px-6">
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
             <ResidentForm 
               resident={selectedResident}
               onClose={closeForm}
