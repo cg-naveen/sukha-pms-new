@@ -90,6 +90,21 @@ export default function SettingsPage() {
     },
   });
 
+  // Fetch Wabot credentials status
+  const { data: wabotCredentials } = useQuery<{
+    instanceIdConfigured: boolean;
+    accessTokenConfigured: boolean;
+  }>({
+    queryKey: ["/api/settings/wabot-credentials"],
+    queryFn: async () => {
+      const response = await fetch("/api/settings/wabot-credentials", {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch credentials status");
+      return response.json();
+    },
+  });
+
   // Update settings mutation
   const updateSettingsMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -652,11 +667,19 @@ export default function SettingsPage() {
                       <h4 className="text-sm font-medium mb-2">API Credentials (from .env)</h4>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-green-600">✓ Configured</span>
+                          {wabotCredentials?.instanceIdConfigured ? (
+                            <span className="text-xs text-green-600">✓ Configured</span>
+                          ) : (
+                            <span className="text-xs text-amber-600">⚠️ Not Configured</span>
+                          )}
                           <span className="px-2 py-1 bg-gray-200 rounded text-xs font-mono">WABOT_INSTANCE_ID</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-green-600">✓ Configured</span>
+                          {wabotCredentials?.accessTokenConfigured ? (
+                            <span className="text-xs text-green-600">✓ Configured</span>
+                          ) : (
+                            <span className="text-xs text-amber-600">⚠️ Not Configured</span>
+                          )}
                           <span className="px-2 py-1 bg-gray-200 rounded text-xs font-mono">WABOT_ACCESS_TOKEN</span>
                         </div>
                       </div>

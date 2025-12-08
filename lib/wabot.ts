@@ -16,6 +16,7 @@ interface WabotResponse {
 
 /**
  * Send a WhatsApp message via Wabot API
+ * Based on Wabot API documentation: https://app.wabot.my/api/send
  */
 export async function sendWabotMessage(
   phone: string,
@@ -37,22 +38,32 @@ export async function sendWabotMessage(
       };
     }
 
-    // Format phone number (remove + and spaces, ensure it starts with country code)
+    // Format phone number (remove + and spaces, ensure it's just digits)
     const formattedPhone = formatPhoneNumber(phone);
+    // Convert to integer as per API docs
+    const phoneNumber = parseInt(formattedPhone, 10);
+    
+    if (isNaN(phoneNumber)) {
+      return {
+        success: false,
+        error: 'Invalid phone number format',
+      };
+    }
 
-    // Wabot API endpoint for sending messages
-    const url = `${baseUrl}/send-message`;
+    // Wabot API endpoint for sending messages (correct endpoint from docs)
+    const url = `${baseUrl}/send`;
 
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
-        instance_id: instance,
-        phone: formattedPhone,
+        number: phoneNumber,
+        type: 'text',
         message: message,
+        instance_id: instance,
+        access_token: token,
       }),
     });
 
@@ -81,16 +92,11 @@ export async function sendWabotMessage(
 
 /**
  * Format phone number for Wabot API
- * Removes +, spaces, and ensures proper format
+ * Removes +, spaces, and ensures proper format (digits only, as integer)
  */
 function formatPhoneNumber(phone: string): string {
-  // Remove all non-digit characters except leading +
-  let formatted = phone.replace(/\s+/g, '').replace(/-/g, '');
-  
-  // If it starts with +, keep it, otherwise assume it's a local number
-  if (formatted.startsWith('+')) {
-    return formatted.substring(1); // Remove + as Wabot might not need it
-  }
+  // Remove all non-digit characters
+  let formatted = phone.replace(/\D/g, '');
   
   // If it doesn't start with country code, assume Malaysia (+60)
   if (formatted.startsWith('60')) {
@@ -98,9 +104,12 @@ function formatPhoneNumber(phone: string): string {
   } else if (formatted.startsWith('0')) {
     // Convert 0XXXXXXXX to 60XXXXXXXX
     return '60' + formatted.substring(1);
-  } else {
+  } else if (formatted.length >= 9) {
     // Assume it's already in international format without +
     return formatted;
+  } else {
+    // Default to Malaysia country code
+    return '60' + formatted;
   }
 }
 
