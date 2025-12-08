@@ -46,8 +46,11 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         .limit(1)
 
       if (settingsData?.visitorApprovalMessageTemplate && settingsData.wabotApiBaseUrl) {
-        // Generate QR code URL (using the QR code value, not the ID)
-        const qrCodeUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/public/visitors/verify/${qrCode}`
+        // Generate QR code URL for verification
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
+          ? `https://${process.env.VERCEL_URL}` 
+          : 'http://localhost:3000'
+        const qrCodeUrl = `${baseUrl}/api/public/visitors/verify/${qrCode}`
 
         // Replace template variables
         const message = replaceTemplateVariables(

@@ -652,16 +652,16 @@ export default function SettingsPage() {
                       <h4 className="text-sm font-medium mb-2">API Credentials (from .env)</h4>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-green-600">✓ Configured</span>
+                          <span className="text-xs text-gray-500">⚠️ Check server</span>
                           <span className="px-2 py-1 bg-gray-200 rounded text-xs font-mono">WABOT_INSTANCE_ID</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-green-600">✓ Configured</span>
+                          <span className="text-xs text-gray-500">⚠️ Check server</span>
                           <span className="px-2 py-1 bg-gray-200 rounded text-xs font-mono">WABOT_ACCESS_TOKEN</span>
                         </div>
                       </div>
                       <p className="text-xs text-gray-500 mt-2">
-                        These credentials are stored in your <span className="px-1 py-0.5 bg-gray-200 rounded font-mono text-xs">.env</span> file. Update them on the server.
+                        These credentials must be added to your <span className="px-1 py-0.5 bg-gray-200 rounded font-mono text-xs">.env</span> file on the server. They are not accessible from the browser for security reasons.
                       </p>
                     </div>
                   </div>
