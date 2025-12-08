@@ -45,10 +45,11 @@ export default function ResidentViewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle>View Resident Details</DialogTitle>
         </DialogHeader>
+        <div className="flex-1 overflow-y-auto px-6">
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -63,7 +64,7 @@ export default function ResidentViewModal({
               <TabsTrigger value="paymentHistory">Payment History</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="personal" className="space-y-4 mt-4">
+            <TabsContent value="personal" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Full Name</label>
@@ -134,7 +135,7 @@ export default function ResidentViewModal({
               </div>
             </TabsContent>
 
-            <TabsContent value="nextOfKin" className="space-y-4 mt-4">
+            <TabsContent value="nextOfKin" className="space-y-4">
               {residentDetail?.nextOfKin && residentDetail.nextOfKin.length > 0 ? (
                 residentDetail.nextOfKin.map((nok: any, index: number) => (
                   <div key={nok.id || index} className="space-y-4">
@@ -172,23 +173,24 @@ export default function ResidentViewModal({
               )}
             </TabsContent>
 
-            <TabsContent value="documents" className="space-y-4 mt-4">
+            <TabsContent value="documents" className="space-y-4">
               <DocumentsViewTab residentId={resident.id} />
             </TabsContent>
 
-            <TabsContent value="paymentHistory" className="space-y-4 mt-4">
+            <TabsContent value="paymentHistory" className="space-y-4">
               <PaymentHistoryTab residentId={resident.id} />
             </TabsContent>
           </Tabs>
         )}
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
+        <div className="flex justify-end gap-2 pt-4 pb-6 px-6 border-t">
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
           <Button onClick={onEdit}>
             Edit Resident
           </Button>
+        </div>
         </div>
       </DialogContent>
     </Dialog>
