@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '../../../../../../lib/db'
-import { visitors } from '../../../../../../shared/schema'
+import { db } from '../../../../../../../lib/db'
+import { visitors } from '../../../../../../../shared/schema'
 import { eq } from 'drizzle-orm'
 import QRCode from 'qrcode'
 
@@ -19,6 +19,8 @@ export async function GET(
       return NextResponse.json({ error: 'QR code is required' }, { status: 400 })
     }
 
+    console.log('QR Code Image Request:', qrCode) // Debug log
+
     // Verify the QR code exists
     const [visitor] = await db
       .select()
@@ -27,8 +29,11 @@ export async function GET(
       .limit(1)
 
     if (!visitor) {
+      console.log('QR code not found in database:', qrCode) // Debug log
       return NextResponse.json({ error: 'Invalid QR code' }, { status: 404 })
     }
+
+    console.log('Visitor found:', visitor.id) // Debug log
 
     // Generate QR code verification URL
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
