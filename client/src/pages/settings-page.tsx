@@ -66,6 +66,12 @@ const contentManagementSchema = z.object({
   visitorTermsAndConditions: z.string().optional(),
 });
 
+const integrationSettingsSchema = z.object({
+  wabotApiBaseUrl: z.string().url("Please enter a valid URL").optional(),
+  visitorApprovalMessageTemplate: z.string().optional(),
+  visitorRejectionMessageTemplate: z.string().optional(),
+});
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("general");
   const { user } = useAuth();
@@ -151,6 +157,15 @@ export default function SettingsPage() {
     },
   });
 
+  const integrationSettingsForm = useForm<z.infer<typeof integrationSettingsSchema>>({
+    resolver: zodResolver(integrationSettingsSchema),
+    defaultValues: {
+      wabotApiBaseUrl: "https://app.wabot.my/api",
+      visitorApprovalMessageTemplate: "",
+      visitorRejectionMessageTemplate: "",
+    },
+  });
+
   // Update form values when settings are loaded
   useEffect(() => {
     if (settingsData) {
@@ -174,8 +189,13 @@ export default function SettingsPage() {
       contentManagementForm.reset({
         visitorTermsAndConditions: settingsData.visitorTermsAndConditions || "",
       });
+      integrationSettingsForm.reset({
+        wabotApiBaseUrl: settingsData.wabotApiBaseUrl || "https://app.wabot.my/api",
+        visitorApprovalMessageTemplate: settingsData.visitorApprovalMessageTemplate || "",
+        visitorRejectionMessageTemplate: settingsData.visitorRejectionMessageTemplate || "",
+      });
     }
-  }, [settingsData, generalForm, notificationForm, jobSchedulingForm, contentManagementForm]);
+  }, [settingsData, generalForm, notificationForm, jobSchedulingForm, contentManagementForm, integrationSettingsForm]);
   
   const onSubmitGeneral = (data: z.infer<typeof generalSettingsSchema>) => {
     updateSettingsMutation.mutate(data);
@@ -190,6 +210,10 @@ export default function SettingsPage() {
   };
 
   const onSubmitContentManagement = (data: z.infer<typeof contentManagementSchema>) => {
+    updateSettingsMutation.mutate(data);
+  };
+
+  const onSubmitIntegrationSettings = (data: z.infer<typeof integrationSettingsSchema>) => {
     updateSettingsMutation.mutate(data);
   };
   
@@ -210,6 +234,7 @@ export default function SettingsPage() {
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="jobs">Job Scheduling</TabsTrigger>
             <TabsTrigger value="content">Content Management</TabsTrigger>
+            <TabsTrigger value="integration">Integration</TabsTrigger>
           </TabsList>
         
         <TabsContent value="general">
@@ -574,6 +599,120 @@ export default function SettingsPage() {
                       </FormItem>
                     )}
                   />
+                  
+                  <Button type="submit" disabled={updateSettingsMutation.isPending}>
+                    {updateSettingsMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="integration">
+          <Card>
+            <CardHeader>
+              <CardTitle>Integration Settings</CardTitle>
+              <CardDescription>
+                Configure third-party integrations for notifications and messaging.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...integrationSettingsForm}>
+                <form onSubmit={integrationSettingsForm.handleSubmit(onSubmitIntegrationSettings)} className="space-y-6">
+                  <div className="space-y-4">
+                    <FormField
+                      control={integrationSettingsForm.control}
+                      name="wabotApiBaseUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Wabot API Base URL *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              placeholder="https://app.wabot.my/api"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            The base URL for your Wabot / WhatsApp provider API.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="rounded-lg border p-4 bg-gray-50">
+                      <h4 className="text-sm font-medium mb-2">API Credentials (from .env)</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-green-600">✓ Configured</span>
+                          <span className="px-2 py-1 bg-gray-200 rounded text-xs font-mono">WABOT_INSTANCE_ID</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-green-600">✓ Configured</span>
+                          <span className="px-2 py-1 bg-gray-200 rounded text-xs font-mono">WABOT_ACCESS_TOKEN</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        These credentials are stored in your <span className="px-1 py-0.5 bg-gray-200 rounded font-mono text-xs">.env</span> file. Update them on the server.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4 pt-4 border-t">
+                    <h4 className="text-lg font-semibold">Message Templates</h4>
+                    
+                    <FormField
+                      control={integrationSettingsForm.control}
+                      name="visitorApprovalMessageTemplate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Visitor Approval Notification Template</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              {...field} 
+                              rows={6}
+                              placeholder="Hello {visitorName}, your visit request to {residentName} on {visitDate} at {visitTime} has been approved. Your QR code: {qrCodeUrl}"
+                              className="font-mono text-sm"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            WhatsApp message template for visitor approval. Available variables: {"{"}visitorName{"}"}, {"{"}residentName{"}"}, {"{"}visitDate{"}"}, {"{"}visitTime{"}"}, {"{"}qrCodeUrl{"}"}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={integrationSettingsForm.control}
+                      name="visitorRejectionMessageTemplate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Visitor Rejection Notification Template</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              {...field} 
+                              rows={6}
+                              placeholder="Hello {visitorName}, we regret to inform you that your visit request to {residentName} on {visitDate} at {visitTime} has been rejected. Please contact us for more information."
+                              className="font-mono text-sm"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            WhatsApp message template for visitor rejection. Available variables: {"{"}visitorName{"}"}, {"{"}residentName{"}"}, {"{"}visitDate{"}"}, {"{"}visitTime{"}"}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   
                   <Button type="submit" disabled={updateSettingsMutation.isPending}>
                     {updateSettingsMutation.isPending ? (
