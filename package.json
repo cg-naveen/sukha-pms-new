@@ -10,7 +10,8 @@
     "db:push": "drizzle-kit push --force --config=./drizzle.config.ts",
     "db:seed": "tsx db/seed.ts",
     "db:migrate": "tsx db/migrate-add-columns.ts",
-    "db:migrate:classification": "tsx db/migrate-add-classification.ts"
+    "db:migrate:classification": "tsx db/migrate-add-classification.ts",
+    "db:migrate:remove-bedroom-types": "tsx db/migrate-remove-bedroom-types.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

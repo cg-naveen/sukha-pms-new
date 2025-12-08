@@ -478,14 +478,21 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                         <SelectItem value="no_room">No room assigned</SelectItem>
                           {roomsWithAvailability
                             .filter((room: any) => room.isAvailable)
-                            .map((room: any) => (
-                          <SelectItem key={room.id} value={room.id.toString()}>
-                                {room.unitNumber} - {room.roomType.replace('_', ' ')} 
-                                {room.availableBeds !== undefined && ` (${room.availableBeds}/${room.numberOfBeds || 1} beds available)`}
-                                {room.availableBeds === undefined && ` (${room.numberOfBeds || 1} beds)`}
-                                {' '}(RM {room.monthlyRate})
-                          </SelectItem>
-                        ))}
+                            .map((room: any) => {
+                              const getBedLabel = (beds: number) => {
+                                if (beds === 1) return 'Single';
+                                if (beds === 2) return 'Twin Sharing';
+                                if (beds === 3) return 'Triple Sharing';
+                                return `${beds} Beds`;
+                              };
+                              return (
+                                <SelectItem key={room.id} value={room.id.toString()}>
+                                  {room.unitNumber} - {room.roomType.replace('_', ' ')} ({getBedLabel(room.numberOfBeds || 1)})
+                                  {room.availableBeds !== undefined && ` - ${room.availableBeds}/${room.numberOfBeds || 1} beds available`}
+                                  {' '}(RM {room.monthlyRate})
+                                </SelectItem>
+                              );
+                            })}
                       </SelectContent>
                     </Select>
                     <FormMessage />
