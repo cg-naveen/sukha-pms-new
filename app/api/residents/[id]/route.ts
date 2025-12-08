@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '../../../../lib/db'
-import { residents, nextOfKin } from '../../../../shared/schema'
+import { residents, nextOfKin, occupancy, rooms, insertOccupancySchema } from '../../../../shared/schema'
 import { requireAuth } from '../../../../lib/auth'
 import { insertResidentSchema } from '../../../../shared/schema'
-import { eq } from 'drizzle-orm'
+import { eq, and, count } from 'drizzle-orm'
 import { z } from 'zod'
 
 export async function GET(
@@ -58,14 +58,83 @@ export async function PUT(
     // Validate with schema (partial update allowed)
     const validatedData = insertResidentSchema.partial().parse(body)
 
+    // Pull roomId out so we can manage occupancy & room status
+    const { roomId, ...residentData } = validatedData as typeof validatedData & {
+      roomId?: number | null
+    }
+
     const [updatedResident] = await db
       .update(residents)
-      .set({ ...validatedData, updatedAt: new Date() })
+      .set({ ...residentData, roomId: roomId ?? null, updatedAt: new Date() })
       .where(eq(residents.id, residentId))
       .returning()
 
     if (!updatedResident) {
       return NextResponse.json({ error: 'Resident not found' }, { status: 404 })
+    }
+
+    // === Occupancy & room status handling ===
+    // Fetch any current active occupancy for this resident
+    const [currentOccupancy] = await db
+      .select()
+      .from(occupancy)
+      .where(and(eq(occupancy.residentId, residentId), eq(occupancy.active, true)))
+
+    const oldRoomId = currentOccupancy?.roomId as number | undefined
+    const newRoomId = roomId ?? null
+
+    // Helper to update room status based on active occupancies
+    const updateRoomStatus = async (roomIdToCheck: number) => {
+      const [activeCountResult] = await db
+        .select({ count: count() })
+        .from(occupancy)
+        .where(and(eq(occupancy.roomId, roomIdToCheck), eq(occupancy.active, true)))
+
+      const activeCount = Number(activeCountResult?.count || 0)
+      const newStatus = activeCount > 0 ? 'occupied' : 'vacant'
+
+      await db
+        .update(rooms)
+        .set({ status: newStatus as any, updatedAt: new Date() })
+        .where(eq(rooms.id, roomIdToCheck))
+    }
+
+    // Case 1: Room cleared (newRoomId is null)
+    if (!newRoomId && currentOccupancy) {
+      await db
+        .update(occupancy)
+        .set({ active: false, updatedAt: new Date() })
+        .where(eq(occupancy.id, currentOccupancy.id))
+
+      await updateRoomStatus(currentOccupancy.roomId)
+    }
+
+    // Case 2: Room changed or newly assigned
+    if (newRoomId && newRoomId !== oldRoomId) {
+      // Deactivate any current active occupancy for this resident
+      if (currentOccupancy) {
+        await db
+          .update(occupancy)
+          .set({ active: false, updatedAt: new Date() })
+          .where(eq(occupancy.id, currentOccupancy.id))
+
+        await updateRoomStatus(currentOccupancy.roomId)
+      }
+
+      const today = new Date()
+      const oneYearLater = new Date(today)
+      oneYearLater.setFullYear(today.getFullYear() + 1)
+
+      const occupancyData = insertOccupancySchema.parse({
+        roomId: newRoomId,
+        residentId: residentId,
+        startDate: today,
+        endDate: oneYearLater,
+        active: true,
+      })
+
+      await db.insert(occupancy).values(occupancyData)
+      await updateRoomStatus(newRoomId)
     }
 
     return NextResponse.json(updatedResident)

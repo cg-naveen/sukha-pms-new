@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
           salesReferral: (row['sales_referral'] || row['salesReferral'] || 'Other').trim(),
           billingDate: row['billing_date'] || row['billingDate'] ? parseInt(row['billing_date'] || row['billingDate']) : 1,
           numberOfBeds: row['number_of_beds'] || row['numberOfBeds'] ? parseInt(row['number_of_beds'] || row['numberOfBeds']) : 1,
+          classification: (row['classification'] || 'independent').trim() as 'independent' | 'dependent' | 'memory_care',
         }
 
         // Check required fields
