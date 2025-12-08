@@ -448,24 +448,28 @@ export default function VisitorsPage() {
       
       {/* Visitor Request Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle>Request a Visit</DialogTitle>
           </DialogHeader>
-          <VisitorForm onClose={closeForm} />
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            <VisitorForm onClose={closeForm} />
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Walk-in Registration Form Dialog */}
       <Dialog open={isWalkInFormOpen} onOpenChange={setIsWalkInFormOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle>Walk-in Registration</DialogTitle>
             <DialogDescription>
               Register a visitor who is currently at the premises. This visitor will be automatically approved.
             </DialogDescription>
           </DialogHeader>
-          <VisitorForm onClose={closeWalkInForm} isWalkIn={true} />
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            <VisitorForm onClose={closeWalkInForm} isWalkIn={true} />
+          </div>
         </DialogContent>
       </Dialog>
       

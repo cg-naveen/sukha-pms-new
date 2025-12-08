@@ -629,8 +629,8 @@ export default function BillingPage() {
 
       {/* Billing Form Dialog */}
       <Dialog open={isBillingFormOpen} onOpenChange={setIsBillingFormOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle>
               {selectedBilling ? "Edit Billing" : "Create New Billing"}
             </DialogTitle>
@@ -641,10 +641,12 @@ export default function BillingPage() {
               }
             </DialogDescription>
           </DialogHeader>
-          <BillingForm 
-            billing={selectedBilling} 
-            onClose={() => setIsBillingFormOpen(false)} 
-          />
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            <BillingForm 
+              billing={selectedBilling} 
+              onClose={() => setIsBillingFormOpen(false)} 
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </MainLayout>

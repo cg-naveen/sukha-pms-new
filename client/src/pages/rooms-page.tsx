@@ -462,16 +462,18 @@ export default function RoomsPage() {
       
       {/* Room Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle>
               {selectedRoom ? 'Edit Room' : 'Add New Room'}
             </DialogTitle>
           </DialogHeader>
-          <RoomForm 
-            room={selectedRoom}
-            onClose={closeForm}
-          />
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            <RoomForm 
+              room={selectedRoom}
+              onClose={closeForm}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </MainLayout>

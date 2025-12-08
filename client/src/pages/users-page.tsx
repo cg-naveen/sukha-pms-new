@@ -207,16 +207,18 @@ export default function UsersPage() {
       
       {/* User Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle>
               {selectedUser ? 'Edit User' : 'Add New User'}
             </DialogTitle>
           </DialogHeader>
-          <UserForm 
-            user={selectedUser}
-            onClose={closeForm}
-          />
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            <UserForm 
+              user={selectedUser}
+              onClose={closeForm}
+            />
+          </div>
         </DialogContent>
       </Dialog>
       
