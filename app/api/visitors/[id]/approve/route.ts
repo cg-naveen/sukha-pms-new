@@ -5,7 +5,6 @@ import { requireAuth } from '../../../../../lib/auth'
 import { eq } from 'drizzle-orm'
 import { sendWabotMessage, sendWabotMedia, replaceTemplateVariables } from '../../../../../lib/wabot'
 import { format } from 'date-fns'
-import QRCode from 'qrcode'
 
 export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const authResult = await requireAuth(['admin', 'staff'])()
@@ -77,23 +76,18 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
           console.log('WhatsApp text message sent successfully')
         }
 
-        // Generate QR code as data URL (base64 image)
+        // Generate QR code image URL (using API endpoint)
         try {
-          const qrCodeDataUrl = await QRCode.toDataURL(qrCodeVerifyUrl, {
-            errorCorrectionLevel: 'H',
-            margin: 1,
-            scale: 8,
-            color: {
-              dark: '#000000',
-              light: '#FFFFFF'
-            }
-          })
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
+            ? `https://${process.env.VERCEL_URL}` 
+            : 'http://localhost:3000'
+          const qrCodeImageUrl = `${baseUrl}/api/visitors/qr/${qrCode}/image`
 
           // Send second message (QR code image)
           const mediaResult = await sendWabotMedia(
             updated.phone,
             'Your QR code for entry:',
-            qrCodeDataUrl,
+            qrCodeImageUrl,
             settingsData.wabotApiBaseUrl
           )
 
@@ -103,7 +97,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
             console.log('WhatsApp QR code image sent successfully')
           }
         } catch (qrError) {
-          console.error('Error generating QR code:', qrError)
+          console.error('Error sending QR code image:', qrError)
           // Don't fail the approval if QR code generation fails
         }
       }
