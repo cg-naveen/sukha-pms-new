@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '../../../../../../../../lib/db'
-import { visitors } from '../../../../../../../../shared/schema'
+import { db } from '../../../../../../../lib/db'
+import { visitors } from '../../../../../../../shared/schema'
 import { eq } from 'drizzle-orm'
 import QRCode from 'qrcode'
 
