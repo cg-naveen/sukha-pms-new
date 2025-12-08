@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       vehicleNumber
     } = body
 
-    if (!fullName || !email || !phone || !nricPassport || !visitDate || !visitTime || !numberOfVisitors || !purposeOfVisit) {
+    if (!fullName || !email || !phone || !nricPassport || !visitDate || !visitTime || !numberOfVisitors || !purposeOfVisit || !residentName) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }

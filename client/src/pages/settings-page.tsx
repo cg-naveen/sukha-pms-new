@@ -62,6 +62,10 @@ const jobSchedulingSchema = z.object({
   billingGenerationMinute: z.coerce.number().int().min(0).max(59),
 });
 
+const contentManagementSchema = z.object({
+  visitorTermsAndConditions: z.string().optional(),
+});
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("general");
   const { user } = useAuth();
@@ -140,6 +144,13 @@ export default function SettingsPage() {
     },
   });
 
+  const contentManagementForm = useForm<z.infer<typeof contentManagementSchema>>({
+    resolver: zodResolver(contentManagementSchema),
+    defaultValues: {
+      visitorTermsAndConditions: "",
+    },
+  });
+
   // Update form values when settings are loaded
   useEffect(() => {
     if (settingsData) {
@@ -160,8 +171,11 @@ export default function SettingsPage() {
         billingGenerationHour: settingsData.billingGenerationHour ?? 2,
         billingGenerationMinute: settingsData.billingGenerationMinute ?? 0,
       });
+      contentManagementForm.reset({
+        visitorTermsAndConditions: settingsData.visitorTermsAndConditions || "",
+      });
     }
-  }, [settingsData, generalForm, notificationForm, jobSchedulingForm]);
+  }, [settingsData, generalForm, notificationForm, jobSchedulingForm, contentManagementForm]);
   
   const onSubmitGeneral = (data: z.infer<typeof generalSettingsSchema>) => {
     updateSettingsMutation.mutate(data);
@@ -172,6 +186,10 @@ export default function SettingsPage() {
   };
 
   const onSubmitJobScheduling = (data: z.infer<typeof jobSchedulingSchema>) => {
+    updateSettingsMutation.mutate(data);
+  };
+
+  const onSubmitContentManagement = (data: z.infer<typeof contentManagementSchema>) => {
     updateSettingsMutation.mutate(data);
   };
   
@@ -191,6 +209,7 @@ export default function SettingsPage() {
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="jobs">Job Scheduling</TabsTrigger>
+            <TabsTrigger value="content">Content Management</TabsTrigger>
           </TabsList>
         
         <TabsContent value="general">
@@ -506,6 +525,55 @@ export default function SettingsPage() {
                       </p>
                     </div>
                   )}
+                  
+                  <Button type="submit" disabled={updateSettingsMutation.isPending}>
+                    {updateSettingsMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="content">
+          <Card>
+            <CardHeader>
+              <CardTitle>Content Management</CardTitle>
+              <CardDescription>
+                Manage content displayed to visitors and users.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...contentManagementForm}>
+                <form onSubmit={contentManagementForm.handleSubmit(onSubmitContentManagement)} className="space-y-6">
+                  <FormField
+                    control={contentManagementForm.control}
+                    name="visitorTermsAndConditions"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Visitor Terms and Conditions</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            {...field} 
+                            rows={15}
+                            placeholder="Enter the terms and conditions for visitor registration. This content will be displayed in the visitor registration form."
+                            className="font-mono text-sm"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          This content will be shown to visitors when they click on "Terms and Conditions" during registration. You can use markdown formatting.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   
                   <Button type="submit" disabled={updateSettingsMutation.isPending}>
                     {updateSettingsMutation.isPending ? (
