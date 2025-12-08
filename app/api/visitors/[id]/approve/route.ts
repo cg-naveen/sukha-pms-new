@@ -80,6 +80,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
           const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
             (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
           // Use .png extension so Wabot recognizes it as an image URL
+          // The route handler will serve the image regardless of .png extension
           const qrCodeImageUrl = `${baseUrl}/api/public/visitors/qr/${qrCode}/image.png`
           
           console.log('QR Code Image URL:', qrCodeImageUrl) // Debug log

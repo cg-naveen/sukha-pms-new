@@ -7,9 +7,10 @@ import QRCode from 'qrcode'
 /**
  * Public endpoint to generate and serve QR code images
  * This endpoint must be publicly accessible for Wabot to fetch the image
+ * Supports both /image and /image.png URLs
  */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ qrCode: string }> }
 ) {
   try {
