@@ -16,6 +16,10 @@ async function migrate() {
   
   // If the connection string has @@ in the password part, it means password contains @
   // We need to URL-encode the @ as %40
+  // Format: postgresql://user:password@host:port/db
+  // If password is "pass@word", it should be "pass%40word" in the URL
+  
+  // Try to parse and fix the connection string
   const urlMatch = connectionString.match(/^postgresql:\/\/([^:]+):([^@]+)@(.+)$/)
   if (urlMatch) {
     const [, username, password, rest] = urlMatch
