@@ -90,6 +90,21 @@ export default function SettingsPage() {
     },
   });
 
+  // Fetch Wabot credentials status
+  const { data: wabotCredentials } = useQuery<{
+    instanceIdConfigured: boolean;
+    accessTokenConfigured: boolean;
+  }>({
+    queryKey: ["/api/settings/wabot-credentials"],
+    queryFn: async () => {
+      const response = await fetch("/api/settings/wabot-credentials", {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch credentials status");
+      return response.json();
+    },
+  });
+
   // Update settings mutation
   const updateSettingsMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -652,16 +667,24 @@ export default function SettingsPage() {
                       <h4 className="text-sm font-medium mb-2">API Credentials (from .env)</h4>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500">⚠️ Check server</span>
+                          {wabotCredentials?.instanceIdConfigured ? (
+                            <span className="text-xs text-green-600">✓ Configured</span>
+                          ) : (
+                            <span className="text-xs text-amber-600">⚠️ Not Configured</span>
+                          )}
                           <span className="px-2 py-1 bg-gray-200 rounded text-xs font-mono">WABOT_INSTANCE_ID</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500">⚠️ Check server</span>
+                          {wabotCredentials?.accessTokenConfigured ? (
+                            <span className="text-xs text-green-600">✓ Configured</span>
+                          ) : (
+                            <span className="text-xs text-amber-600">⚠️ Not Configured</span>
+                          )}
                           <span className="px-2 py-1 bg-gray-200 rounded text-xs font-mono">WABOT_ACCESS_TOKEN</span>
                         </div>
                       </div>
                       <p className="text-xs text-gray-500 mt-2">
-                        These credentials must be added to your <span className="px-1 py-0.5 bg-gray-200 rounded font-mono text-xs">.env</span> file on the server. They are not accessible from the browser for security reasons.
+                        These credentials are stored in your <span className="px-1 py-0.5 bg-gray-200 rounded font-mono text-xs">.env</span> file. Update them on the server.
                       </p>
                     </div>
                   </div>
