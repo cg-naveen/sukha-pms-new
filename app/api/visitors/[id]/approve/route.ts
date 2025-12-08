@@ -3,7 +3,7 @@ import { db } from '../../../../../lib/db'
 import { visitors, settings } from '../../../../../shared/schema'
 import { requireAuth } from '../../../../../lib/auth'
 import { eq } from 'drizzle-orm'
-import { sendWabotMessage, replaceTemplateVariables } from '../../../../../lib/wabot'
+import { sendWabotMessage, sendWabotMedia, replaceTemplateVariables } from '../../../../../lib/wabot'
 import { format } from 'date-fns'
 
 export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -50,32 +50,55 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
           ? `https://${process.env.VERCEL_URL}` 
           : 'http://localhost:3000'
-        const qrCodeUrl = `${baseUrl}/api/public/visitors/verify/${qrCode}`
+        const qrCodeVerifyUrl = `${baseUrl}/api/public/visitors/verify/${qrCode}`
 
-        // Replace template variables
-        const message = replaceTemplateVariables(
+        // Replace template variables (remove qrCodeUrl from template since we'll send image)
+        const textMessage = replaceTemplateVariables(
           settingsData.visitorApprovalMessageTemplate,
           {
             visitorName: updated.fullName || 'Visitor',
             residentName: updated.residentName || 'Resident',
             visitDate: updated.visitDate ? format(new Date(updated.visitDate), 'dd MMM yyyy') : 'N/A',
             visitTime: updated.visitTime || 'N/A',
-            qrCodeUrl: qrCodeUrl,
           }
         )
 
-        // Send WhatsApp message
-        const wabotResult = await sendWabotMessage(
+        // Send first message (text)
+        const textResult = await sendWabotMessage(
           updated.phone,
-          message,
+          textMessage,
           settingsData.wabotApiBaseUrl
         )
 
-        if (!wabotResult.success) {
-          console.error('Failed to send WhatsApp approval notification:', wabotResult.error)
-          // Don't fail the approval if WhatsApp fails
+        if (!textResult.success) {
+          console.error('Failed to send WhatsApp text message:', textResult.error)
         } else {
-          console.log('WhatsApp approval notification sent successfully')
+          console.log('WhatsApp text message sent successfully')
+        }
+
+        // Generate QR code image URL (using API endpoint)
+        try {
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
+            ? `https://${process.env.VERCEL_URL}` 
+            : 'http://localhost:3000'
+          const qrCodeImageUrl = `${baseUrl}/api/visitors/qr/${qrCode}/image`
+
+          // Send second message (QR code image)
+          const mediaResult = await sendWabotMedia(
+            updated.phone,
+            'Your QR code for entry:',
+            qrCodeImageUrl,
+            settingsData.wabotApiBaseUrl
+          )
+
+          if (!mediaResult.success) {
+            console.error('Failed to send WhatsApp QR code image:', mediaResult.error)
+          } else {
+            console.log('WhatsApp QR code image sent successfully')
+          }
+        } catch (qrError) {
+          console.error('Error sending QR code image:', qrError)
+          // Don't fail the approval if QR code generation fails
         }
       }
     } catch (whatsappError) {
