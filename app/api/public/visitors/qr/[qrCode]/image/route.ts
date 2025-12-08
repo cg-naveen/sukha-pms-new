@@ -4,12 +4,20 @@ import { visitors } from '../../../../../../shared/schema'
 import { eq } from 'drizzle-orm'
 import QRCode from 'qrcode'
 
+/**
+ * Public endpoint to generate and serve QR code images
+ * This endpoint must be publicly accessible for Wabot to fetch the image
+ */
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ qrCode: string }> }
 ) {
   try {
     const { qrCode } = await params
+
+    if (!qrCode) {
+      return NextResponse.json({ error: 'QR code is required' }, { status: 400 })
+    }
 
     // Verify the QR code exists
     const [visitor] = await db
@@ -23,9 +31,8 @@ export async function GET(
     }
 
     // Generate QR code verification URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'http://localhost:3000'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
     const qrCodeVerifyUrl = `${baseUrl}/api/public/visitors/verify/${qrCode}`
 
     // Generate QR code as PNG buffer
@@ -40,11 +47,12 @@ export async function GET(
       }
     })
 
-    // Return the image
+    // Return the image with proper headers for public access
     return new NextResponse(qrCodeBuffer, {
       headers: {
         'Content-Type': 'image/png',
         'Cache-Control': 'public, max-age=31536000, immutable',
+        'Access-Control-Allow-Origin': '*', // Allow CORS for Wabot
       },
     })
   } catch (error) {
