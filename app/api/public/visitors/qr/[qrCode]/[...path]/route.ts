@@ -1,26 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '../../../../../../../lib/db'
-import { visitors } from '../../../../../../../shared/schema'
+import { db } from '../../../../../../../../lib/db'
+import { visitors } from '../../../../../../../../shared/schema'
 import { eq } from 'drizzle-orm'
 import QRCode from 'qrcode'
 
 /**
- * Public endpoint to generate and serve QR code images
- * This endpoint must be publicly accessible for Wabot to fetch the image
- * Supports both /image and /image.png URLs
+ * Catch-all route to handle /image.png URLs
+ * Generates QR code image directly (same logic as /image route)
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ qrCode: string }> }
+  { params }: { params: Promise<{ qrCode: string; path: string[] }> }
 ) {
   try {
-    const { qrCode } = await params
+    const { qrCode, path } = await params
+    
+    // Only handle image.png path
+    if (!path || path[0] !== 'image.png') {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
 
     if (!qrCode) {
       return NextResponse.json({ error: 'QR code is required' }, { status: 400 })
     }
 
-    console.log('QR Code Image Request:', qrCode) // Debug log
+    console.log('QR Code Image Request (.png):', qrCode) // Debug log
 
     // Verify the QR code exists
     const [visitor] = await db

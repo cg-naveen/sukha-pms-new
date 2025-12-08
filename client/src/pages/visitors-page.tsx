@@ -162,7 +162,7 @@ export default function VisitorsPage() {
         return searchQuery === "" || 
           visitor.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
           visitor.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          visitor.resident?.fullName?.toLowerCase().includes(searchQuery.toLowerCase());
+          (visitor.residentName || '').toLowerCase().includes(searchQuery.toLowerCase());
       })
     : [];
 
@@ -386,9 +386,9 @@ export default function VisitorsPage() {
                       <div className="text-sm text-gray-500">{visitor.email}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium">{visitor.resident?.fullName || 'Unknown'}</div>
+                      <div className="font-medium">{visitor.residentName || 'Unknown'}</div>
                       <div className="text-sm text-gray-500">
-                        Room {visitor.resident?.occupancy?.[0]?.room?.unitNumber || 'N/A'}
+                        {visitor.roomNumber ? `Room ${visitor.roomNumber}` : 'Room N/A'}
                       </div>
                     </TableCell>
                     <TableCell>{format(new Date(visitor.visitDate), "MMM d, yyyy")}</TableCell>
@@ -485,7 +485,7 @@ export default function VisitorsPage() {
           {selectedVisitor && (
             <div className="px-6 py-4">
               <p><span className="font-medium">Visitor:</span> {selectedVisitor.fullName}</p>
-              <p><span className="font-medium">Visiting:</span> {selectedVisitor.resident?.fullName}</p>
+              <p><span className="font-medium">Visiting:</span> {selectedVisitor.residentName || 'Unknown'}</p>
               <p><span className="font-medium">Date:</span> {format(new Date(selectedVisitor.visitDate), "MMMM d, yyyy")}</p>
             </div>
           )}
@@ -526,7 +526,7 @@ export default function VisitorsPage() {
           {selectedVisitor && (
             <div className="px-6 py-4">
               <p><span className="font-medium">Visitor:</span> {selectedVisitor.fullName}</p>
-              <p><span className="font-medium">Visiting:</span> {selectedVisitor.resident?.fullName}</p>
+              <p><span className="font-medium">Visiting:</span> {selectedVisitor.residentName || 'Unknown'}</p>
               <p><span className="font-medium">Date:</span> {format(new Date(selectedVisitor.visitDate), "MMMM d, yyyy")}</p>
             </div>
           )}

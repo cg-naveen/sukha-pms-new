@@ -75,17 +75,31 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
           console.log('WhatsApp text message sent successfully')
         }
 
-        // Generate QR code image URL (using public API endpoint - must be publicly accessible for Wabot)
+        // Generate QR code image URL (using public API endpoint with .png extension for Wabot)
         try {
           const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
             (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
-          const qrCodeImageUrl = `${baseUrl}/api/public/visitors/qr/${qrCode}/image`
+          // Use .png extension so Wabot recognizes it as an image URL
+          // The route handler will serve the image regardless of .png extension
+          const qrCodeImageUrl = `${baseUrl}/api/public/visitors/qr/${qrCode}/image.png`
           
           console.log('QR Code Image URL:', qrCodeImageUrl) // Debug log
           
           // Verify URL is accessible (basic check)
           if (!qrCodeImageUrl.startsWith('http')) {
             throw new Error('Invalid QR code image URL format')
+          }
+          
+          // Test if URL is accessible (optional - can be removed if too slow)
+          try {
+            const testResponse = await fetch(qrCodeImageUrl, { method: 'HEAD' })
+            if (!testResponse.ok) {
+              console.warn('QR code image URL test failed:', testResponse.status)
+            } else {
+              console.log('QR code image URL is accessible')
+            }
+          } catch (testError) {
+            console.warn('Could not test QR code image URL:', testError)
           }
 
           // Send second message (QR code image)
