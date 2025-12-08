@@ -38,8 +38,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Building2, Loader2, Check, ChevronLeft } from "lucide-react";
+import { CalendarIcon, Building2, Loader2, Check, ChevronLeft, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useQuery } from "@tanstack/react-query";
 
 // Visitor registration form schema
 const visitorRegistrationSchema = z.object({
@@ -47,7 +55,7 @@ const visitorRegistrationSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(10, "Please enter a valid phone number"),
   nricPassport: z.string().min(6, "NRIC/Passport must be at least 6 characters"),
-  residentName: z.string().optional(),
+  residentName: z.string().min(2, "Resident name is required"),
   roomNumber: z.string().optional(),
   visitDate: z.date({
     required_error: "Please select a date for your visit",
@@ -61,6 +69,9 @@ const visitorRegistrationSchema = z.object({
     required_error: "Please select a purpose for your visit",
   }),
   otherPurpose: z.string().optional(),
+  termsAccepted: z.boolean().refine((val) => val === true, {
+    message: "You must accept the terms and conditions to proceed",
+  }),
 }).refine(
   (data) => {
     // If purpose is 'other', otherPurpose must be provided and not empty
@@ -73,18 +84,6 @@ const visitorRegistrationSchema = z.object({
     message: "Please specify the purpose of your visit",
     path: ["otherPurpose"]
   }
-).refine(
-  (data) => {
-    // For non-site visits, require resident name and room number
-    if (data.purposeOfVisit !== "site_visit") {
-      return data.residentName && data.residentName.trim() !== "" && data.roomNumber && data.roomNumber.trim() !== "";
-    }
-    return true;
-  },
-  {
-    message: "Resident name and room number are required for this type of visit",
-    path: ["residentName"]
-  }
 );
 
 type VisitorRegistrationFormData = z.infer<typeof visitorRegistrationSchema>;
@@ -92,7 +91,18 @@ type VisitorRegistrationFormData = z.infer<typeof visitorRegistrationSchema>;
 export default function VisitorRegistrationPage() {
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const { toast } = useToast();
+
+  // Fetch visitor terms and conditions
+  const { data: termsData, isLoading: isLoadingTerms } = useQuery<{ termsAndConditions: string }>({
+    queryKey: ['/api/public/visitor-terms'],
+    queryFn: async () => {
+      const res = await fetch('/api/public/visitor-terms');
+      if (!res.ok) throw new Error('Failed to fetch terms');
+      return res.json();
+    },
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -109,20 +119,13 @@ export default function VisitorRegistrationPage() {
       roomNumber: "",
       vehicleNumber: "",
       numberOfVisitors: 1,
-      purposeOfVisit: "site_visit",
+      purposeOfVisit: "general_visit",
       otherPurpose: "",
+      termsAccepted: false,
     },
   });
 
   const purposeOfVisit = form.watch("purposeOfVisit");
-
-  // Clear resident/room fields when switching to Site Visit
-  useEffect(() => {
-    if (purposeOfVisit === "site_visit") {
-      form.setValue("residentName", "");
-      form.setValue("roomNumber", "");
-    }
-  }, [purposeOfVisit, form]);
 
   const visitTimeslots = [
     "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", 
@@ -230,12 +233,6 @@ export default function VisitorRegistrationPage() {
               <CardDescription>
                 Register your visit to Sukha Senior Resort
               </CardDescription>
-              <div className="mt-2 text-sm text-muted-foreground">
-                {purposeOfVisit === "site_visit" ? 
-                  "Site visit selected - resident information not required" :
-                  "Resident name and room number are required for visits to residents"
-                }
-              </div>
             </CardHeader>
             <CardContent>
               <Form {...form}>
@@ -339,36 +336,34 @@ export default function VisitorRegistrationPage() {
                       />
                     )}
                     
+                    <FormField
+                      control={form.control}
+                      name="residentName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name of Resident to Visit *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Jane Doe" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
                     {purposeOfVisit !== "site_visit" && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="residentName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Resident Name *</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Jane Doe" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="roomNumber"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Room Number *</FormLabel>
-                              <FormControl>
-                                <Input placeholder="A101" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                      <FormField
+                        control={form.control}
+                        name="roomNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Room Number (optional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="A101" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     )}
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -485,6 +480,35 @@ export default function VisitorRegistrationPage() {
                     
                   </div>
                   
+                  <FormField
+                    control={form.control}
+                    name="termsAccepted"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-normal">
+                            I accept the{" "}
+                            <button
+                              type="button"
+                              onClick={() => setIsTermsModalOpen(true)}
+                              className="text-primary hover:underline font-medium"
+                            >
+                              Terms and Conditions
+                            </button>
+                            {" "}for visitor registration *
+                          </FormLabel>
+                          <FormMessage />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  
                   <Button 
                     type="submit" 
                     className="w-full"
@@ -538,6 +562,31 @@ export default function VisitorRegistrationPage() {
           </div>
         </div>
       </div>
+      
+      {/* Terms and Conditions Modal */}
+      <Dialog open={isTermsModalOpen} onOpenChange={setIsTermsModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-4">
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Visitor Terms and Conditions
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            {isLoadingTerms ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="prose prose-sm max-w-none">
+                <div className="whitespace-pre-wrap text-sm text-gray-700">
+                  {termsData?.termsAndConditions || "Loading terms and conditions..."}
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

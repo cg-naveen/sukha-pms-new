@@ -173,6 +173,8 @@ export const settings = pgTable("settings", {
   billingGenerationEnabled: boolean("billing_generation_enabled").notNull().default(true),
   billingGenerationHour: integer("billing_generation_hour").notNull().default(2), // 0-23 (24-hour format)
   billingGenerationMinute: integer("billing_generation_minute").notNull().default(0), // 0-59
+  // Content management
+  visitorTermsAndConditions: text("visitor_terms_and_conditions"), // Terms and conditions for visitor registration
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -325,7 +327,7 @@ export const publicVisitorRegistrationSchema = z.object({
   email: z.string().email("Must provide a valid email"),
   phone: z.string().min(10, "Phone number must be at least 10 characters"),
   nricPassport: z.string().min(5, "NRIC/Passport number must be at least 5 characters"),
-  residentName: z.string().optional().nullable(),
+  residentName: z.string().min(2, "Resident name is required"),
   roomNumber: z.string().optional().nullable(),
   visitDate: z.string(),
   visitTime: z.string(),
@@ -333,6 +335,9 @@ export const publicVisitorRegistrationSchema = z.object({
   numberOfVisitors: z.number().min(1, "Number of visitors must be at least 1"),
   purposeOfVisit: z.enum(["general_visit", "site_visit", "celebration", "delivery", "maintenance", "other"]),
   otherPurpose: z.string().optional(),
+  termsAccepted: z.boolean().refine((val) => val === true, {
+    message: "You must accept the terms and conditions to proceed",
+  }),
 }).refine(
   (data) => {
     // If purpose is 'other', otherPurpose must be provided and not empty
