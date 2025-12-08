@@ -48,24 +48,10 @@ async function migrate() {
   try {
     console.log('Starting migration: Adding visitor_terms_and_conditions column to settings table...')
     
-    // Check if column already exists
-    const checkColumn = await pool.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'settings' 
-      AND column_name = 'visitor_terms_and_conditions';
-    `)
-    
-    if (checkColumn.rows.length > 0) {
-      console.log('✓ Column visitor_terms_and_conditions already exists')
-      await pool.end()
-      process.exit(0)
-    }
-    
-    // Add the column
+    // Add the column if it doesn't exist (same approach as add-classification migration)
     await pool.query(`
       ALTER TABLE settings 
-      ADD COLUMN visitor_terms_and_conditions TEXT;
+      ADD COLUMN IF NOT EXISTS visitor_terms_and_conditions TEXT;
     `)
     console.log('✓ Added visitor_terms_and_conditions column to settings table')
     

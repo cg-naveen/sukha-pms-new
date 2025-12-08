@@ -217,20 +217,22 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
             name="numberOfBeds"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Number of Beds</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    placeholder="1" 
-                    min="1"
-                    {...field}
-                    onChange={(e) => {
-                      const value = e.target.value === "" ? "1" : e.target.value;
-                      field.onChange(parseInt(value, 10));
-                    }}
-                    value={field.value || 1}
-                  />
-                </FormControl>
+                <FormLabel>Bed Configuration</FormLabel>
+                <Select
+                  onValueChange={(value) => field.onChange(parseInt(value, 10))}
+                  value={field.value?.toString() || "1"}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select bed configuration" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="1">Single (1 bed)</SelectItem>
+                    <SelectItem value="2">Twin Sharing (2 beds)</SelectItem>
+                    <SelectItem value="3">Triple Sharing (3 beds)</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
