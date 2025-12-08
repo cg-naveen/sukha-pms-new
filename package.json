@@ -13,7 +13,8 @@
     "db:migrate:classification": "tsx db/migrate-add-classification.ts",
     "db:migrate:remove-bedroom-types": "tsx db/migrate-remove-bedroom-types.ts",
     "db:migrate:visitor-terms": "tsx db/migrate-add-visitor-terms.ts",
-    "db:migrate:wabot": "tsx db/migrate-add-wabot-integration.ts"
+    "db:migrate:wabot": "tsx db/migrate-add-wabot-integration.ts",
+    "db:seed:templates": "tsx db/seed-message-templates.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

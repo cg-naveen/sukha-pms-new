@@ -38,7 +38,15 @@ export async function GET() {
       return NextResponse.json(defaultSettings[0])
     }
 
-    return NextResponse.json(existingSettings[0])
+    // Return settings with all fields, including Wabot integration fields
+    const settingsRecord = existingSettings[0]
+    return NextResponse.json({
+      ...settingsRecord,
+      // Ensure all fields are included even if null
+      wabotApiBaseUrl: settingsRecord.wabotApiBaseUrl || null,
+      visitorApprovalMessageTemplate: settingsRecord.visitorApprovalMessageTemplate || null,
+      visitorRejectionMessageTemplate: settingsRecord.visitorRejectionMessageTemplate || null,
+    })
   } catch (error: any) {
     console.error('Error fetching settings:', error)
     return NextResponse.json(
