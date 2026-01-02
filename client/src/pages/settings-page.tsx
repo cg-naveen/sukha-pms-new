@@ -67,6 +67,7 @@ const contentManagementSchema = z.object({
 });
 
 const integrationSettingsSchema = z.object({
+  wabotEnabled: z.boolean().default(false),
   wabotApiBaseUrl: z.string().url("Please enter a valid URL").optional(),
   visitorApprovalMessageTemplate: z.string().optional(),
   visitorRejectionMessageTemplate: z.string().optional(),
@@ -175,6 +176,7 @@ export default function SettingsPage() {
   const integrationSettingsForm = useForm<z.infer<typeof integrationSettingsSchema>>({
     resolver: zodResolver(integrationSettingsSchema),
     defaultValues: {
+      wabotEnabled: false,
       wabotApiBaseUrl: "https://app.wabot.my/api",
       visitorApprovalMessageTemplate: "",
       visitorRejectionMessageTemplate: "",
@@ -205,6 +207,7 @@ export default function SettingsPage() {
         visitorTermsAndConditions: settingsData.visitorTermsAndConditions || "",
       });
       integrationSettingsForm.reset({
+        wabotEnabled: settingsData.wabotEnabled ?? false,
         wabotApiBaseUrl: settingsData.wabotApiBaseUrl || settingsData.wabot_api_base_url || "https://app.wabot.my/api",
         visitorApprovalMessageTemplate: settingsData.visitorApprovalMessageTemplate || settingsData.visitor_approval_message_template || "",
         visitorRejectionMessageTemplate: settingsData.visitorRejectionMessageTemplate || settingsData.visitor_rejection_message_template || "",
@@ -643,6 +646,27 @@ export default function SettingsPage() {
               <Form {...integrationSettingsForm}>
                 <form onSubmit={integrationSettingsForm.handleSubmit(onSubmitIntegrationSettings)} className="space-y-6">
                   <div className="space-y-4">
+                    <FormField
+                      control={integrationSettingsForm.control}
+                      name="wabotEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Enable Wabot Integration</FormLabel>
+                            <FormDescription>
+                              Enable or disable WhatsApp notifications via Wabot. When disabled, no WhatsApp messages will be sent.
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
                     <FormField
                       control={integrationSettingsForm.control}
                       name="wabotApiBaseUrl"

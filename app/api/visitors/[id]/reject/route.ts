@@ -35,7 +35,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Visitor not found' }, { status: 404 })
     }
 
-    // Send WhatsApp notification if configured
+    // Send WhatsApp notification if configured and enabled
     try {
       // Get settings for Wabot configuration and message template
       const [settingsData] = await db
@@ -43,7 +43,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         .from(settings)
         .limit(1)
 
-      if (settingsData?.visitorRejectionMessageTemplate && settingsData.wabotApiBaseUrl) {
+      if (settingsData?.wabotEnabled && settingsData?.visitorRejectionMessageTemplate && settingsData.wabotApiBaseUrl) {
         // Replace template variables
         const message = replaceTemplateVariables(
           settingsData.visitorRejectionMessageTemplate,
