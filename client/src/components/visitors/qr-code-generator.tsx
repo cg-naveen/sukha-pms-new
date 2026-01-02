@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Visitor } from "@shared/schema";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Download, Loader2, MessageCircle, Copy } from "lucide-react";
+import { Download, Loader2, MessageCircle, Copy, FileText, Image as ImageIcon } from "lucide-react";
 import QRCode from "qrcode";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -12,6 +12,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface QRCodeGeneratorProps {
   visitor: Visitor;
@@ -20,6 +26,7 @@ interface QRCodeGeneratorProps {
 export default function QRCodeGenerator({ visitor }: QRCodeGeneratorProps) {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [copyMenuOpen, setCopyMenuOpen] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
 
@@ -94,7 +101,25 @@ ${visitor.details ? `📝 *Details:* ${visitor.details}` : ''}
 Please save this information and present the QR code when arriving.`;
   };
 
-  const copyToClipboard = async () => {
+  const copyText = async () => {
+    const message = getVisitorMessage();
+    try {
+      await navigator.clipboard.writeText(message);
+      toast({
+        title: "Text Copied!",
+        description: "Text message copied to clipboard.",
+      });
+    } catch (error) {
+      console.error("Failed to copy text:", error);
+      toast({
+        title: "Copy Failed",
+        description: "Unable to copy text to clipboard. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const copyImage = async () => {
     if (!qrCodeDataUrl) {
       toast({
         title: "Error",
@@ -104,61 +129,31 @@ Please save this information and present the QR code when arriving.`;
       return;
     }
 
-    const message = getVisitorMessage();
-    let imageCopied = false;
-
-    // First, try to copy the image
     if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
       try {
         const response = await fetch(qrCodeDataUrl);
         const blob = await response.blob();
         const clipboardItem = new ClipboardItem({ 'image/png': blob });
         await navigator.clipboard.write([clipboardItem]);
-        imageCopied = true;
-        
-        // Show initial toast for image
         toast({
           title: "QR Image Copied!",
-          description: "Image copied. Copying text message next...",
+          description: "QR code image copied to clipboard. You can paste it now.",
         });
       } catch (error) {
         console.error("Failed to copy image:", error);
+        toast({
+          title: "Copy Failed",
+          description: "Unable to copy image to clipboard. Please use the Download button instead.",
+          variant: "destructive",
+        });
       }
+    } else {
+      toast({
+        title: "Not Supported",
+        description: "Image copying is not supported in your browser. Please use the Download button.",
+        variant: "destructive",
+      });
     }
-
-    // Wait a moment, then copy the text
-    setTimeout(async () => {
-      try {
-        await navigator.clipboard.writeText(message);
-        
-        if (imageCopied) {
-          toast({
-            title: "Both Copied!",
-            description: "Text is now in clipboard. To paste both in WhatsApp: 1) Paste the text first, 2) Click Copy button again to get the image, then paste it.",
-          });
-        } else {
-          toast({
-            title: "Text Copied!",
-            description: "Text message copied to clipboard. Please use the Download button to get the QR code image.",
-          });
-        }
-      } catch (error) {
-        console.error("Failed to copy text:", error);
-        if (imageCopied) {
-          toast({
-            title: "Image Copied",
-            description: "QR image copied. Text copy failed. Please copy the text manually.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Copy Failed",
-            description: "Unable to copy to clipboard. Please try again or use the download button.",
-            variant: "destructive",
-          });
-        }
-      }
-    }, imageCopied ? 1000 : 0);
   };
 
   const shareViaWhatsApp = async () => {
@@ -293,20 +288,37 @@ Please save this information and present the QR code when arriving.`;
                   </TooltipContent>
                 </Tooltip>
                 
-                <Tooltip>
-                  <TooltipTrigger asChild>
+                <DropdownMenu open={copyMenuOpen} onOpenChange={setCopyMenuOpen}>
+                  <DropdownMenuTrigger asChild>
                     <Button 
-                      onClick={copyToClipboard}
                       variant="outline"
                       className="flex-1 aspect-square"
+                      onMouseEnter={() => setCopyMenuOpen(true)}
                     >
                       <Copy className="h-5 w-5" />
                     </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Copy</p>
-                  </TooltipContent>
-                </Tooltip>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    align="end"
+                    onMouseEnter={() => setCopyMenuOpen(true)}
+                    onMouseLeave={() => setCopyMenuOpen(false)}
+                  >
+                    <DropdownMenuItem onClick={() => {
+                      copyText();
+                      setCopyMenuOpen(false);
+                    }}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      <span>Copy Text</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      copyImage();
+                      setCopyMenuOpen(false);
+                    }}>
+                      <ImageIcon className="h-4 w-4 mr-2" />
+                      <span>Copy Image</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 
                 <Tooltip>
                   <TooltipTrigger asChild>
