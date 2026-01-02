@@ -557,11 +557,11 @@ export default function VisitorsPage() {
       
       {/* QR Code Dialog */}
       <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
-        <DialogContent className="p-0">
+        <DialogContent className="p-0 max-w-md">
           <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle>Visitor QR Code</DialogTitle>
           </DialogHeader>
-          <div className="px-6 pb-6">
+          <div className="px-6 pb-6 overflow-x-hidden">
             {selectedVisitor && (
               <QRCodeGenerator visitor={selectedVisitor} />
             )}

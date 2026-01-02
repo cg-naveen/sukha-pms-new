@@ -176,6 +176,7 @@ export const settings = pgTable("settings", {
   // Content management
   visitorTermsAndConditions: text("visitor_terms_and_conditions"), // Terms and conditions for visitor registration
   // Wabot integration settings
+  wabotEnabled: boolean("wabot_enabled").notNull().default(false), // Enable/disable Wabot integration
   wabotApiBaseUrl: text("wabot_api_base_url").default("https://app.wabot.my/api"), // Wabot API base URL
   // Message templates
   visitorApprovalMessageTemplate: text("visitor_approval_message_template"), // WhatsApp message template for visitor approval

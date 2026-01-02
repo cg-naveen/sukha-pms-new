@@ -43,6 +43,7 @@ export async function GET() {
     return NextResponse.json({
       ...settingsRecord,
       // Ensure all fields are included even if null
+      wabotEnabled: settingsRecord.wabotEnabled ?? false,
       wabotApiBaseUrl: settingsRecord.wabotApiBaseUrl || null,
       visitorApprovalMessageTemplate: settingsRecord.visitorApprovalMessageTemplate || null,
       visitorRejectionMessageTemplate: settingsRecord.visitorRejectionMessageTemplate || null,
@@ -89,6 +90,7 @@ export async function PUT(request: NextRequest) {
           billingGenerationEnabled: validated.billingGenerationEnabled ?? true,
           billingGenerationHour: validated.billingGenerationHour ?? 2,
           billingGenerationMinute: validated.billingGenerationMinute ?? 0,
+          wabotEnabled: validated.wabotEnabled ?? false,
         })
         .returning()
 
