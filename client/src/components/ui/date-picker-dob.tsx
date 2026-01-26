@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select"
 
 interface DatePickerDOBProps {
-  value?: Date | string
+  value?: Date | string | null
   onChange: (date: Date | undefined) => void
   placeholder?: string
   disabled?: (date: Date) => boolean

@@ -636,7 +636,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                   <FormItem className="flex flex-col">
                     <FormLabel>Date of Birth</FormLabel>
                     <DatePickerDOB
-                      value={field.value}
+                      value={field.value ?? undefined}
                       onChange={(date) => {
                         if (date) {
                           const dateString = date.toISOString().split('T')[0]
