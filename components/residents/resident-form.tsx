@@ -123,8 +123,19 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
   });
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
-    residentMutation.mutate(data);
+    const payload = {
+      ...data,
+      resident: {
+        ...data.resident,
+        dateOfBirth: data.resident.dateOfBirth
+          ? data.resident.dateOfBirth.toISOString()
+          : null,
+      },
+    };
+  
+    residentMutation.mutate(payload);
   };
+  
 
   if (resident && isLoadingDetail) {
     return (

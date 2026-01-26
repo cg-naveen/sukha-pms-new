@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '../../../lib/db'
-import { billings } from '../../../shared/schema'
+import { billings, residents, rooms, occupancy } from '../../../shared/schema'
 import { requireAuth } from '../../../lib/auth'
 import { insertBillingSchema } from '../../../shared/schema'
 import { eq, and, desc } from 'drizzle-orm'
@@ -28,12 +28,48 @@ export async function GET(request: NextRequest) {
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined
     
     const allBillings = await db
-      .select()
+      .select({
+        id: billings.id,
+        residentId: billings.residentId,
+        occupancyId: billings.occupancyId,
+        amount: billings.amount,
+        dueDate: billings.dueDate,
+        status: billings.status,
+        description: billings.description,
+        invoiceFile: billings.invoiceFile,
+        billingAccount: billings.billingAccount,
+        createdAt: billings.createdAt,
+        updatedAt: billings.updatedAt,
+        resident: {
+          id: residents.id,
+          fullName: residents.fullName,
+          email: residents.email,
+          phone: residents.phone,
+          roomId: residents.roomId,
+        },
+        room: {
+          id: rooms.id,
+          unitNumber: rooms.unitNumber,
+          roomType: rooms.roomType,
+        }
+      })
       .from(billings)
+      .leftJoin(residents, eq(billings.residentId, residents.id))
+      .leftJoin(rooms, eq(residents.roomId, rooms.id))
       .where(whereClause)
       .orderBy(desc(billings.createdAt))
     
-    return NextResponse.json(allBillings)
+    // Transform the result to nest the related data
+    const result = allBillings.map(item => ({
+      ...item,
+      resident: item.resident ? {
+        ...item.resident,
+        room: item.room
+      } : null,
+      room: undefined
+    }))
+    
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Error fetching billings:', error)
     return NextResponse.json({ error: 'Failed to fetch billings' }, { status: 500 })

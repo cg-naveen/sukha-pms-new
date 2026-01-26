@@ -386,15 +386,15 @@ export default function VisitorsPage() {
                       <div className="text-sm text-gray-500">{visitor.email}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium">{visitor.residentName || 'Unknown'}</div>
+                      <div className="font-medium">{visitor.residentFullName || '-'}</div>
                       <div className="text-sm text-gray-500">
-                        {visitor.roomNumber ? `Room ${visitor.roomNumber}` : 'Room N/A'}
+                        {visitor.residentRoomNumber ? `Room ${visitor.residentRoomNumber}` : '-'}
                       </div>
                     </TableCell>
                     <TableCell>{format(new Date(visitor.visitDate), "MMM d, yyyy")}</TableCell>
                     <TableCell>
-                      <div className="max-w-xs truncate" title={visitor.purpose}>
-                        {visitor.purpose}
+                      <div className="max-w-xs truncate" title={visitor.purposeOfVisit}>
+                        {visitor.purposeOfVisit ? visitor.purposeOfVisit.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : '-'}
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(visitor.status)}</TableCell>
