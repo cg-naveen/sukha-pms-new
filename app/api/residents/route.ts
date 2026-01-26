@@ -64,8 +64,7 @@ export async function GET(request: NextRequest) {
               status: rooms.status,
               monthlyRate: rooms.monthlyRate,
               description: rooms.description,
-            },
-            billings: []
+            }
           })
           .from(occupancy)
           .leftJoin(rooms, eq(occupancy.roomId, rooms.id))
