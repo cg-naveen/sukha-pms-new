@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     // Fetch resident and room data for each visitor
     const visitorsWithDetails = await Promise.all(
       allVisitors.map(async (visitor) => {
-        let residentInfo = null
+        let residentInfo: any = null
         if (visitor.residentId) {
           const [resident] = await db.select().from(residents).where(eq(residents.id, visitor.residentId))
           if (resident) {
