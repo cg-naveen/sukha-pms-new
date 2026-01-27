@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '../../../lib/db'
-import { visitors, insertVisitorSchema } from '../../../shared/schema'
+import { visitors, residents, rooms, insertVisitorSchema } from '../../../shared/schema'
 import { requireAuth } from '../../../lib/auth'
 import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -26,7 +26,33 @@ export async function GET(request: NextRequest) {
         .orderBy(desc(visitors.createdAt))
     }
 
-    return NextResponse.json(allVisitors)
+    // Fetch resident and room data for each visitor
+    const visitorsWithDetails = await Promise.all(
+      allVisitors.map(async (visitor) => {
+        let residentInfo: any = null
+        if (visitor.residentId) {
+          const [resident] = await db.select().from(residents).where(eq(residents.id, visitor.residentId))
+          if (resident) {
+            residentInfo = resident
+            // Get room info if resident has a room
+            if (resident.roomId) {
+              const [room] = await db.select().from(rooms).where(eq(rooms.id, resident.roomId))
+              if (room) {
+                residentInfo = { ...residentInfo, room }
+              }
+            }
+          }
+        }
+        return {
+          ...visitor,
+          residentFullName: residentInfo?.fullName || visitor.residentName || null,
+          residentRoomNumber: residentInfo?.room?.unitNumber || visitor.roomNumber || null,
+          purposeOfVisit: visitor.purposeOfVisit || null,
+        }
+      })
+    )
+
+    return NextResponse.json(visitorsWithDetails)
   } catch (error) {
     console.error('Error fetching visitors:', error)
     return NextResponse.json({ error: 'Failed to fetch visitors' }, { status: 500 })

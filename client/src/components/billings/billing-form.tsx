@@ -183,7 +183,18 @@ export default function BillingForm({ billing, onClose }: BillingFormProps) {
                     type="number" 
                     placeholder="0" 
                     {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                    onChange={(e) => {
+                      const value = e.target.value.trim()
+                      if (value === "") {
+                        field.onChange("")
+                      } else {
+                        const numValue = parseInt(value, 10)
+                        if (!isNaN(numValue)) {
+                          field.onChange(numValue)
+                        }
+                      }
+                    }}
+                    value={field.value ?? ""}
                   />
                 </FormControl>
                 <FormMessage />

@@ -43,7 +43,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UserPlus, Search, Download, Upload, Loader2 } from "lucide-react";
+import { UserPlus, Search, Download, Upload, Loader2, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { insertResidentSchema, Resident } from "@shared/schema";
 import { exportToCSV } from "@/lib/csv-utils";
@@ -56,7 +56,7 @@ export default function ResidentsPage() {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedResident, setSelectedResident] = useState<Resident | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [roomTypeFilter, setRoomTypeFilter] = useState<string>("all_room_types");
+  const [classificationFilter, setClassificationFilter] = useState<string>("all_classifications");
   const [statusFilter, setStatusFilter] = useState<string>("all_statuses");
   const [page, setPage] = useState(1);
 
@@ -72,8 +72,8 @@ export default function ResidentsPage() {
           resident.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
           resident.email.toLowerCase().includes(searchQuery.toLowerCase());
         
-        const matchesRoomType = roomTypeFilter === "all_room_types" || 
-          (resident.occupancy?.[0]?.room?.roomType === roomTypeFilter);
+        const matchesClassification = classificationFilter === "all_classifications" || 
+          (resident.classification === classificationFilter);
         
         const hasRenewalDue = statusFilter === "renewal_due" && 
           resident.occupancy?.[0]?.billings?.length > 0;
@@ -84,7 +84,7 @@ export default function ResidentsPage() {
         
         return matchesSearch && 
           (statusFilter === "all_statuses" || hasRenewalDue || isActive) &&
-          matchesRoomType;
+          matchesClassification;
       })
     : [];
 
@@ -124,6 +124,34 @@ export default function ResidentsPage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+
+  // Delete resident mutation
+  const deleteResidentMutation = useMutation({
+    mutationFn: async (residentId: number) => {
+      const res = await apiRequest('DELETE', `/api/residents/${residentId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Resident deleted',
+        description: 'The resident has been deleted successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/residents'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleDeleteResident = (residentId: number) => {
+    if (window.confirm('Are you sure you want to delete this resident? This action cannot be undone.')) {
+      deleteResidentMutation.mutate(residentId);
+    }
+  };
 
   // Export function
   const handleExport = () => {
@@ -276,15 +304,16 @@ export default function ResidentsPage() {
             </div>
             
             <div className="w-full md:w-auto flex flex-wrap gap-2">
-              <Select value={roomTypeFilter} onValueChange={setRoomTypeFilter}>
+              <Select value={classificationFilter} onValueChange={setClassificationFilter}>
                 <SelectTrigger className="w-full md:w-[180px]">
-                  <SelectValue placeholder="All Room Types" />
+                  <SelectValue placeholder="All Classifications" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectItem value="all_room_types">All Room Types</SelectItem>
-                    <SelectItem value="studio">Studio</SelectItem>
-                    <SelectItem value="studio_deluxe">Studio Deluxe</SelectItem>
+                    <SelectItem value="all_classifications">All Classifications</SelectItem>
+                    <SelectItem value="independent">Independent</SelectItem>
+                    <SelectItem value="dependent">Dependent</SelectItem>
+                    <SelectItem value="memory_care">Memory Care</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -412,9 +441,20 @@ export default function ResidentsPage() {
                         </button>
                         <button 
                           onClick={() => openForm(resident)}
-                          className="text-gray-600 hover:text-gray-900"
+                          className="text-gray-600 hover:text-gray-900 mr-3"
                         >
                           Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteResident(resident.id)}
+                          disabled={deleteResidentMutation.isPending}
+                          className="text-red-600 hover:text-red-900 disabled:text-gray-400"
+                        >
+                          {deleteResidentMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin inline" />
+                          ) : (
+                            'Delete'
+                          )}
                         </button>
                       </TableCell>
                     </TableRow>

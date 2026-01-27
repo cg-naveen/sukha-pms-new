@@ -14,13 +14,70 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')
     
+    const query = db
+      .select({
+        id: residents.id,
+        fullName: residents.fullName,
+        email: residents.email,
+        phone: residents.phone,
+        countryCode: residents.countryCode,
+        dateOfBirth: residents.dateOfBirth,
+        idNumber: residents.idNumber,
+        address: residents.address,
+        photo: residents.photo,
+        roomId: residents.roomId,
+        salesReferral: residents.salesReferral,
+        billingDate: residents.billingDate,
+        numberOfBeds: residents.numberOfBeds,
+        classification: residents.classification,
+        createdAt: residents.createdAt,
+        updatedAt: residents.updatedAt,
+      })
+      .from(residents)
+    
     if (search) {
-      const allResidents = await db.select().from(residents).where(like(residents.fullName, `%${search}%`))
-      return NextResponse.json(allResidents)
+      query.where(like(residents.fullName, `%${search}%`))
     }
     
-    const allResidents = await db.select().from(residents)
-    return NextResponse.json(allResidents)
+    const allResidents = await query
+
+    // For each resident, fetch their occupancy and room data
+    const residentsWithOccupancy = await Promise.all(
+      allResidents.map(async (resident) => {
+        const occupancyData = await db
+          .select({
+            id: occupancy.id,
+            roomId: occupancy.roomId,
+            residentId: occupancy.residentId,
+            startDate: occupancy.startDate,
+            endDate: occupancy.endDate,
+            active: occupancy.active,
+            createdAt: occupancy.createdAt,
+            updatedAt: occupancy.updatedAt,
+            room: {
+              id: rooms.id,
+              unitNumber: rooms.unitNumber,
+              roomType: rooms.roomType,
+              size: rooms.size,
+              floor: rooms.floor,
+              numberOfBeds: rooms.numberOfBeds,
+              status: rooms.status,
+              monthlyRate: rooms.monthlyRate,
+              description: rooms.description,
+            }
+          })
+          .from(occupancy)
+          .leftJoin(rooms, eq(occupancy.roomId, rooms.id))
+          .where(eq(occupancy.residentId, resident.id))
+
+        return {
+          ...resident,
+          occupancy: occupancyData
+        }
+      })
+    )
+    
+    return NextResponse.json(residentsWithOccupancy)
   } catch (error) {
     console.error('Error fetching residents:', error)
     return NextResponse.json({ error: 'Failed to fetch residents' }, { status: 500 })
@@ -54,11 +111,15 @@ export async function POST(request: NextRequest) {
       const oneYearLater = new Date(today)
       oneYearLater.setFullYear(today.getFullYear() + 1)
 
+      // Convert dates to YYYY-MM-DD string format
+      const startDateString = today.toISOString().split('T')[0]
+      const endDateString = oneYearLater.toISOString().split('T')[0]
+
       const occupancyData = insertOccupancySchema.parse({
         roomId,
         residentId: newResident.id,
-        startDate: today,
-        endDate: oneYearLater,
+        startDate: startDateString,
+        endDate: endDateString,
         active: true,
       })
 

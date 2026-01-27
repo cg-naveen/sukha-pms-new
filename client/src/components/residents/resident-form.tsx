@@ -19,8 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DatePickerDOB } from "@/components/ui/date-picker-dob";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { insertResidentSchema, insertNextOfKinSchema, Resident } from "@shared/schema";
 import DocumentsTab from "./documents-tab";
@@ -572,13 +571,17 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                         max="31"
                         {...field}
                         onChange={(e) => {
-                          const value = e.target.value === "" ? "1" : e.target.value;
-                          const numValue = parseInt(value, 10);
-                          if (numValue >= 1 && numValue <= 31) {
-                            field.onChange(numValue);
+                          const value = e.target.value.trim()
+                          if (value === "") {
+                            field.onChange("")
+                          } else {
+                            const numValue = parseInt(value, 10)
+                            if (!isNaN(numValue) && numValue >= 1 && numValue <= 31) {
+                              field.onChange(numValue)
+                            }
                           }
                         }}
-                        value={field.value || 1}
+                        value={field.value ?? ""}
                       />
                     </FormControl>
                     <FormMessage />
@@ -603,13 +606,17 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                         max="10"
                         {...field}
                         onChange={(e) => {
-                          const value = e.target.value === "" ? "1" : e.target.value;
-                          const numValue = parseInt(value, 10);
-                          if (numValue >= 1 && numValue <= 10) {
-                            field.onChange(numValue);
+                          const value = e.target.value.trim()
+                          if (value === "") {
+                            field.onChange("")
+                          } else {
+                            const numValue = parseInt(value, 10)
+                            if (!isNaN(numValue) && numValue >= 1 && numValue <= 10) {
+                              field.onChange(numValue)
+                            }
                           }
                         }}
-                        value={field.value || 1}
+                        value={field.value ?? ""}
                       />
                     </FormControl>
                     <FormMessage />
@@ -628,42 +635,20 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Date of Birth</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
-                          >
-                            {field.value ? (
-                              format(new Date(field.value), "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value ? new Date(field.value) : undefined}
-                          onSelect={(date) => {
-                            // Convert Date to string format (YYYY-MM-DD) for the form
-                            if (date) {
-                              const dateString = date.toISOString().split('T')[0];
-                              field.onChange(dateString);
-                            } else {
-                              field.onChange(undefined);
-                            }
-                          }}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DatePickerDOB
+                      value={field.value ?? undefined}
+                      onChange={(date) => {
+                        if (date) {
+                          const dateString = date.toISOString().split('T')[0]
+                          field.onChange(dateString)
+                        } else {
+                          field.onChange(undefined)
+                        }
+                      }}
+                      disabled={(date) =>
+                        date > new Date() || date < new Date("1900-01-01")
+                      }
+                    />
                     <FormMessage />
                   </FormItem>
                 )}

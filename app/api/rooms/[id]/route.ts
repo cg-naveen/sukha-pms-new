@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '../../../../lib/db'
-import { rooms } from '../../../../shared/schema'
+import { rooms, occupancy } from '../../../../shared/schema'
 import { requireAuth } from '../../../../lib/auth'
 import { insertRoomSchema } from '../../../../shared/schema'
 import { eq } from 'drizzle-orm'
@@ -82,6 +82,10 @@ export async function DELETE(
     const resolvedParams = await params
     const roomId = parseInt(resolvedParams.id)
 
+    // Delete all occupancy records for this room first
+    await db.delete(occupancy).where(eq(occupancy.roomId, roomId))
+
+    // Then delete the room
     await db.delete(rooms).where(eq(rooms.id, roomId))
 
     return NextResponse.json({ message: 'Room deleted successfully' })

@@ -43,19 +43,19 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Search, Download, Upload, Loader2 } from "lucide-react";
+import { Plus, Search, Download, Upload, Loader2, Trash2 } from "lucide-react";
 import { Room } from "@shared/schema";
 import { exportToCSV } from "@/lib/csv-utils";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useRef } from "react";
 
 export default function RoomsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("all_types");
+  const [bedConfigFilter, setBedConfigFilter] = useState<string>("all_bed_configs");
   const [statusFilter, setStatusFilter] = useState<string>("all_statuses");
   const [page, setPage] = useState(1);
   const { toast } = useToast();
@@ -65,6 +65,34 @@ export default function RoomsPage() {
   const { data: rooms, isLoading } = useQuery<any[]>({
     queryKey: ["/api/rooms"],
   });
+
+  // Delete room mutation
+  const deleteRoomMutation = useMutation({
+    mutationFn: async (roomId: number) => {
+      const res = await apiRequest('DELETE', `/api/rooms/${roomId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Room deleted',
+        description: 'The room has been deleted successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/rooms'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleDeleteRoom = (roomId: number) => {
+    if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
+      deleteRoomMutation.mutate(roomId);
+    }
+  };
 
   // Export function
   const handleExport = () => {
@@ -152,6 +180,20 @@ export default function RoomsPage() {
     }
   };
 
+  // Helper function to convert numberOfBeds to bed configuration label
+  const getBedConfigLabel = (numberOfBeds: number): string => {
+    switch (numberOfBeds) {
+      case 1:
+        return "single";
+      case 2:
+        return "twin_sharing";
+      case 3:
+        return "triple_sharing";
+      default:
+        return "unknown";
+    }
+  };
+
   // Filter data based on search and filters
   const filteredRooms = rooms
     ? rooms.filter((room: Room) => {
@@ -159,10 +201,10 @@ export default function RoomsPage() {
           room.unitNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
           room.description?.toLowerCase().includes(searchQuery.toLowerCase());
         
-        const matchesType = typeFilter === "all_types" || room.roomType === typeFilter;
+        const matchesBedConfig = bedConfigFilter === "all_bed_configs" || getBedConfigLabel(room.numberOfBeds) === bedConfigFilter;
         const matchesStatus = statusFilter === "all_statuses" || room.status === statusFilter;
         
-        return matchesSearch && matchesType && matchesStatus;
+        return matchesSearch && matchesBedConfig && matchesStatus;
       })
     : [];
 
@@ -264,15 +306,16 @@ export default function RoomsPage() {
             </div>
             
             <div className="w-full md:w-auto flex flex-wrap gap-2">
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <Select value={bedConfigFilter} onValueChange={setBedConfigFilter}>
                 <SelectTrigger className="w-full md:w-[180px]">
-                  <SelectValue placeholder="All Types" />
+                  <SelectValue placeholder="All Bed Configurations" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectItem value="all_types">All Types</SelectItem>
-                    <SelectItem value="studio">Studio</SelectItem>
-                    <SelectItem value="studio_deluxe">Studio Deluxe</SelectItem>
+                    <SelectItem value="all_bed_configs">All Bed Configurations</SelectItem>
+                    <SelectItem value="single">Single</SelectItem>
+                    <SelectItem value="twin_sharing">Twin Sharing</SelectItem>
+                    <SelectItem value="triple_sharing">Triple Sharing</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -303,7 +346,6 @@ export default function RoomsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Unit Number</TableHead>
-                <TableHead>Type</TableHead>
                 <TableHead>Bed Configuration</TableHead>
                 <TableHead>Size</TableHead>
                 <TableHead>Floor</TableHead>
@@ -318,12 +360,12 @@ export default function RoomsPage() {
                 Array(5).fill(0).map((_, i) => (
                   <TableRow key={i}>
                     <TableCell><Skeleton className="h-8 w-[100px]" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-[120px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[80px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[60px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[100px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[100px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[150px]" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-[100px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[100px] ml-auto" /></TableCell>
                   </TableRow>
                 ))
@@ -334,7 +376,6 @@ export default function RoomsPage() {
                   return (
                     <TableRow key={room.id}>
                       <TableCell className="font-medium">{room.unitNumber}</TableCell>
-                      <TableCell>{formatRoomType(room.roomType)}</TableCell>
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">{getBedSharingLabel(room.numberOfBeds || 1)}</span>
@@ -361,9 +402,20 @@ export default function RoomsPage() {
                         </button>
                         <button 
                           onClick={() => openForm(room)}
-                          className="text-gray-600 hover:text-gray-900"
+                          className="text-gray-600 hover:text-gray-900 mr-3"
                         >
                           Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteRoom(room.id)}
+                          disabled={deleteRoomMutation.isPending}
+                          className="text-red-600 hover:text-red-900 disabled:text-gray-400"
+                        >
+                          {deleteRoomMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin inline" />
+                          ) : (
+                            'Delete'
+                          )}
                         </button>
                       </TableCell>
                     </TableRow>
@@ -371,7 +423,7 @@ export default function RoomsPage() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-6 text-gray-500">
+                  <TableCell colSpan={8} className="text-center py-6 text-gray-500">
                     No rooms found matching filters
                   </TableCell>
                 </TableRow>

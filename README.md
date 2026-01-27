@@ -33,6 +33,7 @@ SUPABASE_ANON_KEY="your-supabase-anon-key"
 
 # Session Secret
 SESSION_SECRET="your-secret-key-change-in-production"
+JWT_SECRET="dev-jwt-secret-change-later"
 
 # Email Configuration (Optional)
 BREVO_API_KEY="..."

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '../../../../lib/db'
-import { residents, nextOfKin, occupancy, rooms, insertOccupancySchema } from '../../../../shared/schema'
+import { residents, nextOfKin, occupancy, rooms, billings, insertOccupancySchema } from '../../../../shared/schema'
 import { requireAuth } from '../../../../lib/auth'
 import { insertResidentSchema } from '../../../../shared/schema'
 import { eq, and, count } from 'drizzle-orm'
@@ -125,11 +125,15 @@ export async function PUT(
       const oneYearLater = new Date(today)
       oneYearLater.setFullYear(today.getFullYear() + 1)
 
+      // Convert dates to YYYY-MM-DD string format for the schema
+      const startDateString = today.toISOString().split('T')[0]
+      const endDateString = oneYearLater.toISOString().split('T')[0]
+
       const occupancyData = insertOccupancySchema.parse({
         roomId: newRoomId,
         residentId: residentId,
-        startDate: today,
-        endDate: oneYearLater,
+        startDate: startDateString,
+        endDate: endDateString,
         active: true,
       })
 
@@ -161,6 +165,38 @@ export async function DELETE(
     const resolvedParams = await params
     const residentId = parseInt(resolvedParams.id)
 
+    // Delete related records in order of dependencies
+    // 1. Delete billings first (depends on resident)
+    await db.delete(billings).where(eq(billings.residentId, residentId))
+
+    // 2. Delete next of kin records
+    await db.delete(nextOfKin).where(eq(nextOfKin.residentId, residentId))
+
+    // 3. Delete occupancy records and update room status
+    const occupancyRecords = await db
+      .select()
+      .from(occupancy)
+      .where(eq(occupancy.residentId, residentId))
+
+    for (const occ of occupancyRecords) {
+      await db.delete(occupancy).where(eq(occupancy.id, occ.id))
+      
+      // Update room status to vacant if no active occupancy
+      const [activeCountResult] = await db
+        .select({ count: count() })
+        .from(occupancy)
+        .where(and(eq(occupancy.roomId, occ.roomId), eq(occupancy.active, true)))
+      
+      const activeCount = Number(activeCountResult?.count || 0)
+      if (activeCount === 0) {
+        await db
+          .update(rooms)
+          .set({ status: 'vacant', updatedAt: new Date() })
+          .where(eq(rooms.id, occ.roomId))
+      }
+    }
+
+    // 4. Finally delete the resident
     await db.delete(residents).where(eq(residents.id, residentId))
 
     return NextResponse.json({ message: 'Resident deleted successfully' })
