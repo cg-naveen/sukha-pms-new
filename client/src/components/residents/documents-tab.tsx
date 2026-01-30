@@ -281,7 +281,9 @@ export default function DocumentsTab({ residentId }: DocumentsTabProps) {
                   <div className="flex items-center gap-3 flex-1">
                     {getFileIcon(doc.mimeType)}
                     {isGoogleDriveDocument(doc.filePath) && (
-                      <Cloud className="h-4 w-4 text-blue-600 shrink-0" title="Stored in Google Drive" />
+                      <span title="Stored in Google Drive">
+                        <Cloud className="h-4 w-4 text-blue-600 shrink-0" />
+                      </span>
                     )}
                     <div className="flex-1">
                       <h4 className="font-medium">{doc.title}</h4>

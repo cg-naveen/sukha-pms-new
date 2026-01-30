@@ -284,7 +284,9 @@ function DocumentsViewTab({ residentId }: DocumentsViewTabProps) {
                 <div className="flex items-center gap-3 flex-1">
                   {getFileIcon(doc.mimeType)}
                   {isGoogleDriveDocument(doc.filePath) && (
-                    <Cloud className="h-4 w-4 text-blue-600 shrink-0" title="Stored in Google Drive" />
+                    <span title="Stored in Google Drive">
+                      <Cloud className="h-4 w-4 text-blue-600 shrink-0" />
+                    </span>
                   )}
                   <div className="flex-1">
                     <h4 className="font-medium">{doc.title}</h4>
@@ -342,34 +344,40 @@ function PaymentHistoryTab({ residentId }: PaymentHistoryTabProps) {
     }
 
     try {
-      // Check if it's a OneDrive URL or local path
+      // External URL (legacy OneDrive, etc.) – open in new tab
       if (billing.invoiceFile.startsWith('http')) {
-        // OneDrive URL - open in new tab
         window.open(billing.invoiceFile, '_blank');
-      } else {
-        // Local file - download via API
-        const filePath = billing.invoiceFile.startsWith('/') 
-          ? billing.invoiceFile 
-          : `/${billing.invoiceFile}`;
-        
-        const response = await fetch(`/api/documents/download?path=${encodeURIComponent(filePath)}`, {
-          credentials: 'include',
-        });
-        
-        if (!response.ok) {
-          throw new Error('Download failed');
-        }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `receipt-${billing.id}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
+        return;
       }
+
+      // Google Drive file ID (no slash) – serve via receipt API
+      if (!billing.invoiceFile.includes('/') && !billing.invoiceFile.startsWith('/')) {
+        window.open(`/api/billings/${billing.id}/receipt`, '_blank');
+        return;
+      }
+
+      // Local file path – download via documents API
+      const filePath = billing.invoiceFile.startsWith('/')
+        ? billing.invoiceFile
+        : `/${billing.invoiceFile}`;
+
+      const response = await fetch(`/api/documents/download?path=${encodeURIComponent(filePath)}`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `receipt-${billing.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download error:', error);
     }
