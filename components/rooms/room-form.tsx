@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 import { z } from "zod";
 
 interface RoomFormProps {
@@ -41,6 +42,7 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
       roomType: room?.roomType || "studio",
       size: room?.size || 0,
       floor: room?.floor || 1,
+      numberOfBeds: room?.numberOfBeds || 1,
       status: room?.status || "vacant",
       monthlyRate: room?.monthlyRate || 0,
       description: room?.description || "",
@@ -111,22 +113,24 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="roomType"
+            name="numberOfBeds"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Room Type</FormLabel>
+                <FormLabel>Bed Configuration</FormLabel>
                 <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  onValueChange={(value) => field.onChange(parseInt(value, 10))}
+                  defaultValue={String(field.value)}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select room type" />
+                      <SelectValue placeholder="Select bed configuration" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="studio">Studio</SelectItem>
-                    <SelectItem value="studio_deluxe">Studio Deluxe</SelectItem>
+                    <SelectItem value="1">Single</SelectItem>
+                    <SelectItem value="2">Twin Sharing</SelectItem>
+                    <SelectItem value="3">Triple Sharing</SelectItem>
+                    <SelectItem value="4">VIP</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

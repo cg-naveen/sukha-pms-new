@@ -33,7 +33,7 @@ const salesReferralOptions = [
 
 const classificationOptions = [
   { value: 'independent', label: 'Independent' },
-  { value: 'dependent', label: 'Dependent' },
+  { value: 'dependent', label: 'Support Living' },
   { value: 'memory_care', label: 'Memory Care' },
 ];
 
@@ -482,6 +482,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                                 if (beds === 1) return 'Single';
                                 if (beds === 2) return 'Twin Sharing';
                                 if (beds === 3) return 'Triple Sharing';
+                                if (beds === 4) return 'VIP';
                                 return `${beds} Beds`;
                               };
                               return (

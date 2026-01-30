@@ -65,7 +65,7 @@ const visitorRegistrationSchema = z.object({
   }),
   vehicleNumber: z.string().optional(),
   numberOfVisitors: z.coerce.number().int().min(1, "At least 1 visitor is required").max(10, "Maximum 10 visitors allowed"),
-  purposeOfVisit: z.enum(["general_visit", "site_visit", "celebration", "other"], {
+  purposeOfVisit: z.enum(["general_visit", "enquiry_tour", "pickup_dropoff", "other"], {
     required_error: "Please select a purpose for your visit",
   }),
   otherPurpose: z.string().optional(),
@@ -309,10 +309,10 @@ export default function VisitorRegistrationPage() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="general_visit">General Visit of Father/Mother/Relative</SelectItem>
-                              <SelectItem value="site_visit">Site Visit</SelectItem>
-                              <SelectItem value="celebration">Celebration</SelectItem>
-                              <SelectItem value="other">Other (specify)</SelectItem>
+                              <SelectItem value="general_visit">General visit of resident</SelectItem>
+                              <SelectItem value="enquiry_tour">Enquiry/Tour</SelectItem>
+                              <SelectItem value="pickup_dropoff">Resident/Item pickup & dropoff</SelectItem>
+                              <SelectItem value="other">Others</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -350,7 +350,7 @@ export default function VisitorRegistrationPage() {
                       )}
                     />
                     
-                    {purposeOfVisit !== "site_visit" && (
+                    {purposeOfVisit !== "enquiry_tour" && (
                       <FormField
                         control={form.control}
                         name="roomNumber"
@@ -554,6 +554,7 @@ export default function VisitorRegistrationPage() {
               <ul className="space-y-2 list-disc list-inside">
                 <li>Please arrive at your scheduled time</li>
                 <li>Bring a valid ID for security check-in</li>
+                <li>Visiting hours is 10:00AM - 6:00PM</li>
                 <li>Respect the privacy and rest times of all residents</li>
                 <li>Children must be supervised at all times</li>
                 <li>Follow all health and safety protocols</li>

@@ -112,31 +112,6 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="roomType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Room Type</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select room type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="studio">Studio</SelectItem>
-                    <SelectItem value="studio_deluxe">Studio Deluxe</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
             name="status"
             render={({ field }) => (
               <FormItem>
@@ -231,6 +206,7 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
                     <SelectItem value="1">Single (1 bed)</SelectItem>
                     <SelectItem value="2">Twin Sharing (2 beds)</SelectItem>
                     <SelectItem value="3">Triple Sharing (3 beds)</SelectItem>
+                    <SelectItem value="4">VIP</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

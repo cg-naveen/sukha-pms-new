@@ -312,7 +312,7 @@ export default function ResidentsPage() {
                   <SelectGroup>
                     <SelectItem value="all_classifications">All Classifications</SelectItem>
                     <SelectItem value="independent">Independent</SelectItem>
-                    <SelectItem value="dependent">Dependent</SelectItem>
+                    <SelectItem value="dependent">Support Living</SelectItem>
                     <SelectItem value="memory_care">Memory Care</SelectItem>
                   </SelectGroup>
                 </SelectContent>
@@ -384,7 +384,7 @@ export default function ResidentsPage() {
                       <TableCell>
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                           {resident.classification === 'independent' ? 'Independent' : 
-                           resident.classification === 'dependent' ? 'Dependent' : 
+                           resident.classification === 'dependent' ? 'Support Living' : 
                            resident.classification === 'memory_care' ? 'Memory Care' : 
                            'N/A'}
                         </span>
