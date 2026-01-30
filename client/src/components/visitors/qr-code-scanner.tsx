@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useMutation } from '@tanstack/react-query';
 import { Loader2, CheckCircle2, XCircle, Camera } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
 import { Html5Qrcode } from 'html5-qrcode';
 
 interface QrScannerProps {
@@ -32,11 +31,41 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
 
   const verifyMutation = useMutation({
     mutationFn: async (code: string) => {
-      const res = await apiRequest('POST', '/api/public/visitors/verify', { qrCode: code });
-      return await res.json();
+      const res = await fetch('/api/public/visitors/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ qrCode: code }),
+        credentials: 'include',
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        // Create error with the API message
+        const error = new Error(data.message || res.statusText);
+        (error as any).status = res.status;
+        (error as any).apiData = data;
+        throw error;
+      }
+
+      return data;
     },
     onError: (error: Error) => {
-      console.error('QR verification error:', error);
+      // Suppress console error logging since we handle it gracefully
+      // The error message is shown in the UI instead
+      
+      // Extract user-friendly message
+      let errorMessage = error.message;
+      
+      if (error.message.includes('expired')) {
+        errorMessage = '⏰ Your visit has already expired. Please register a new visit to continue.';
+      } else if (error.message.includes('invalid') || error.message.includes('not found')) {
+        errorMessage = '❌ Invalid QR code. Please try again.';
+      }
+
+      setCameraError(errorMessage);
+      setIsCameraActive(false);
+      setIsScanning(false);
     }
   });
 
@@ -194,12 +223,16 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
     }
 
     if (verifyMutation.isError) {
+      // Use the error message from cameraError state (set by onError handler)
+      const errorMsg = cameraError || 'Failed to verify QR code. Please try again.';
+      const isExpired = errorMsg.includes('expired');
+      
       return (
         <Alert variant="destructive" className="mt-4">
           <XCircle className="h-5 w-5" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>{isExpired ? '⏰ Visit Expired' : 'Verification Failed'}</AlertTitle>
           <AlertDescription>
-            Failed to verify QR code. Please try again.
+            {errorMsg}
           </AlertDescription>
         </Alert>
       );
