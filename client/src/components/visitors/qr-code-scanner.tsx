@@ -78,7 +78,6 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
           qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0,
           showTorchButtonIfSupported: true,
-          defaultZoom: 1.2,
           rememberLastUsedCamera: true,
         },
         /* useBarCodeDetectorIfAvailable= */ false
