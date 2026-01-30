@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useMutation } from '@tanstack/react-query';
 import { Loader2, CheckCircle2, XCircle, Camera } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 
 interface QrScannerProps {
   onClose: () => void;
@@ -27,11 +27,8 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string>('');
-  const [isSecureContext, setIsSecureContext] = useState(false);
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const html5QrcodeRef = useRef<Html5Qrcode | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  // Generate stable ID once
-  const uniqueId = useMemo(() => 'qr-reader-' + Math.random().toString(36).substr(2, 9), []);
 
   const verifyMutation = useMutation({
     mutationFn: async (code: string) => {
@@ -43,97 +40,68 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
     }
   });
 
-  // Start camera scanning
+  // Start camera scanning - CALLED DIRECTLY FROM USER CLICK
+  // This ensures getUserMedia() is triggered within user gesture context
   const startCamera = async () => {
-    console.log('startCamera called');
-    console.log('containerRef.current:', containerRef.current);
-    
-    if (!isSecureContext) {
-      setCameraError('Camera access requires HTTPS in production. Please access this page over a secure connection.');
-      setIsScanning(false);
-      return;
-    }
+    console.log('🎬 startCamera called - WITHIN USER GESTURE');
     
     if (!containerRef.current) {
-      console.error('Container ref is null');
       setCameraError('Container not found. Please try refreshing the page.');
-      setIsScanning(false);
       return;
     }
 
     try {
-      console.log('Starting camera initialization...');
       setCameraError(null);
       setDebugInfo('Requesting camera permission...');
       setIsScanning(true);
       setIsCameraActive(true);
 
-      // Ensure container has the correct ID
-      if (containerRef.current.id !== uniqueId) {
-        console.log('Setting container ID to:', uniqueId);
-        containerRef.current.id = uniqueId;
-      }
-
-      // IMPORTANT: Do NOT clear innerHTML before creating scanner
-      // html5-qrcode will handle DOM manipulation
+      const qrReaderElementId = 'qr-reader';
       
-      // Verify element exists in DOM
-      const element = document.getElementById(uniqueId);
-      if (!element) {
-        throw new Error(`DOM element with ID ${uniqueId} not found in document`);
-      }
+      // Ensure element has correct ID
+      containerRef.current.id = qrReaderElementId;
 
-      console.log('Creating Html5QrcodeScanner with ID:', uniqueId);
+      console.log('Creating Html5Qrcode instance...');
       
-      // Stop any existing scanner first
-      if (scannerRef.current) {
+      // Stop any existing scanner
+      if (html5QrcodeRef.current) {
         try {
-          await scannerRef.current.clear();
-          scannerRef.current = null;
+          await html5QrcodeRef.current.stop();
+          await html5QrcodeRef.current.clear();
         } catch (e) {
           console.warn('Error clearing old scanner:', e);
         }
+        html5QrcodeRef.current = null;
       }
 
-      // Create scanner with optimized config for Vercel
-      scannerRef.current = new Html5QrcodeScanner(
-        uniqueId,
+      // Create new instance
+      html5QrcodeRef.current = new Html5Qrcode(qrReaderElementId);
+
+      console.log('Starting camera with getUserMedia...');
+      setDebugInfo('Camera starting...');
+
+      // START CAMERA DIRECTLY - getUserMedia is called here within user gesture
+      await html5QrcodeRef.current.start(
+        { facingMode: 'environment' },
         {
           fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.33,
-          showTorchButtonIfSupported: true,
-          rememberLastUsedCamera: true,
-          supportedScanTypes: [],
+          qrbox: 250,
         },
-        /* useBarCodeDetectorIfAvailable= */ false
+        (decodedText) => {
+          console.log('✅ QR Code detected:', decodedText);
+          setDebugInfo('QR Code detected! Verifying...');
+          onScanSuccessCallback(decodedText);
+        },
+        () => {
+          // Silent error handling for "QR code not detected"
+        }
       );
 
-      setDebugInfo('Camera initializing...');
-
-      // Handle successful scan
-      const onScanSuccess = (decodedText: string) => {
-        console.log('QR Code detected:', decodedText);
-        setDebugInfo('QR Code detected! Verifying...');
-        onScanSuccessCallback(decodedText);
-      };
-
-      // Handle scan errors
-      const onScanError = (error: string) => {
-        // Ignore "QR code not detected" errors - these are normal during scanning
-        if (!error.includes('QR code not detected') && !error.includes('NotFoundException')) {
-          console.warn('Scan error:', error);
-        }
-      };
-
-      // Render and start scanner
-      console.log('Rendering scanner...');
-      await scannerRef.current.render(onScanSuccess, onScanError);
-      console.log('Scanner rendered successfully');
-      setDebugInfo('Camera active - scanning for QR codes...');
+      console.log('✅ Camera stream started successfully');
+      setDebugInfo('✅ Camera active - scanning for QR codes...');
       setIsScanning(false);
     } catch (error) {
-      console.error('Camera error caught:', error);
+      console.error('❌ Camera error:', error);
       handleCameraError(error);
     }
   };
@@ -172,16 +140,19 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
 
   // Stop camera and cleanup
   const stopCamera = async () => {
+    console.log('Stopping camera...');
     setIsScanning(false);
     setIsCameraActive(false);
     setDebugInfo('');
 
-    if (scannerRef.current) {
+    if (html5QrcodeRef.current) {
       try {
-        await scannerRef.current.clear();
-        scannerRef.current = null;
+        await html5QrcodeRef.current.stop();
+        await html5QrcodeRef.current.clear();
+        html5QrcodeRef.current = null;
+        console.log('✅ Camera stopped');
       } catch (e) {
-        console.error('Error stopping scanner:', e);
+        console.error('Error stopping camera:', e);
       }
     }
   };
@@ -193,30 +164,11 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
     };
   }, []);
 
-  // Check secure context on mount
-  useEffect(() => {
-    // Camera API requires HTTPS in production
-    const isSecure = window.isSecureContext || 
-                    window.location.hostname === 'localhost' || 
-                    window.location.hostname === '127.0.0.1';
-    setIsSecureContext(isSecure);
-    
-    if (!isSecure) {
-      setCameraError('Camera access requires HTTPS in production. Please access this page over a secure connection.');
-    }
-
-    console.log('Secure context check:', {
-      isSecureContext: isSecure,
-      hostname: window.location.hostname,
-      protocol: window.location.protocol,
-    });
-  }, []);
-
-  // Test camera access immediately
+  // Test camera availability on mount
   useEffect(() => {
     const testCamera = async () => {
       try {
-        console.log('Testing camera access...');
+        console.log('Testing camera availability...');
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(device => device.kind === 'videoinput');
         console.log('Available cameras:', videoDevices.length);
@@ -228,26 +180,10 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
         setDebugInfo('⚠️ Unable to detect cameras');
       }
     };
-    
-    if (isSecureContext) {
-      testCamera();
-    }
-  }, [isSecureContext]);
+    testCamera();
+  }, []);
 
   const renderResult = () => {
-    if (!isSecureContext) {
-      return (
-        <Alert variant="destructive" className="mb-4">
-          <XCircle className="h-5 w-5" />
-          <AlertTitle>HTTPS Required</AlertTitle>
-          <AlertDescription>
-            Camera access requires a secure HTTPS connection in production. 
-            This feature works on localhost but needs HTTPS when deployed.
-          </AlertDescription>
-        </Alert>
-      );
-    }
-
     if (verifyMutation.isPending) {
       return (
         <div className="flex flex-col items-center justify-center p-6">
@@ -344,19 +280,14 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* QR Scanner Container - Always rendered, shown/hidden with CSS */}
-        {/* CRITICAL: No display:none - use visibility to keep element in DOM */}
+        {/* QR Scanner Container */}
         <div
           ref={containerRef}
-          id={uniqueId}
-          className={`w-full rounded-lg overflow-visible bg-black transition-all ${
+          className={`w-full rounded-lg bg-black transition-all ${
             isCameraActive ? 'block' : 'hidden'
           }`}
           style={{ 
             minHeight: isCameraActive ? '350px' : '0px',
-            // Ensure camera video element can be seen through portal
-            position: 'relative',
-            zIndex: 1,
           }}
         />
 
@@ -406,19 +337,11 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
               <p className="text-sm text-center text-gray-700">
                 Click below to scan a visitor's QR code using your device camera
               </p>
-              {!isSecureContext && (
-                <p className="text-xs text-red-600 mt-2 font-semibold">
-                  ⚠️ HTTPS connection required for camera access in production
-                </p>
-              )}
             </div>
             <Button
-              onClick={() => {
-                console.log('Start Camera button clicked');
-                startCamera();
-              }}
+              onClick={startCamera}
               className="w-full"
-              disabled={isScanning || !isSecureContext}
+              disabled={isScanning}
             >
               {isScanning ? (
                 <>
