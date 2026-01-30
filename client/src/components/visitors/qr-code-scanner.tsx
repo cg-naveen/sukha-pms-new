@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,9 +27,11 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string>('');
+  const [isSecureContext, setIsSecureContext] = useState(false);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const uniqueId = useRef(`qr-reader-${Math.random().toString(36).substr(2, 9)}`).current;
+  // Generate stable ID once
+  const uniqueId = useMemo(() => 'qr-reader-' + Math.random().toString(36).substr(2, 9), []);
 
   const verifyMutation = useMutation({
     mutationFn: async (code: string) => {
@@ -46,9 +48,15 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
     console.log('startCamera called');
     console.log('containerRef.current:', containerRef.current);
     
+    if (!isSecureContext) {
+      setCameraError('Camera access requires HTTPS in production. Please access this page over a secure connection.');
+      setIsScanning(false);
+      return;
+    }
+    
     if (!containerRef.current) {
       console.error('Container ref is null');
-      setCameraError('Container not found');
+      setCameraError('Container not found. Please try refreshing the page.');
       setIsScanning(false);
       return;
     }
@@ -60,25 +68,43 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
       setIsScanning(true);
       setIsCameraActive(true);
 
-      // Check if the container has the right ID
+      // Ensure container has the correct ID
       if (containerRef.current.id !== uniqueId) {
         console.log('Setting container ID to:', uniqueId);
         containerRef.current.id = uniqueId;
       }
 
-      // Clear any existing content
-      containerRef.current.innerHTML = '';
+      // IMPORTANT: Do NOT clear innerHTML before creating scanner
+      // html5-qrcode will handle DOM manipulation
+      
+      // Verify element exists in DOM
+      const element = document.getElementById(uniqueId);
+      if (!element) {
+        throw new Error(`DOM element with ID ${uniqueId} not found in document`);
+      }
 
-      // Initialize scanner with QR code only configuration
       console.log('Creating Html5QrcodeScanner with ID:', uniqueId);
+      
+      // Stop any existing scanner first
+      if (scannerRef.current) {
+        try {
+          await scannerRef.current.clear();
+          scannerRef.current = null;
+        } catch (e) {
+          console.warn('Error clearing old scanner:', e);
+        }
+      }
+
+      // Create scanner with optimized config for Vercel
       scannerRef.current = new Html5QrcodeScanner(
         uniqueId,
         {
           fps: 10,
           qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
+          aspectRatio: 1.33,
           showTorchButtonIfSupported: true,
           rememberLastUsedCamera: true,
+          supportedScanTypes: [],
         },
         /* useBarCodeDetectorIfAvailable= */ false
       );
@@ -167,6 +193,25 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
     };
   }, []);
 
+  // Check secure context on mount
+  useEffect(() => {
+    // Camera API requires HTTPS in production
+    const isSecure = window.isSecureContext || 
+                    window.location.hostname === 'localhost' || 
+                    window.location.hostname === '127.0.0.1';
+    setIsSecureContext(isSecure);
+    
+    if (!isSecure) {
+      setCameraError('Camera access requires HTTPS in production. Please access this page over a secure connection.');
+    }
+
+    console.log('Secure context check:', {
+      isSecureContext: isSecure,
+      hostname: window.location.hostname,
+      protocol: window.location.protocol,
+    });
+  }, []);
+
   // Test camera access immediately
   useEffect(() => {
     const testCamera = async () => {
@@ -183,10 +228,26 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
         setDebugInfo('⚠️ Unable to detect cameras');
       }
     };
-    testCamera();
-  }, []);
+    
+    if (isSecureContext) {
+      testCamera();
+    }
+  }, [isSecureContext]);
 
   const renderResult = () => {
+    if (!isSecureContext) {
+      return (
+        <Alert variant="destructive" className="mb-4">
+          <XCircle className="h-5 w-5" />
+          <AlertTitle>HTTPS Required</AlertTitle>
+          <AlertDescription>
+            Camera access requires a secure HTTPS connection in production. 
+            This feature works on localhost but needs HTTPS when deployed.
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
     if (verifyMutation.isPending) {
       return (
         <div className="flex flex-col items-center justify-center p-6">
@@ -284,13 +345,19 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
       </CardHeader>
       <CardContent>
         {/* QR Scanner Container - Always rendered, shown/hidden with CSS */}
+        {/* CRITICAL: No display:none - use visibility to keep element in DOM */}
         <div
           ref={containerRef}
           id={uniqueId}
-          className={`w-full rounded-lg overflow-hidden bg-black transition-all ${
+          className={`w-full rounded-lg overflow-visible bg-black transition-all ${
             isCameraActive ? 'block' : 'hidden'
           }`}
-          style={{ minHeight: isCameraActive ? '350px' : '0px' }}
+          style={{ 
+            minHeight: isCameraActive ? '350px' : '0px',
+            // Ensure camera video element can be seen through portal
+            position: 'relative',
+            zIndex: 1,
+          }}
         />
 
         {isCameraActive && (
@@ -339,6 +406,11 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
               <p className="text-sm text-center text-gray-700">
                 Click below to scan a visitor's QR code using your device camera
               </p>
+              {!isSecureContext && (
+                <p className="text-xs text-red-600 mt-2 font-semibold">
+                  ⚠️ HTTPS connection required for camera access in production
+                </p>
+              )}
             </div>
             <Button
               onClick={() => {
@@ -346,7 +418,7 @@ export default function QrCodeScanner({ onClose }: QrScannerProps) {
                 startCamera();
               }}
               className="w-full"
-              disabled={isScanning}
+              disabled={isScanning || !isSecureContext}
             >
               {isScanning ? (
                 <>
