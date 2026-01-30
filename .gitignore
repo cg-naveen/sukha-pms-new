@@ -109,3 +109,6 @@ Thumbs.db
 # Replit files
 .replit
 replit.nix.next/
+
+# Uploaded files (documents, invoices)
+uploads/
