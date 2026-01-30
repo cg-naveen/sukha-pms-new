@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/auth'
-import { uploadToOneDrive } from '../../../../lib/onedrive'
+import { uploadToGoogleDrive } from '../../../../lib/google-drive'
 
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth(['admin', 'staff'])()
@@ -19,48 +19,51 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Convert File to Buffer for OneDrive upload
+    const residentIdNum = parseInt(residentId);
+    const residentDisplayId = `R-${residentIdNum.toString().padStart(5, '0')}`;
+
+    // Convert File to Buffer for Google Drive upload
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    // Upload to OneDrive (if configured) or fallback to local storage
+    // Upload to Google Drive (if configured) or fallback to local storage
     let filePath: string;
-    let oneDriveId: string | undefined;
+    let googleDriveId: string | undefined;
 
-    if (process.env.ONEDRIVE_CLIENT_ID && process.env.ONEDRIVE_CLIENT_SECRET) {
+    if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY || (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_REFRESH_TOKEN)) {
       try {
-        const oneDriveResult = await uploadToOneDrive(buffer, file.name, file.type, {
-          folder: `residents/${residentId}/documents`,
+        const googleDriveResult = await uploadToGoogleDrive(buffer, file.name, file.type, {
+          folder: `residents/${residentDisplayId}/documents`,
           fileName: file.name
         })
-        filePath = oneDriveResult.webUrl || oneDriveResult.id;
-        oneDriveId = oneDriveResult.id;
+        filePath = googleDriveResult.id; // Store Google Drive file ID
+        googleDriveId = googleDriveResult.id;
       } catch (error: any) {
-        console.error('OneDrive upload failed, falling back to local storage:', error);
+        console.error('Google Drive upload failed, falling back to local storage:', error);
         // Fallback to local storage
         const fs = await import('fs');
         const path = await import('path');
-        const uploadDir = path.join(process.cwd(), 'uploads', 'documents', residentId);
+        const uploadDir = path.join(process.cwd(), 'uploads', 'documents', residentDisplayId);
         if (!fs.existsSync(uploadDir)) {
           fs.mkdirSync(uploadDir, { recursive: true });
         }
         const fileName = `${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(file.name)}`;
         const localPath = path.join(uploadDir, fileName);
         fs.writeFileSync(localPath, buffer);
-        filePath = `/uploads/documents/${residentId}/${fileName}`;
+        filePath = `/uploads/documents/${residentDisplayId}/${fileName}`;
       }
     } else {
-      // No OneDrive configured, use local storage
+      // No Google Drive configured, use local storage
       const fs = await import('fs');
       const path = await import('path');
-      const uploadDir = path.join(process.cwd(), 'uploads', 'documents', residentId);
+      const uploadDir = path.join(process.cwd(), 'uploads', 'documents', residentDisplayId);
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
       const fileName = `${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(file.name)}`;
       const localPath = path.join(uploadDir, fileName);
       fs.writeFileSync(localPath, buffer);
-      filePath = `/uploads/documents/${residentId}/${fileName}`;
+      filePath = `/uploads/documents/${residentDisplayId}/${fileName}`;
     }
 
     // Save document metadata to database
@@ -68,10 +71,10 @@ export async function POST(request: NextRequest) {
     const { documents, insertDocumentSchema } = await import('../../../../shared/schema')
     
     const documentData = {
-      residentId: parseInt(residentId),
+      residentId: residentIdNum,
       title,
       fileName: file.name,
-      filePath: filePath, // Store OneDrive URL/ID or local path
+      filePath: filePath, // Store Google Drive file ID or local path
       fileSize: file.size,
       mimeType: file.type
     }
