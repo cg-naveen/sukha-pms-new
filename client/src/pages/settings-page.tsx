@@ -106,6 +106,24 @@ export default function SettingsPage() {
     },
   });
 
+  // Fetch file storage (Google Drive) status
+  const { data: fileStorageStatus } = useQuery<{
+    storageType: string;
+    oauthConfigured: boolean;
+    serviceAccountConfigured: boolean;
+    rootFolderConfigured: boolean;
+    googleDriveActive: boolean;
+  }>({
+    queryKey: ["/api/settings/file-storage"],
+    queryFn: async () => {
+      const response = await fetch("/api/settings/file-storage", {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch file storage status");
+      return response.json();
+    },
+  });
+
   // Update settings mutation
   const updateSettingsMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -252,7 +270,8 @@ export default function SettingsPage() {
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="jobs">Job Scheduling</TabsTrigger>
             <TabsTrigger value="content">Content Management</TabsTrigger>
-            <TabsTrigger value="integration">Integration</TabsTrigger>
+            <TabsTrigger value="filestorage">File Storage</TabsTrigger>
+            {/* <TabsTrigger value="integration">Integration</TabsTrigger> */}
           </TabsList>
         
         <TabsContent value="general">
@@ -633,7 +652,73 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="filestorage">
+          <Card>
+            <CardHeader>
+              <CardTitle>File Storage</CardTitle>
+              <CardDescription>
+                Google Drive integration for resident documents and billing receipts. Credentials are configured in your server environment (.env).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="rounded-lg border p-4 bg-gray-50">
+                <h4 className="text-sm font-medium mb-3">Storage status</h4>
+                <div className="space-y-2">
+                  {fileStorageStatus?.googleDriveActive ? (
+                    <div className="flex items-center gap-2 text-green-700">
+                      <span className="text-lg">✓</span>
+                      <span className="font-medium">Google Drive is active</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-amber-700">
+                      <span className="text-lg">⚠</span>
+                      <span className="font-medium">Using local storage</span>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Resident documents and billing receipts are stored on the server. Configure Google Drive in .env to use cloud storage.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-lg border p-4 bg-gray-50">
+                <h4 className="text-sm font-medium mb-2">Google Drive credentials (from .env)</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    {fileStorageStatus?.oauthConfigured ? (
+                      <span className="text-green-600">✓ Configured</span>
+                    ) : (
+                      <span className="text-amber-600">Not set</span>
+                    )}
+                    <span className="px-2 py-0.5 bg-gray-200 rounded font-mono text-xs">OAuth (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {fileStorageStatus?.serviceAccountConfigured ? (
+                      <span className="text-green-600">✓ Configured</span>
+                    ) : (
+                      <span className="text-amber-600">Not set</span>
+                    )}
+                    <span className="px-2 py-0.5 bg-gray-200 rounded font-mono text-xs">GOOGLE_SERVICE_ACCOUNT_KEY</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {fileStorageStatus?.rootFolderConfigured ? (
+                      <span className="text-green-600">✓ Configured</span>
+                    ) : (
+                      <span className="text-amber-600">Optional (OAuth) / Required (Service Account)</span>
+                    )}
+                    <span className="px-2 py-0.5 bg-gray-200 rounded font-mono text-xs">GOOGLE_DRIVE_ROOT_FOLDER_ID</span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-3">
+                  Use either OAuth or Service Account. See <code className="px-1 py-0.5 bg-gray-200 rounded">GOOGLE_DRIVE_SETUP.md</code> in the project for setup steps.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
         
+        {/* Integration tab – hidden for now
         <TabsContent value="integration">
           <Card>
             <CardHeader>
@@ -776,6 +861,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        */}
       </Tabs>
       )}
     </MainLayout>
