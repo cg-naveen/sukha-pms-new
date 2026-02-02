@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Loader2, Upload, Download, Trash2, FileText, FileImage } from "lucide-react";
+import { Loader2, Upload, Download, Trash2, FileText, FileImage, ExternalLink, Cloud } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -186,6 +186,14 @@ export default function DocumentsTab({ residentId }: DocumentsTabProps) {
     return <FileText className="h-5 w-5 text-gray-500" />;
   };
 
+  const isGoogleDriveDocument = (filePath: string) =>
+    filePath && !filePath.startsWith("/uploads/") && !filePath.startsWith("uploads/");
+
+  const getDocumentViewUrl = (doc: Document) =>
+    isGoogleDriveDocument(doc.filePath)
+      ? `https://drive.google.com/file/d/${doc.filePath}/view`
+      : `${window.location.origin}/api/documents/${doc.id}/download`;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -272,6 +280,11 @@ export default function DocumentsTab({ residentId }: DocumentsTabProps) {
                 >
                   <div className="flex items-center gap-3 flex-1">
                     {getFileIcon(doc.mimeType)}
+                    {isGoogleDriveDocument(doc.filePath) && (
+                      <span title="Stored in Google Drive">
+                        <Cloud className="h-4 w-4 text-blue-600 shrink-0" />
+                      </span>
+                    )}
                     <div className="flex-1">
                       <h4 className="font-medium">{doc.title}</h4>
                       <p className="text-sm text-muted-foreground">
@@ -280,6 +293,14 @@ export default function DocumentsTab({ residentId }: DocumentsTabProps) {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(getDocumentViewUrl(doc), "_blank")}
+                      title="View in browser"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"

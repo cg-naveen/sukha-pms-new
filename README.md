@@ -39,19 +39,24 @@ JWT_SECRET="dev-jwt-secret-change-later"
 BREVO_API_KEY="..."
 MAILERLITE_API_KEY="..."
 
-# OneDrive Integration (Optional - falls back to local storage if not set)
-ONEDRIVE_CLIENT_ID="..."
-ONEDRIVE_CLIENT_SECRET="..."
-ONEDRIVE_TENANT_ID="..."  # Optional, defaults to 'common'
-ONEDRIVE_REFRESH_TOKEN="..."
-ONEDRIVE_ROOT_FOLDER="SukhaPMS/Documents"  # Optional
+# Google Drive Integration (Optional - falls back to local storage if not set)
+# Option 1: Service Account (Recommended)
+GOOGLE_SERVICE_ACCOUNT_KEY='{"type":"service_account",...}'
+
+# Option 2: OAuth 2.0 (Alternative)
+# GOOGLE_CLIENT_ID="..."
+# GOOGLE_CLIENT_SECRET="..."
+# GOOGLE_REFRESH_TOKEN="..."
+
+# Optional: Root folder ID in Google Drive
+# GOOGLE_DRIVE_ROOT_FOLDER_ID="..."
 
 # Cron Job Configuration (Required for automated billing generation)
 CRON_SECRET="your-secure-random-string-here"  # Generate with: openssl rand -base64 32
 ```
 
 See `SUPABASE_SETUP.md` for detailed Supabase setup instructions.
-See `ONEDRIVE_SETUP.md` for detailed OneDrive setup instructions.
+See `GOOGLE_DRIVE_SETUP.md` for detailed Google Drive setup instructions.
 
 ## Local Development
 

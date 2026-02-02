@@ -9,6 +9,7 @@ import { randomBytes } from "crypto";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { uploadToGoogleDrive, downloadFromGoogleDrive, deleteFromGoogleDrive } from "../lib/google-drive";
 import {
   insertUserSchema,
   insertResidentSchema,
@@ -887,11 +888,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Title and resident ID are required' });
       }
 
+      const residentIdNum = parseInt(residentId);
+      const residentDisplayId = `R-${residentIdNum.toString().padStart(5, '0')}`;
+
+      let filePath = req.file.path;
+      
+      // Try to upload to Google Drive if configured
+      if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY || (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)) {
+        try {
+          const fileBuffer = fs.readFileSync(req.file.path);
+          const googleDriveResult = await uploadToGoogleDrive(fileBuffer, req.file.originalname, req.file.mimetype, {
+            folder: `residents/${residentDisplayId}/documents`,
+            fileName: req.file.originalname
+          });
+          filePath = googleDriveResult.id; // Store Google Drive file ID
+          
+          // Delete local file after successful upload to Google Drive
+          fs.unlinkSync(req.file.path);
+        } catch (error) {
+          console.error('Google Drive upload failed, using local storage:', error);
+          // Keep using local file path
+        }
+      }
+
       const documentData = {
-        residentId: parseInt(residentId),
+        residentId: residentIdNum,
         title,
         fileName: req.file.originalname,
-        filePath: req.file.path,
+        filePath: filePath,
         fileSize: req.file.size,
         mimeType: req.file.mimetype
       };
@@ -919,11 +943,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Document not found' });
       }
 
-      if (!fs.existsSync(document.filePath)) {
-        return res.status(404).json({ message: 'File not found on server' });
+      // Check if it's a Google Drive file or local file
+      if (document.filePath && !document.filePath.startsWith('/uploads/') && !document.filePath.startsWith('uploads/')) {
+        // Download from Google Drive
+        try {
+          const fileBuffer = await downloadFromGoogleDrive(document.filePath);
+          res.setHeader('Content-Type', document.mimeType);
+          res.setHeader('Content-Disposition', `attachment; filename="${document.fileName}"`);
+          res.send(fileBuffer);
+        } catch (error) {
+          console.error('Google Drive download failed:', error);
+          return res.status(500).json({ message: 'Failed to download from Google Drive' });
+        }
+      } else {
+        // Local file
+        if (!fs.existsSync(document.filePath)) {
+          return res.status(404).json({ message: 'File not found on server' });
+        }
+        res.download(document.filePath, document.fileName);
       }
-
-      res.download(document.filePath, document.fileName);
     } catch (error) {
       console.error('Error downloading document:', error);
       res.status(500).json({ message: 'Failed to download document' });
@@ -940,9 +978,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Document not found' });
       }
 
-      // Delete file from filesystem
-      if (fs.existsSync(document.filePath)) {
-        fs.unlinkSync(document.filePath);
+      // Delete from Google Drive if it's a Google Drive file
+      if (document.filePath && !document.filePath.startsWith('/uploads/') && !document.filePath.startsWith('uploads/')) {
+        try {
+          await deleteFromGoogleDrive(document.filePath);
+        } catch (error) {
+          console.error('Error deleting from Google Drive:', error);
+          // Continue with database deletion even if Google Drive deletion fails
+        }
+      } else {
+        // Delete local file from filesystem
+        if (fs.existsSync(document.filePath)) {
+          fs.unlinkSync(document.filePath);
+        }
       }
 
       // Delete from database

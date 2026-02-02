@@ -8,7 +8,11 @@ const nextConfig = {
     JWT_SECRET: process.env.JWT_SECRET,
     BREVO_API_KEY: process.env.BREVO_API_KEY,
     MAILERLITE_API_KEY: process.env.MAILERLITE_API_KEY,
-    SESSION_SECRET: process.env.SESSION_SECRET || 'your-secret-key-change-in-production'
+    SESSION_SECRET: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    GOOGLE_REFRESH_TOKEN: process.env.GOOGLE_REFRESH_TOKEN,
+    GOOGLE_DRIVE_ROOT_FOLDER_ID: process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID,
   },
   headers: async () => [
     {
@@ -25,6 +29,7 @@ const nextConfig = {
       ]
     }
   ]
+  }
 }
 
 export default nextConfig

@@ -3,7 +3,7 @@ import { db } from '../../../../lib/db'
 import { documents } from '../../../../shared/schema'
 import { requireAuth } from '../../../../lib/auth'
 import { eq } from 'drizzle-orm'
-import { deleteFromOneDrive } from '../../../../lib/onedrive'
+import { deleteFromGoogleDrive } from '../../../../lib/google-drive'
 
 export async function GET(
   request: NextRequest,
@@ -53,13 +53,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Document not found' }, { status: 404 })
     }
 
-    // Delete from OneDrive if it's a OneDrive file
-    if (document.filePath && !document.filePath.startsWith('/uploads/')) {
+    // Delete from Google Drive if it's a Google Drive file
+    if (document.filePath && !document.filePath.startsWith('/uploads/') && !document.filePath.startsWith('uploads/')) {
       try {
-        await deleteFromOneDrive(document.filePath)
+        await deleteFromGoogleDrive(document.filePath)
       } catch (error) {
-        console.error('Error deleting from OneDrive:', error)
-        // Continue with database deletion even if OneDrive deletion fails
+        console.error('Error deleting from Google Drive:', error)
+        // Continue with database deletion even if Google Drive deletion fails
       }
     }
 

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Loader2, Download, FileText, FileImage, Receipt, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { Loader2, Download, FileText, FileImage, Receipt, CheckCircle, Clock, AlertCircle, ExternalLink, Cloud } from "lucide-react";
 import { Resident } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import {
@@ -247,6 +247,14 @@ function DocumentsViewTab({ residentId }: DocumentsViewTabProps) {
     return <FileText className="h-5 w-5 text-gray-500" />;
   };
 
+  const isGoogleDriveDocument = (filePath: string) =>
+    filePath && !filePath.startsWith("/uploads/") && !filePath.startsWith("uploads/");
+
+  const getDocumentViewUrl = (doc: any) =>
+    isGoogleDriveDocument(doc.filePath)
+      ? `https://drive.google.com/file/d/${doc.filePath}/view`
+      : `${typeof window !== "undefined" ? window.location.origin : ""}/api/documents/${doc.id}/download`;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -275,6 +283,11 @@ function DocumentsViewTab({ residentId }: DocumentsViewTabProps) {
               >
                 <div className="flex items-center gap-3 flex-1">
                   {getFileIcon(doc.mimeType)}
+                  {isGoogleDriveDocument(doc.filePath) && (
+                    <span title="Stored in Google Drive">
+                      <Cloud className="h-4 w-4 text-blue-600 shrink-0" />
+                    </span>
+                  )}
                   <div className="flex-1">
                     <h4 className="font-medium">{doc.title}</h4>
                     <p className="text-sm text-muted-foreground">
@@ -282,13 +295,23 @@ function DocumentsViewTab({ residentId }: DocumentsViewTabProps) {
                     </p>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDownload(doc)}
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(getDocumentViewUrl(doc), "_blank")}
+                    title="View in browser"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(doc)}
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -321,34 +344,40 @@ function PaymentHistoryTab({ residentId }: PaymentHistoryTabProps) {
     }
 
     try {
-      // Check if it's a OneDrive URL or local path
+      // External URL (legacy OneDrive, etc.) – open in new tab
       if (billing.invoiceFile.startsWith('http')) {
-        // OneDrive URL - open in new tab
         window.open(billing.invoiceFile, '_blank');
-      } else {
-        // Local file - download via API
-        const filePath = billing.invoiceFile.startsWith('/') 
-          ? billing.invoiceFile 
-          : `/${billing.invoiceFile}`;
-        
-        const response = await fetch(`/api/documents/download?path=${encodeURIComponent(filePath)}`, {
-          credentials: 'include',
-        });
-        
-        if (!response.ok) {
-          throw new Error('Download failed');
-        }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `receipt-${billing.id}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
+        return;
       }
+
+      // Google Drive file ID (no slash) – serve via receipt API
+      if (!billing.invoiceFile.includes('/') && !billing.invoiceFile.startsWith('/')) {
+        window.open(`/api/billings/${billing.id}/receipt`, '_blank');
+        return;
+      }
+
+      // Local file path – download via documents API
+      const filePath = billing.invoiceFile.startsWith('/')
+        ? billing.invoiceFile
+        : `/${billing.invoiceFile}`;
+
+      const response = await fetch(`/api/documents/download?path=${encodeURIComponent(filePath)}`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `receipt-${billing.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download error:', error);
     }

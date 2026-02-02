@@ -3,7 +3,7 @@ import { db } from '../../../../../lib/db'
 import { documents } from '../../../../../shared/schema'
 import { requireAuth } from '../../../../../lib/auth'
 import { eq } from 'drizzle-orm'
-import { downloadFromOneDrive } from '../../../../../lib/onedrive'
+import { downloadFromGoogleDrive } from '../../../../../lib/google-drive'
 import fs from 'fs'
 import path from 'path'
 
@@ -27,11 +27,11 @@ export async function GET(
       return NextResponse.json({ error: 'Document not found' }, { status: 404 })
     }
 
-    // Check if it's a OneDrive file or local file
+    // Check if it's a Google Drive file or local file
     if (document.filePath && !document.filePath.startsWith('/uploads/') && !document.filePath.startsWith('uploads/')) {
-      // Download from OneDrive
+      // Download from Google Drive
       try {
-        const fileBuffer = await downloadFromOneDrive(document.filePath)
+        const fileBuffer = await downloadFromGoogleDrive(document.filePath)
         
         return new NextResponse(fileBuffer, {
           headers: {
@@ -40,9 +40,9 @@ export async function GET(
           },
         })
       } catch (error: any) {
-        console.error('OneDrive download failed:', error)
+        console.error('Google Drive download failed:', error)
         return NextResponse.json(
-          { error: 'Failed to download from OneDrive' },
+          { error: 'Failed to download from Google Drive' },
           { status: 500 }
         )
       }

@@ -3,7 +3,7 @@ import { db } from '../../../../../lib/db'
 import { billings } from '../../../../../shared/schema'
 import { requireAuth } from '../../../../../lib/auth'
 import { eq } from 'drizzle-orm'
-import { uploadToOneDrive } from '../../../../../lib/onedrive'
+import { uploadToGoogleDrive } from '../../../../../lib/google-drive'
 import fs from 'fs'
 import path from 'path'
 
@@ -45,19 +45,18 @@ export async function POST(
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    // Upload to OneDrive (if configured) or fallback to local storage
+    // Upload to Google Drive (if configured) or fallback to local storage
     let filePath: string;
 
-    if (process.env.ONEDRIVE_CLIENT_ID && process.env.ONEDRIVE_CLIENT_SECRET) {
+    if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY || (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_REFRESH_TOKEN)) {
       try {
-        const oneDriveResult = await uploadToOneDrive(buffer, file.name, file.type, {
-          folder: `billings/receipts`,
+        const googleDriveResult = await uploadToGoogleDrive(buffer, file.name, file.type, {
+          folder: 'billings/receipts',
           fileName: `receipt-${billingId}-${Date.now()}.pdf`
         })
-        filePath = oneDriveResult.webUrl || oneDriveResult.id;
+        filePath = googleDriveResult.id;
       } catch (error: any) {
-        console.error('OneDrive upload failed, falling back to local storage:', error);
-        // Fallback to local storage
+        console.error('Google Drive upload failed, falling back to local storage:', error);
         const uploadDir = path.join(process.cwd(), 'uploads', 'receipts');
         if (!fs.existsSync(uploadDir)) {
           fs.mkdirSync(uploadDir, { recursive: true });
@@ -68,7 +67,7 @@ export async function POST(
         filePath = `/uploads/receipts/${fileName}`;
       }
     } else {
-      // No OneDrive configured, use local storage
+      // No Google Drive configured, use local storage
       const uploadDir = path.join(process.cwd(), 'uploads', 'receipts');
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '../../../../lib/auth'
-import { downloadFromOneDrive } from '../../../../lib/onedrive'
 import fs from 'fs'
 import path from 'path'
 
@@ -16,9 +15,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'File path is required' }, { status: 400 })
     }
 
-    // Check if it's a OneDrive URL or local path
+    // Check if it's a cloud URL (e.g. Google Drive) or local path
     if (filePath.startsWith('http')) {
-      // OneDrive URL - redirect to the URL
+      // Cloud URL - redirect to the URL
       return NextResponse.redirect(filePath)
     } else {
       // Local file path
