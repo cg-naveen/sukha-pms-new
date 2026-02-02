@@ -22,6 +22,8 @@
   "/api/public/visitor-terms/route": "app/api/public/visitor-terms/route.js",
   "/api/public/visitors/qr/[qrCode]/[...path]/route": "app/api/public/visitors/qr/[qrCode]/[...path]/route.js",
   "/api/public/visitors/qr/[qrCode]/image/route": "app/api/public/visitors/qr/[qrCode]/image/route.js",
+  "/api/public/visitors/verify/[qrCode]/route": "app/api/public/visitors/verify/[qrCode]/route.js",
+  "/api/public/visitors/verify/route": "app/api/public/visitors/verify/route.js",
   "/api/residents/[id]/documents/route": "app/api/residents/[id]/documents/route.js",
   "/api/residents/[id]/next-of-kin/route": "app/api/residents/[id]/next-of-kin/route.js",
   "/api/residents/[id]/route": "app/api/residents/[id]/route.js",

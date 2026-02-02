@@ -105,10 +105,10 @@ export default function ResidentViewModal({
                   <div className="text-sm text-gray-900 mt-1">
                     <Badge variant="outline" className="mt-1">
                       {residentDetail?.classification === 'independent' ? 'Independent' : 
-                       residentDetail?.classification === 'dependent' ? 'Dependent' : 
+                       residentDetail?.classification === 'dependent' ? 'Support Living' : 
                        residentDetail?.classification === 'memory_care' ? 'Memory Care' : 
                        resident?.classification === 'independent' ? 'Independent' : 
-                       resident?.classification === 'dependent' ? 'Dependent' : 
+                       resident?.classification === 'dependent' ? 'Support Living' : 
                        resident?.classification === 'memory_care' ? 'Memory Care' : 
                        'N/A'}
                     </Badge>

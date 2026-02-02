@@ -13,6 +13,22 @@ const nextConfig = {
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     GOOGLE_REFRESH_TOKEN: process.env.GOOGLE_REFRESH_TOKEN,
     GOOGLE_DRIVE_ROOT_FOLDER_ID: process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID,
+  },
+  headers: async () => [
+    {
+      source: '/:path*',
+      headers: [
+        {
+          key: 'Permissions-Policy',
+          value: 'camera=(self "https://sukha-pms.vercel.app"), microphone=()'
+        },
+        {
+          key: 'Feature-Policy',
+          value: 'camera \'self\' https://sukha-pms.vercel.app'
+        }
+      ]
+    }
+  ]
   }
 }
 

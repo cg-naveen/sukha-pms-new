@@ -189,6 +189,8 @@ export default function RoomsPage() {
         return "twin_sharing";
       case 3:
         return "triple_sharing";
+      case 4:
+        return "vip";
       default:
         return "unknown";
     }
@@ -234,6 +236,7 @@ export default function RoomsPage() {
     if (beds === 1) return 'Single';
     if (beds === 2) return 'Twin Sharing';
     if (beds === 3) return 'Triple Sharing';
+    if (beds === 4) return 'VIP';
     return `${beds} Beds`;
   };
 
@@ -316,6 +319,7 @@ export default function RoomsPage() {
                     <SelectItem value="single">Single</SelectItem>
                     <SelectItem value="twin_sharing">Twin Sharing</SelectItem>
                     <SelectItem value="triple_sharing">Triple Sharing</SelectItem>
+                    <SelectItem value="vip">VIP</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
