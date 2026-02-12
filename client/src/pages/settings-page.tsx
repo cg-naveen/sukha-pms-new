@@ -54,6 +54,7 @@ const notificationSettingsSchema = z.object({
   enableSmsNotifications: z.boolean().default(false),
   billingReminderDays: z.coerce.number().int().min(1).max(30),
   visitorApprovalNotification: z.boolean().default(true),
+  visitorAutoApproval: z.boolean().default(false),
 });
 
 const jobSchedulingSchema = z.object({
@@ -172,6 +173,7 @@ export default function SettingsPage() {
       enableSmsNotifications: false,
       billingReminderDays: 7,
       visitorApprovalNotification: true,
+      visitorAutoApproval: false,
     },
   });
 
@@ -215,6 +217,7 @@ export default function SettingsPage() {
         enableSmsNotifications: settingsData.enableSmsNotifications ?? false,
         billingReminderDays: settingsData.billingReminderDays ?? 7,
         visitorApprovalNotification: settingsData.visitorApprovalNotification ?? true,
+        visitorAutoApproval: settingsData.visitorAutoApproval ?? false,
       });
       jobSchedulingForm.reset({
         billingGenerationEnabled: settingsData.billingGenerationEnabled ?? true,
@@ -271,7 +274,7 @@ export default function SettingsPage() {
             <TabsTrigger value="jobs">Job Scheduling</TabsTrigger>
             <TabsTrigger value="content">Content Management</TabsTrigger>
             <TabsTrigger value="filestorage">File Storage</TabsTrigger>
-            {/* <TabsTrigger value="integration">Integration</TabsTrigger> */}
+            <TabsTrigger value="integration">Integration</TabsTrigger>
           </TabsList>
         
         <TabsContent value="general">
@@ -461,6 +464,29 @@ export default function SettingsPage() {
                           </FormLabel>
                           <FormDescription>
                             Receive notifications for visitor approval requests.
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={notificationForm.control}
+                    name="visitorAutoApproval"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">
+                            Enable Auto Approval
+                          </FormLabel>
+                          <FormDescription>
+                            Automatically approve visitor registrations and send WhatsApp notification to the visitor. No QR code will be generated.
                           </FormDescription>
                         </div>
                         <FormControl>
@@ -718,7 +744,6 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
         
-        {/* Integration tab – hidden for now
         <TabsContent value="integration">
           <Card>
             <CardHeader>
@@ -811,12 +836,12 @@ export default function SettingsPage() {
                             <Textarea 
                               {...field} 
                               rows={6}
-                              placeholder="Hello {visitorName}, your visit request to {residentName} on {visitDate} at {visitTime} has been approved. Your QR code: {qrCodeUrl}"
+                              placeholder="Hello {visitorName}, your visit request to {residentName} on {visitDate} at {visitTime} has been approved."
                               className="font-mono text-sm"
                             />
                           </FormControl>
                           <FormDescription>
-                            WhatsApp message template for visitor approval. Available variables: {"{"}visitorName{"}"}, {"{"}residentName{"}"}, {"{"}visitDate{"}"}, {"{"}visitTime{"}"}, {"{"}qrCodeUrl{"}"}
+                            WhatsApp message template for visitor approval. Available variables: {"{"}visitorName{"}"}, {"{"}residentName{"}"}, {"{"}visitDate{"}"}, {"{"}visitTime{"}"}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -861,7 +886,6 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        */}
       </Tabs>
       )}
     </MainLayout>

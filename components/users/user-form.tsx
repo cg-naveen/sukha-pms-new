@@ -33,10 +33,10 @@ interface UserFormProps {
 export default function UserForm({ user, onClose }: UserFormProps) {
   const { toast } = useToast();
 
-  // Create schema without password requirement for updates
-  const userSchema = user ? 
-    insertUserSchema.partial({ password: true }) : 
-    insertUserSchema;
+  // Create schema - password optional for updates, required for create
+  const userSchema = user 
+    ? insertUserSchema.extend({ password: z.string().optional() })
+    : insertUserSchema;
 
   // Create form with default values
   const form = useForm<z.infer<typeof userSchema>>({
@@ -65,7 +65,7 @@ export default function UserForm({ user, onClose }: UserFormProps) {
         // Create new user
         const res = await apiRequest(
           "POST", 
-          "/api/register", 
+          "/api/users", 
           data
         );
         return res.json();

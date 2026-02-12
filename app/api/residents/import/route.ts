@@ -87,7 +87,10 @@ export async function POST(request: NextRequest) {
           fullName: (row['full_name'] || row['fullName'] || '').trim(),
           email: (row['email'] || '').trim(),
           phone: (row['phone'] || '').trim(),
-          countryCode: (row['country_code'] || row['countryCode'] || '+60').trim(),
+          countryCode: (() => {
+            const code = (row['country_code'] || row['countryCode'] || '+60').trim()
+            return code.startsWith('+') ? code : `+${code}`
+          })(),
           dateOfBirth: (row['date_of_birth'] || row['dateOfBirth']) ? String(row['date_of_birth'] || row['dateOfBirth']).trim() : undefined,
           idNumber: row['id_number'] || row['idNumber'] ? (row['id_number'] || row['idNumber']).trim() : undefined,
           address: row['address'] ? (row['address']).trim() : undefined,
