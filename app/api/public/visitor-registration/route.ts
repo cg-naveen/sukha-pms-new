@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '../../../../lib/db'
-import { visitors } from '../../../../shared/schema'
+import { visitors, settings } from '../../../../shared/schema'
 import { eq } from 'drizzle-orm'
+import { sendWabotMessage, replaceTemplateVariables } from '../../../../lib/wabot'
+import { format } from 'date-fns'
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +22,8 @@ export async function POST(request: NextRequest) {
       details,
       residentName,
       roomNumber,
-      vehicleNumber
+      vehicleNumber,
+      countryCode
     } = body
 
     if (!fullName || !email || !phone || !nricPassport || !visitDate || !visitTime || !numberOfVisitors || !purposeOfVisit || !residentName) {
@@ -29,6 +32,14 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Check if auto-approval is enabled
+    const [settingsData] = await db
+      .select()
+      .from(settings)
+      .limit(1)
+
+    const autoApproval = settingsData?.visitorAutoApproval ?? false
 
     // Create visitor record
     const visitorData = {
@@ -44,17 +55,51 @@ export async function POST(request: NextRequest) {
       residentName: residentName || null,
       roomNumber: roomNumber || null,
       vehicleNumber: vehicleNumber || null,
-      status: 'pending' as const,
-      countryCode: '+60' as const,
+      status: autoApproval ? 'approved' as const : 'pending' as const,
+      countryCode: (countryCode || '+60') as '+60',
       otherPurpose: purposeOfVisit === 'other' ? details : null
     }
 
     const [newVisitor] = await db.insert(visitors).values(visitorData).returning()
 
+    // If auto-approved and wabot is enabled, send WhatsApp notification
+    if (autoApproval && settingsData?.wabotEnabled && settingsData?.visitorApprovalMessageTemplate && settingsData.wabotApiBaseUrl) {
+      try {
+        const visitorPhone = `${(countryCode || '+60').replace('+', '')}${phone}`
+
+        const textMessage = replaceTemplateVariables(
+          settingsData.visitorApprovalMessageTemplate,
+          {
+            visitorName: newVisitor.fullName || 'Visitor',
+            residentName: newVisitor.residentName || 'Resident',
+            visitDate: newVisitor.visitDate ? format(new Date(newVisitor.visitDate), 'dd MMM yyyy') : 'N/A',
+            visitTime: newVisitor.visitTime || 'N/A',
+          }
+        )
+
+        const result = await sendWabotMessage(
+          visitorPhone,
+          textMessage,
+          settingsData.wabotApiBaseUrl
+        )
+
+        if (!result.success) {
+          console.error('Failed to send WhatsApp notification on auto-approval:', result.error)
+        } else {
+          console.log('WhatsApp notification sent on auto-approval for visitor:', newVisitor.id)
+        }
+      } catch (whatsappError) {
+        console.error('Error sending WhatsApp notification on auto-approval:', whatsappError)
+        // Don't fail the registration if WhatsApp fails
+      }
+    }
+
     return NextResponse.json({
       success: true,
       visitor: newVisitor,
-      message: 'Visitor registration submitted successfully'
+      message: autoApproval 
+        ? 'Visitor registration approved automatically' 
+        : 'Visitor registration submitted successfully'
     })
 
   } catch (error: any) {

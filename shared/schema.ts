@@ -175,6 +175,8 @@ export const settings = pgTable("settings", {
   billingGenerationMinute: integer("billing_generation_minute").notNull().default(0), // 0-59
   // Content management
   visitorTermsAndConditions: text("visitor_terms_and_conditions"), // Terms and conditions for visitor registration
+  // Visitor settings
+  visitorAutoApproval: boolean("visitor_auto_approval").notNull().default(false), // Auto-approve visitor registrations
   // Wabot integration settings
   wabotEnabled: boolean("wabot_enabled").notNull().default(false), // Enable/disable Wabot integration
   wabotApiBaseUrl: text("wabot_api_base_url").default("https://app.wabot.my/api"), // Wabot API base URL

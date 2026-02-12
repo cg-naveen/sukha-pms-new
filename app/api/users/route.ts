@@ -28,10 +28,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    // Hash password
-    if (body.password) {
-      body.password = await hashPassword(body.password)
-    }
+    // Hash password (use default if not provided)
+    body.password = await hashPassword(body.password || 'default123')
     
     const newUser = await db.insert(users).values(body).returning()
     const { password, ...userWithoutPassword } = newUser[0] as any

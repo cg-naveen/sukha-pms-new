@@ -43,6 +43,7 @@ export async function GET() {
     return NextResponse.json({
       ...settingsRecord,
       // Ensure all fields are included even if null
+      visitorAutoApproval: settingsRecord.visitorAutoApproval ?? false,
       wabotEnabled: settingsRecord.wabotEnabled ?? false,
       wabotApiBaseUrl: settingsRecord.wabotApiBaseUrl || null,
       visitorApprovalMessageTemplate: settingsRecord.visitorApprovalMessageTemplate || null,
