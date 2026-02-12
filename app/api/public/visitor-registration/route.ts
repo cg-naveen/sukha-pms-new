@@ -65,8 +65,6 @@ export async function POST(request: NextRequest) {
     // If auto-approved and wabot is enabled, send WhatsApp notification
     if (autoApproval && settingsData?.wabotEnabled && settingsData?.visitorApprovalMessageTemplate && settingsData.wabotApiBaseUrl) {
       try {
-        const visitorPhone = `${(countryCode || '+60').replace('+', '')}${phone}`
-
         const textMessage = replaceTemplateVariables(
           settingsData.visitorApprovalMessageTemplate,
           {
@@ -78,7 +76,7 @@ export async function POST(request: NextRequest) {
         )
 
         const result = await sendWabotMessage(
-          visitorPhone,
+          newVisitor.phone,
           textMessage,
           settingsData.wabotApiBaseUrl
         )

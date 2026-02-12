@@ -421,7 +421,7 @@ export default function VisitorsPage() {
                           </Button>
                         </>
                       )}
-                      {visitor.status === 'approved' && (
+                      {visitor.status === 'approved' && visitor.qrCode && (
                         <Button 
                           variant="outline" 
                           size="sm"
