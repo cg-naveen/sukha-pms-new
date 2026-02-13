@@ -60,7 +60,8 @@ export default function UsersPage() {
   // Reset password mutation
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ id, password }: { id: number, password: string }) => {
-      return await apiRequest("PUT", `/api/users/${id}/password`, { password });
+      // The Next.js route only exposes PUT /api/users/:id (no /password sub-route)
+      return await apiRequest("PUT", `/api/users/${id}`, { password });
     },
     onSuccess: () => {
       toast({
