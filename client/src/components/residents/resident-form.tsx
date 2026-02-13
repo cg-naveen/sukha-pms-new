@@ -485,9 +485,10 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                                 if (beds === 4) return 'VIP';
                                 return `${beds} Beds`;
                               };
+                              const unitDisplay = room.slotLabel ? `${room.unitNumber} ${room.slotLabel}` : room.unitNumber;
                               return (
                                 <SelectItem key={room.id} value={room.id.toString()}>
-                                  {room.unitNumber} - {room.roomType.replace('_', ' ')} ({getBedLabel(room.numberOfBeds || 1)})
+                                  {unitDisplay} - {room.roomType.replace('_', ' ')} ({getBedLabel(room.numberOfBeds || 1)})
                                   {room.availableBeds !== undefined && ` - ${room.availableBeds}/${room.numberOfBeds || 1} beds available`}
                                   {' '}(RM {room.monthlyRate})
                                 </SelectItem>

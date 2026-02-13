@@ -233,7 +233,7 @@ class DatabaseStorage implements IStorage {
           }
         }
       },
-      orderBy: [rooms.unitNumber]
+      orderBy: [rooms.unitNumber, rooms.slotLabel]
     });
     
     // Apply filters in the client-side as this is a simple query pattern for now

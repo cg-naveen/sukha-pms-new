@@ -50,7 +50,8 @@ async function seed() {
       // Define arrays for rooms with proper typing
       const roomsToCreate = [
         {
-          unitNumber: "101A",
+          unitNumber: "101",
+          slotLabel: "A",
           roomType: "studio" as const,
           size: 300,
           floor: 1,
@@ -60,7 +61,8 @@ async function seed() {
           description: "Standard studio apartment with basic amenities"
         },
         {
-          unitNumber: "102A",
+          unitNumber: "102",
+          slotLabel: "A",
           roomType: "studio" as const,
           size: 300,
           floor: 1,
@@ -70,7 +72,8 @@ async function seed() {
           description: "Standard studio apartment with basic amenities"
         },
         {
-          unitNumber: "201B",
+          unitNumber: "201",
+          slotLabel: "B",
           roomType: "studio_deluxe" as const,
           size: 400,
           floor: 2,
@@ -80,7 +83,8 @@ async function seed() {
           description: "Deluxe studio with additional storage space"
         },
         {
-          unitNumber: "202B",
+          unitNumber: "202",
+          slotLabel: "B",
           roomType: "studio_deluxe" as const,
           size: 500,
           floor: 2,
@@ -90,7 +94,8 @@ async function seed() {
           description: "Studio deluxe - single room"
         },
         {
-          unitNumber: "301C",
+          unitNumber: "301",
+          slotLabel: "C",
           roomType: "studio_deluxe" as const,
           size: 550,
           floor: 3,
@@ -100,7 +105,8 @@ async function seed() {
           description: "Studio deluxe - single room"
         },
         {
-          unitNumber: "302C",
+          unitNumber: "302",
+          slotLabel: "C",
           roomType: "studio_deluxe" as const,
           size: 700,
           floor: 3,
@@ -110,7 +116,8 @@ async function seed() {
           description: "Studio deluxe - twin sharing"
         },
         {
-          unitNumber: "401D",
+          unitNumber: "401",
+          slotLabel: "D",
           roomType: "studio_deluxe" as const,
           size: 750,
           floor: 4,
@@ -120,7 +127,8 @@ async function seed() {
           description: "Studio deluxe - twin sharing"
         },
         {
-          unitNumber: "402D",
+          unitNumber: "402",
+          slotLabel: "D",
           roomType: "studio_deluxe" as const,
           size: 900,
           floor: 4,

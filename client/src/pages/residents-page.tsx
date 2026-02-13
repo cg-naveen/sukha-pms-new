@@ -392,7 +392,11 @@ export default function ResidentsPage() {
                       <TableCell>
                         {currentOccupancy ? (
                           <>
-                            <div className="text-sm text-gray-900">{currentOccupancy.room.unitNumber}</div>
+                            <div className="text-sm text-gray-900">
+                              {currentOccupancy.room.slotLabel
+                                ? `${currentOccupancy.room.unitNumber} ${currentOccupancy.room.slotLabel}`
+                                : currentOccupancy.room.unitNumber}
+                            </div>
                             <div className="text-sm text-gray-500">
                               {(() => {
                                 const beds = currentOccupancy.room.numberOfBeds || 1;

@@ -6,7 +6,7 @@ import { relations } from "drizzle-orm";
 // Enums
 export const roleEnum = pgEnum('role', ['superadmin', 'admin', 'staff', 'user']);
 export const roomTypeEnum = pgEnum('room_type', ['studio', 'studio_deluxe']);
-export const roomStatusEnum = pgEnum('room_status', ['vacant', 'occupied', 'maintenance', 'reserved']);
+export const roomStatusEnum = pgEnum('room_status', ['vacant', 'occupied', 'maintenance', 'reserved', 'not_in_use']);
 export const billingStatusEnum = pgEnum('billing_status', ['paid', 'pending', 'overdue', 'new_invoice']);
 export const visitorStatusEnum = pgEnum('visitor_status', ['pending', 'approved', 'rejected']);
 export const salesReferralEnum = pgEnum('sales_referral', ['caGrand', 'Sales Team', 'Offline Event', 'Other']);
@@ -63,7 +63,8 @@ export const nextOfKin = pgTable("next_of_kin", {
 // Rooms table
 export const rooms = pgTable("rooms", {
   id: serial("id").primaryKey(),
-  unitNumber: text("unit_number").notNull().unique(),
+  unitNumber: text("unit_number").notNull(),
+  slotLabel: text("slot_label").notNull().default(""),
   roomType: roomTypeEnum("room_type").notNull(),
   size: integer("size").notNull(), // Size in square feet
   floor: integer("floor").notNull(),
@@ -71,9 +72,12 @@ export const rooms = pgTable("rooms", {
   status: roomStatusEnum("status").notNull().default('vacant'),
   monthlyRate: integer("monthly_rate").notNull(),
   description: text("description"),
+  remark: text("remark"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  roomUnitSlotUnq: unique().on(t.unitNumber, t.slotLabel),
+}));
 
 // Occupancy table
 export const occupancy = pgTable("occupancy", {

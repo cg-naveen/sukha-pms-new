@@ -93,7 +93,11 @@ export default function UpcomingRenewals({ renewals = [], isLoading }: RenewalPr
                 </span>
               </div>
               <p className="text-xs text-gray-500">
-                Room {billing.occupancy?.room?.unitNumber || "N/A"}, 
+                Room {billing.occupancy?.room
+                  ? (billing.occupancy.room.slotLabel
+                      ? `${billing.occupancy.room.unitNumber} ${billing.occupancy.room.slotLabel}`
+                      : billing.occupancy.room.unitNumber)
+                  : "N/A"},
                 {billing.occupancy?.room?.roomType?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || "Unknown"}
               </p>
               <p className="text-xs font-medium text-gray-700 mt-1">

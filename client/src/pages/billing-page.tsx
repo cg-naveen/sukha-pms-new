@@ -466,7 +466,13 @@ export default function BillingPage() {
                       <div className="text-sm text-gray-500">ID: R-{billing.residentId.toString().padStart(5, '0')}</div>
                     </TableCell>
                     <TableCell>
-                      <div>{billing.resident?.room?.unitNumber || 'Not Assigned'}</div>
+                      <div>
+                        {billing.resident?.room
+                          ? (billing.resident.room.slotLabel
+                              ? `${billing.resident.room.unitNumber} ${billing.resident.room.slotLabel}`
+                              : billing.resident.room.unitNumber)
+                          : 'Not Assigned'}
+                      </div>
                       <div className="text-sm text-gray-500">
                         {billing.resident?.room?.roomType?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'No Room'}
                       </div>

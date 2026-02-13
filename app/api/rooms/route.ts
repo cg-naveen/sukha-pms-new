@@ -59,7 +59,19 @@ export async function POST(request: NextRequest) {
     // Validate with schema
     const validatedData = insertRoomSchema.parse(body)
     
-    const newRoom = await db.insert(rooms).values(validatedData).returning()
+    const newRoom = await db
+      .insert(rooms)
+      .values(validatedData)
+      .onConflictDoNothing({ target: [rooms.unitNumber, rooms.slotLabel] })
+      .returning()
+
+    if (!newRoom[0]) {
+      return NextResponse.json(
+        { error: 'Room with this unit and slot already exists' },
+        { status: 409 }
+      )
+    }
+
     return NextResponse.json(newRoom[0], { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -67,6 +79,12 @@ export async function POST(request: NextRequest) {
         error: 'Validation failed', 
         details: error.errors 
       }, { status: 400 })
+    }
+    if ((error as any)?.code === '23505') {
+      return NextResponse.json(
+        { error: 'Room with this unit and slot already exists' },
+        { status: 409 }
+      )
     }
     console.error('Error creating room:', error)
     return NextResponse.json({ error: 'Failed to create room' }, { status: 500 })

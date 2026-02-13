@@ -38,6 +38,7 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
     resolver: zodResolver(insertRoomSchema),
     defaultValues: {
       unitNumber: room?.unitNumber || "",
+      slotLabel: room?.slotLabel || "",
       roomType: room?.roomType || "studio",
       size: room?.size || 0,
       floor: room?.floor || 1,
@@ -45,6 +46,7 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
       status: room?.status || "vacant",
       monthlyRate: room?.monthlyRate || 0,
       description: room?.description || "",
+      remark: room?.remark || "",
     },
   });
 
@@ -60,22 +62,43 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
         );
         return res.json();
       } else {
-        // Create new room
-        const res = await apiRequest(
-          "POST", 
-          "/api/rooms", 
-          data
+        // Create new room slots based on bed configuration
+        const bedCount = data.numberOfBeds || 1;
+        const slots = Array.from({ length: bedCount }, (_, i) =>
+          bedCount === 1 ? "" : String.fromCharCode(65 + i)
         );
-        return res.json();
+
+        const existingRooms = queryClient.getQueryData<any[]>(['/api/rooms']) || [];
+        const results = [];
+        for (const slot of slots) {
+          const alreadyExists = existingRooms.some(
+            (r) => r.unitNumber === data.unitNumber && (r.slotLabel || "") === slot
+          );
+          if (alreadyExists) continue;
+          const payload = { ...data, slotLabel: slot };
+          const res = await apiRequest("POST", "/api/rooms", payload);
+          results.push(await res.json());
+        }
+        return results;
       }
     },
-    onSuccess: () => {
-      toast({
-        title: room ? "Room updated" : "Room created",
-        description: room 
-          ? `Room ${form.getValues().unitNumber} has been updated successfully` 
-          : `Room ${form.getValues().unitNumber} has been added successfully`,
-      });
+    onSuccess: (result) => {
+      if (room) {
+        toast({
+          title: "Room updated",
+          description: `Room ${form.getValues().unitNumber}${form.getValues().slotLabel ? ` ${form.getValues().slotLabel}` : ""} has been updated successfully`,
+        });
+      } else {
+        const bedCount = form.getValues().numberOfBeds || 1;
+        const createdCount = Array.isArray(result) ? result.length : (result ? 1 : 0);
+        toast({
+          title: createdCount > 0 ? "Room slots created" : "No new slots created",
+          description:
+            createdCount > 0
+              ? `Created ${createdCount}/${bedCount} slot${bedCount > 1 ? "s" : ""} for ${form.getValues().unitNumber}`
+              : `All slots already exist for ${form.getValues().unitNumber}`,
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
       onClose();
     },
@@ -108,7 +131,7 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
             </FormItem>
           )}
         />
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -130,56 +153,9 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
                     <SelectItem value="occupied">Occupied</SelectItem>
                     <SelectItem value="maintenance">Maintenance</SelectItem>
                     <SelectItem value="reserved">Reserved</SelectItem>
+                    <SelectItem value="not_in_use">Not In Use</SelectItem>
                   </SelectContent>
                 </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="size"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Size (sq ft)</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    placeholder="500" 
-                    {...field}
-                    onChange={(e) => {
-                      const value = e.target.value === "" ? "0" : e.target.value;
-                      field.onChange(parseInt(value, 10));
-                    }}
-                    value={field.value || ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="floor"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Floor</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    placeholder="1" 
-                    {...field}
-                    onChange={(e) => {
-                      const value = e.target.value === "" ? "0" : e.target.value;
-                      field.onChange(parseInt(value, 10));
-                    }}
-                    value={field.value || ""}
-                  />
-                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -247,6 +223,25 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
               <FormControl>
                 <Textarea 
                   placeholder="Enter room description" 
+                  className="resize-none"
+                  {...field}
+                  value={field.value || ''}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="remark"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Remark</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Enter remark" 
                   className="resize-none"
                   {...field}
                   value={field.value || ''}

@@ -138,7 +138,11 @@ export default function VisitorForm({ visitor, isPublic = false, isWalkIn = fals
                   <SelectContent>
                     {Array.isArray(residents) ? residents.map((resident: any) => (
                       <SelectItem key={resident.id} value={resident.id.toString()}>
-                        {resident.fullName} - Room {resident.occupancy?.[0]?.room?.unitNumber || "N/A"}
+                        {resident.fullName} - Room {resident.occupancy?.[0]?.room
+                          ? (resident.occupancy[0].room.slotLabel
+                              ? `${resident.occupancy[0].room.unitNumber} ${resident.occupancy[0].room.slotLabel}`
+                              : resident.occupancy[0].room.unitNumber)
+                          : "N/A"}
                       </SelectItem>
                     )) : null}
                   </SelectContent>

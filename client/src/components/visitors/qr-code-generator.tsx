@@ -90,7 +90,11 @@ export default function QRCodeGenerator({ visitor }: QRCodeGeneratorProps) {
 📅 *Visit Date:* ${format(new Date(visitor.visitDate), "MMMM d, yyyy")}
 ⏰ *Visit Time:* ${visitor.visitTime || 'Not specified'}
 👥 *Visiting:* ${(visitor as any).resident?.fullName || 'Unknown'}
-🏠 *Room:* ${(visitor as any).resident?.occupancy?.[0]?.room?.unitNumber || 'N/A'}
+🏠 *Room:* ${(visitor as any).resident?.occupancy?.[0]?.room
+  ? (((visitor as any).resident.occupancy[0].room.slotLabel
+      ? `${(visitor as any).resident.occupancy[0].room.unitNumber} ${(visitor as any).resident.occupancy[0].room.slotLabel}`
+      : (visitor as any).resident.occupancy[0].room.unitNumber))
+  : 'N/A'}
 🎯 *Purpose:* ${visitor.purposeOfVisit || 'Not specified'}
 ${visitor.details ? `📝 *Details:* ${visitor.details}` : ''}
 👥 *Group Size:* ${visitor.numberOfVisitors || 1} ${visitor.numberOfVisitors === 1 ? 'person' : 'people'}
