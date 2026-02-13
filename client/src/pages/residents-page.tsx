@@ -342,7 +342,7 @@ export default function ResidentsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Classification</TableHead>
+                <TableHead>Level of Care</TableHead>
                 <TableHead>Room</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Contract End</TableHead>
@@ -392,7 +392,11 @@ export default function ResidentsPage() {
                       <TableCell>
                         {currentOccupancy ? (
                           <>
-                            <div className="text-sm text-gray-900">{currentOccupancy.room.unitNumber}</div>
+                            <div className="text-sm text-gray-900">
+                              {currentOccupancy.room.slotLabel
+                                ? `${currentOccupancy.room.unitNumber} ${currentOccupancy.room.slotLabel}`
+                                : currentOccupancy.room.unitNumber}
+                            </div>
                             <div className="text-sm text-gray-500">
                               {(() => {
                                 const beds = currentOccupancy.room.numberOfBeds || 1;

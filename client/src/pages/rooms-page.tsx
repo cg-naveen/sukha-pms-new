@@ -106,7 +106,7 @@ export default function RoomsPage() {
     }
 
     const exportData = rooms.map((r: any) => ({
-      unit_number: r.unitNumber,
+      unit_number: r.slotLabel ? `${r.unitNumber} ${r.slotLabel}` : r.unitNumber,
       room_type: r.roomType,
       size: r.size,
       floor: r.floor,
@@ -114,6 +114,7 @@ export default function RoomsPage() {
       status: r.status,
       monthly_rate: r.monthlyRate,
       description: r.description || '',
+      remark: r.remark || '',
     }));
 
     exportToCSV(exportData, 'rooms');
@@ -201,6 +202,8 @@ export default function RoomsPage() {
     ? rooms.filter((room: Room) => {
         const matchesSearch = searchQuery === "" || 
           room.unitNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          room.slotLabel?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          room.remark?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           room.description?.toLowerCase().includes(searchQuery.toLowerCase());
         
         const matchesBedConfig = bedConfigFilter === "all_bed_configs" || getBedConfigLabel(room.numberOfBeds) === bedConfigFilter;
@@ -240,6 +243,10 @@ export default function RoomsPage() {
     return `${beds} Beds`;
   };
 
+  const getUnitDisplay = (room: any) => {
+    return room.unitNumber;
+  };
+
   const renderStatusBadge = (status: string) => {
     switch(status) {
       case 'vacant':
@@ -250,6 +257,8 @@ export default function RoomsPage() {
         return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">Maintenance</Badge>;
       case 'reserved':
         return <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">Reserved</Badge>;
+      case 'not_in_use':
+        return <Badge variant="outline" className="bg-gray-200 text-gray-800 border-gray-300">Not In Use</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -335,6 +344,7 @@ export default function RoomsPage() {
                     <SelectItem value="occupied">Occupied</SelectItem>
                     <SelectItem value="maintenance">Maintenance</SelectItem>
                     <SelectItem value="reserved">Reserved</SelectItem>
+                    <SelectItem value="not_in_use">Not In Use</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -350,9 +360,8 @@ export default function RoomsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Unit Number</TableHead>
+                <TableHead>Slot</TableHead>
                 <TableHead>Bed Configuration</TableHead>
-                <TableHead>Size</TableHead>
-                <TableHead>Floor</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Monthly Rate (RM)</TableHead>
                 <TableHead>Resident</TableHead>
@@ -365,10 +374,8 @@ export default function RoomsPage() {
                   <TableRow key={i}>
                     <TableCell><Skeleton className="h-8 w-[100px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[80px]" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-[60px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[100px]" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-[100px]" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-[150px]" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-[120px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[100px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[100px] ml-auto" /></TableCell>
                   </TableRow>
@@ -379,15 +386,14 @@ export default function RoomsPage() {
                   
                   return (
                     <TableRow key={room.id}>
-                      <TableCell className="font-medium">{room.unitNumber}</TableCell>
+                      <TableCell className="font-medium">{getUnitDisplay(room)}</TableCell>
+                      <TableCell className="font-medium">{room.slotLabel}</TableCell>
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">{getBedSharingLabel(room.numberOfBeds || 1)}</span>
                           <span className="text-xs text-gray-500">({room.numberOfBeds || 1} bed{room.numberOfBeds !== 1 ? 's' : ''})</span>
                         </div>
                       </TableCell>
-                      <TableCell>{room.size} sq ft</TableCell>
-                      <TableCell>{room.floor}</TableCell>
                       <TableCell>{renderStatusBadge(room.status)}</TableCell>
                       <TableCell>RM {room.monthlyRate.toLocaleString()}</TableCell>
                       <TableCell>

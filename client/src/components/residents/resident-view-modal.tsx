@@ -95,13 +95,7 @@ export default function ResidentViewModal({
                   <p className="text-sm text-gray-900 mt-1">{residentDetail?.idNumber || resident.idNumber || "N/A"}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Sales Referral</label>
-                  <p className="text-sm text-gray-900 mt-1">
-                    {residentDetail?.salesReferral || resident.salesReferral || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Classification</label>
+                  <label className="text-sm font-medium text-gray-500">Level of Care</label>
                   <div className="text-sm text-gray-900 mt-1">
                     <Badge variant="outline" className="mt-1">
                       {residentDetail?.classification === 'independent' ? 'Independent' : 
@@ -115,21 +109,21 @@ export default function ResidentViewModal({
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Billing Date</label>
+                  <label className="text-sm font-medium text-gray-500">Check in Date</label>
                   <p className="text-sm text-gray-900 mt-1">
                     Day {residentDetail?.billingDate || resident.billingDate || 1} of each month
                   </p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Number of Beds Required</label>
-                  <p className="text-sm text-gray-900 mt-1">
-                    {residentDetail?.numberOfBeds || resident.numberOfBeds || 1} bed{((residentDetail?.numberOfBeds || resident.numberOfBeds || 1) !== 1) ? 's' : ''}
-                  </p>
-                </div>
                 <div className="md:col-span-2">
-                  <label className="text-sm font-medium text-gray-500">Previous Address</label>
+                  <label className="text-sm font-medium text-gray-500">Address</label>
                   <p className="text-sm text-gray-900 mt-1">
                     {residentDetail?.address || resident.address || "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Price</label>
+                  <p className="text-sm text-gray-900 mt-1">
+                    {residentDetail?.price ?? resident.price ?? "N/A"}
                   </p>
                 </div>
               </div>
@@ -149,6 +143,10 @@ export default function ResidentViewModal({
                         <p className="text-sm text-gray-900 mt-1">{nok.relationship}</p>
                       </div>
                       <div>
+                        <label className="text-sm font-medium text-gray-500">Identity Card Number</label>
+                        <p className="text-sm text-gray-900 mt-1">{nok.idNumber || "N/A"}</p>
+                      </div>
+                      <div>
                         <label className="text-sm font-medium text-gray-500">Phone</label>
                         <p className="text-sm text-gray-900 mt-1">{nok.phone}</p>
                       </div>
@@ -159,6 +157,10 @@ export default function ResidentViewModal({
                       <div className="md:col-span-2">
                         <label className="text-sm font-medium text-gray-500">Address</label>
                         <p className="text-sm text-gray-900 mt-1">{nok.address || "N/A"}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Emergency Contact</label>
+                        <p className="text-sm text-gray-900 mt-1">{nok.emergencyContact ? "Yes" : "No"}</p>
                       </div>
                     </div>
                     {index < residentDetail.nextOfKin.length - 1 && (
@@ -487,4 +489,3 @@ function PaymentHistoryTab({ residentId }: PaymentHistoryTabProps) {
     </Card>
   );
 }
-

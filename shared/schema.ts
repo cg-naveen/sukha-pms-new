@@ -6,7 +6,7 @@ import { relations } from "drizzle-orm";
 // Enums
 export const roleEnum = pgEnum('role', ['superadmin', 'admin', 'staff', 'user']);
 export const roomTypeEnum = pgEnum('room_type', ['studio', 'studio_deluxe']);
-export const roomStatusEnum = pgEnum('room_status', ['vacant', 'occupied', 'maintenance', 'reserved']);
+export const roomStatusEnum = pgEnum('room_status', ['vacant', 'occupied', 'maintenance', 'reserved', 'not_in_use']);
 export const billingStatusEnum = pgEnum('billing_status', ['paid', 'pending', 'overdue', 'new_invoice']);
 export const visitorStatusEnum = pgEnum('visitor_status', ['pending', 'approved', 'rejected']);
 export const salesReferralEnum = pgEnum('sales_referral', ['caGrand', 'Sales Team', 'Offline Event', 'Other']);
@@ -42,6 +42,7 @@ export const residents = pgTable("residents", {
   salesReferral: salesReferralEnum("sales_referral").notNull().default('Other'),
   billingDate: integer("billing_date").notNull().default(1), // Day of month for billing (1-31)
   numberOfBeds: integer("number_of_beds").notNull().default(1), // Number of beds required by the resident
+  price: integer("price"), // Optional price override for this resident
   classification: residentClassificationEnum("classification").notNull().default('independent'), // Resident classification: independent, dependent, or memory_care
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -53,9 +54,11 @@ export const nextOfKin = pgTable("next_of_kin", {
   residentId: integer("resident_id").references(() => residents.id).notNull(),
   fullName: text("full_name").notNull(),
   relationship: text("relationship").notNull(),
+  idNumber: text("id_number"),
   phone: text("phone").notNull(),
   email: text("email"),
   address: text("address"),
+  emergencyContact: boolean("emergency_contact").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -63,7 +66,8 @@ export const nextOfKin = pgTable("next_of_kin", {
 // Rooms table
 export const rooms = pgTable("rooms", {
   id: serial("id").primaryKey(),
-  unitNumber: text("unit_number").notNull().unique(),
+  unitNumber: text("unit_number").notNull(),
+  slotLabel: text("slot_label").notNull().default(""),
   roomType: roomTypeEnum("room_type").notNull(),
   size: integer("size").notNull(), // Size in square feet
   floor: integer("floor").notNull(),
@@ -71,9 +75,12 @@ export const rooms = pgTable("rooms", {
   status: roomStatusEnum("status").notNull().default('vacant'),
   monthlyRate: integer("monthly_rate").notNull(),
   description: text("description"),
+  remark: text("remark"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  roomUnitSlotUnq: unique().on(t.unitNumber, t.slotLabel),
+}));
 
 // Occupancy table
 export const occupancy = pgTable("occupancy", {
@@ -247,11 +254,14 @@ export const insertResidentSchema = createInsertSchema(residents, {
   fullName: (schema) => schema.min(2, "Full name must be at least 2 characters"),
   email: (schema) => schema.email("Must provide a valid email"),
   phone: (schema) => schema.min(10, "Phone number must be at least 10 characters"),
+  price: (schema) => schema.int().positive().optional(),
 }).omit({ createdAt: true, updatedAt: true });
 
 export const insertNextOfKinSchema = createInsertSchema(nextOfKin, {
   fullName: (schema) => schema.min(2, "Full name must be at least 2 characters"),
   phone: (schema) => schema.min(10, "Phone number must be at least 10 characters"),
+  idNumber: (schema) => schema.optional(),
+  emergencyContact: (schema) => schema.optional(),
 }).omit({ createdAt: true, updatedAt: true });
 
 export const insertRoomSchema = createInsertSchema(rooms, {

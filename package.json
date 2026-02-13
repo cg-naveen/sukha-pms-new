@@ -15,6 +15,7 @@
     "db:migrate:visitor-terms": "tsx db/migrate-add-visitor-terms.ts",
     "db:migrate:wabot": "tsx db/migrate-add-wabot-integration.ts",
     "db:migrate:wabot-enabled": "tsx db/migrate-add-wabot-enabled.ts",
+    "db:migrate:room-slots-remark-status": "tsx db/migrate-room-slots-remark-status.ts",
     "db:seed:templates": "tsx db/seed-message-templates.ts"
   },
   "dependencies": {

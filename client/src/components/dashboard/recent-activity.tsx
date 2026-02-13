@@ -92,7 +92,7 @@ export default function RecentActivity({ activities = [], isLoading }: RecentAct
       case 'visitor_approved':
         return `${activity.data.fullName} approved for visit`;
       case 'room_update':
-        return `Room ${activity.data.unitNumber} status updated to ${activity.data.status}`;
+        return `Room ${activity.data.slotLabel ? `${activity.data.unitNumber} ${activity.data.slotLabel}` : activity.data.unitNumber} status updated to ${activity.data.status}`;
       default:
         return 'No description available';
     }

@@ -17,3 +17,13 @@ SELECT column_name, data_type, column_default
 FROM information_schema.columns 
 WHERE table_name = 'residents' AND column_name = 'classification';
 
+-- Add optional price column to residents
+ALTER TABLE residents
+ADD COLUMN IF NOT EXISTS price integer;
+
+-- Add identity card and emergency contact to next_of_kin
+ALTER TABLE next_of_kin
+ADD COLUMN IF NOT EXISTS id_number text;
+
+ALTER TABLE next_of_kin
+ADD COLUMN IF NOT EXISTS emergency_contact boolean NOT NULL DEFAULT false;
