@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
         salesReferral: residents.salesReferral,
         billingDate: residents.billingDate,
         numberOfBeds: residents.numberOfBeds,
+        price: residents.price,
         classification: residents.classification,
         createdAt: residents.createdAt,
         updatedAt: residents.updatedAt,

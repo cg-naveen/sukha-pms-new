@@ -8,6 +8,7 @@ import { Loader2, CalendarIcon } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -23,13 +24,6 @@ import { DatePickerDOB } from "@/components/ui/date-picker-dob";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { insertResidentSchema, insertNextOfKinSchema, Resident } from "@shared/schema";
 import DocumentsTab from "./documents-tab";
-
-const salesReferralOptions = [
-  'caGrand',
-  'Sales Team',
-  'Offline Event',
-  'Other'
-];
 
 const classificationOptions = [
   { value: 'independent', label: 'Independent' },
@@ -120,6 +114,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
         salesReferral: resident?.salesReferral || "Other",
         billingDate: resident?.billingDate || 1,
         numberOfBeds: resident?.numberOfBeds || 1,
+        price: resident?.price || undefined,
         classification: resident?.classification || "independent",
       },
       nextOfKin: {
@@ -128,6 +123,8 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
         phone: "",
         email: "",
         address: "",
+        idNumber: "",
+        emergencyContact: false,
       },
     },
   });
@@ -157,6 +154,9 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
       if (residentDetail.address) {
         form.setValue("resident.address", residentDetail.address);
       }
+      if (residentDetail.price !== undefined) {
+        form.setValue("resident.price", residentDetail.price);
+      }
       if (residentDetail.roomId) {
         form.setValue("resident.roomId", residentDetail.roomId);
       }
@@ -183,6 +183,8 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
           phone: nextOfKinData.phone || "",
           email: nextOfKinData.email || "",
           address: nextOfKinData.address || "",
+          idNumber: nextOfKinData.idNumber || "",
+          emergencyContact: nextOfKinData.emergencyContact ?? false,
       });
       } else {
         console.log('No next of kin data found for resident');
@@ -239,6 +241,8 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
               phone: data.nextOfKin.phone.trim(),
               email: data.nextOfKin.email?.trim() || undefined,
               address: data.nextOfKin.address?.trim() || undefined,
+              idNumber: data.nextOfKin.idNumber?.trim() || undefined,
+              emergencyContact: !!data.nextOfKin.emergencyContact,
             };
             
             // Check if next of kin already exists
@@ -294,6 +298,8 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
               phone: data.nextOfKin.phone.trim(),
               email: data.nextOfKin.email?.trim() || undefined,
               address: data.nextOfKin.address?.trim() || undefined,
+              idNumber: data.nextOfKin.idNumber?.trim() || undefined,
+              emergencyContact: !!data.nextOfKin.emergencyContact,
             };
             
             const nextOfKinRes = await apiRequest(
@@ -351,8 +357,6 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
   };
 
   const handleFormError = (errors: any) => {
-    console.error('Form validation errors:', errors);
-    console.error('Form values:', form.getValues());
     toast({
       title: "Validation Error",
       description: "Please fill in all required fields. Check the form for details.",
@@ -436,6 +440,20 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
 
             <FormField
               control={form.control}
+              name="resident.idNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Identity Card Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="ID123456789" {...field} value={field.value || ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="resident.phone"
               render={({ field }) => (
                 <FormItem>
@@ -504,24 +522,30 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
 
               <FormField
                 control={form.control}
-                name="resident.salesReferral"
+                name="resident.price"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Sales Referral</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select referral source" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {salesReferralOptions.map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Price (optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="e.g., 4500"
+                        min="0"
+                        {...field}
+                        onChange={(e) => {
+                          const value = e.target.value.trim();
+                          if (value === "") {
+                            field.onChange(undefined);
+                          } else {
+                            const numValue = parseInt(value, 10);
+                            if (!isNaN(numValue) && numValue >= 0) {
+                              field.onChange(numValue);
+                            }
+                          }
+                        }}
+                        value={field.value ?? ""}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -534,7 +558,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                 name="resident.classification"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Classification</FormLabel>
+                    <FormLabel>Level of Care</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value || 'independent'}>
                       <FormControl>
                         <SelectTrigger>
@@ -558,128 +582,88 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="resident.billingDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Billing Date (Day of Month)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="1" 
-                        min="1"
-                        max="31"
-                        {...field}
-                        onChange={(e) => {
-                          const value = e.target.value.trim()
-                          if (value === "") {
-                            field.onChange("")
-                          } else {
-                            const numValue = parseInt(value, 10)
-                            if (!isNaN(numValue) && numValue >= 1 && numValue <= 31) {
-                              field.onChange(numValue)
-                            }
-                          }
-                        }}
-                        value={field.value ?? ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                    <p className="text-xs text-muted-foreground">
-                      Day of month (1-31) for billing generation
-                    </p>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="resident.numberOfBeds"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Number of Beds Required</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="1" 
-                        min="1"
-                        max="10"
-                        {...field}
-                        onChange={(e) => {
-                          const value = e.target.value.trim()
-                          if (value === "") {
-                            field.onChange("")
-                          } else {
-                            const numValue = parseInt(value, 10)
-                            if (!isNaN(numValue) && numValue >= 1 && numValue <= 10) {
-                              field.onChange(numValue)
-                            }
-                          }
-                        }}
-                        value={field.value ?? ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                    <p className="text-xs text-muted-foreground">
-                      Number of beds this resident requires (1-10)
-                    </p>
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="resident.dateOfBirth"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Date of Birth</FormLabel>
-                    <DatePickerDOB
-                      value={field.value ?? undefined}
-                      onChange={(date) => {
-                        if (date) {
-                          const dateString = date.toISOString().split('T')[0]
-                          field.onChange(dateString)
+            <FormField
+              control={form.control}
+              name="resident.billingDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Check in Date (Day of Month)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      placeholder="1" 
+                      min="1"
+                      max="31"
+                      {...field}
+                      onChange={(e) => {
+                        const value = e.target.value.trim()
+                        if (value === "") {
+                          field.onChange("")
                         } else {
-                          field.onChange(undefined)
+                          const numValue = parseInt(value, 10)
+                          if (!isNaN(numValue) && numValue >= 1 && numValue <= 31) {
+                            field.onChange(numValue)
+                          }
                         }
                       }}
-                      disabled={(date) =>
-                        date > new Date() || date < new Date("1900-01-01")
-                      }
+                      value={field.value ?? ""}
                     />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="resident.idNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ID Number</FormLabel>
-                    <FormControl>
-                       <Input placeholder="ID123456789" {...field} value={field.value || ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                  </FormControl>
+                  <FormMessage />
+                  <p className="text-xs text-muted-foreground">
+                    Day of month (1-31) for resident check-in/billing start
+                  </p>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="resident.numberOfBeds"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="sr-only">Number of Beds (hidden)</FormLabel>
+                  <FormControl>
+                    <Input type="hidden" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="resident.dateOfBirth"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Date of Birth</FormLabel>
+                  <DatePickerDOB
+                    value={field.value ?? undefined}
+                    onChange={(date) => {
+                      if (date) {
+                        const dateString = date.toISOString().split('T')[0]
+                        field.onChange(dateString)
+                      } else {
+                        field.onChange(undefined)
+                      }
+                    }}
+                    disabled={(date) =>
+                      date > new Date() || date < new Date("1900-01-01")
+                    }
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <FormField
               control={form.control}
               name="resident.address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Previous Address</FormLabel>
+                  <FormLabel>Address</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Enter previous address" 
+                      placeholder="Enter address" 
                       className="resize-none"
                       {...field}
                       value={field.value || ''}
@@ -723,6 +707,20 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                   <FormLabel>Relationship</FormLabel>
                   <FormControl>
                     <Input placeholder="Spouse, Parent, Sibling, etc." {...field} value={field.value || ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="nextOfKin.idNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Identity Card Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="ID123456789" {...field} value={field.value || ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -772,6 +770,26 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                        {...field}
                        value={field.value || ''}
                      />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="nextOfKin.emergencyContact"
+              render={({ field }) => (
+                <FormItem className="flex flex-col space-y-1">
+                  <FormLabel>Emergency Contact</FormLabel>
+                  <FormControl>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={field.value || false}
+                        onCheckedChange={(checked) => field.onChange(!!checked)}
+                      />
+                      <span className="text-sm text-muted-foreground">If the PIC is not available</span>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

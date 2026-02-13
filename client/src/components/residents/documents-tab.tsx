@@ -5,9 +5,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface Document {
@@ -25,8 +23,10 @@ interface DocumentsTabProps {
   residentId: number;
 }
 
+const presetDocumentTitles = ["Agreement", "Sukha Assessment", "Medical Report"];
+
 export default function DocumentsTab({ residentId }: DocumentsTabProps) {
-  const [uploadTitle, setUploadTitle] = useState("");
+  const [pendingTitle, setPendingTitle] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -63,7 +63,7 @@ export default function DocumentsTab({ residentId }: DocumentsTabProps) {
         description: "The document has been successfully uploaded.",
       });
       queryClient.invalidateQueries({ queryKey: [`/api/residents/${residentId}/documents`] });
-      setUploadTitle("");
+      setPendingTitle(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -101,11 +101,11 @@ export default function DocumentsTab({ residentId }: DocumentsTabProps) {
     },
   });
 
-  const handleFileUpload = () => {
-    if (!fileInputRef.current?.files?.[0] || !uploadTitle.trim()) {
+  const handleFileChange = () => {
+    if (!fileInputRef.current?.files?.[0] || !pendingTitle) {
       toast({
         title: "Upload error",
-        description: "Please select a file and enter a title.",
+        description: "Please choose a section first, then pick a file.",
         variant: "destructive",
       });
       return;
@@ -139,7 +139,7 @@ export default function DocumentsTab({ residentId }: DocumentsTabProps) {
     }
 
     setIsUploading(true);
-    uploadMutation.mutate({ file, title: uploadTitle.trim() });
+    uploadMutation.mutate({ file, title: pendingTitle });
   };
 
   const handleDownload = async (documentItem: Document) => {
@@ -204,64 +204,128 @@ export default function DocumentsTab({ residentId }: DocumentsTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Upload Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            Upload Document
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="documentTitle">Document Title</Label>
-              <Input
-                id="documentTitle"
-                placeholder="e.g., Tenancy Agreement, ID Copy"
-                value={uploadTitle}
-                onChange={(e) => setUploadTitle(e.target.value)}
-                disabled={isUploading}
-              />
-            </div>
-            <div>
-              <Label htmlFor="documentFile">Select File</Label>
-              <Input
-                id="documentFile"
-                type="file"
-                ref={fileInputRef}
-                accept=".jpg,.jpeg,.png,.pdf"
-                disabled={isUploading}
-              />
-            </div>
-          </div>
-          <Alert>
-            <AlertDescription>
-              Accepted file types: JPG, PNG, PDF. Maximum file size: 10MB.
-            </AlertDescription>
-          </Alert>
-          <Button 
-            onClick={handleFileUpload} 
-            disabled={isUploading || uploadMutation.isPending}
-            className="w-full md:w-auto"
-          >
-            {isUploading || uploadMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Uploading...
-              </>
-            ) : (
-              <>
-                <Upload className="mr-2 h-4 w-4" />
-                Upload Document
-              </>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+      <Input
+        id="documentFile"
+        type="file"
+        ref={fileInputRef}
+        accept=".jpg,.jpeg,.png,.pdf"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {/* Three required sections */}
+      <div className="grid grid-cols-1 gap-4">
+        {presetDocumentTitles.map((title) => {
+          const doc = documents.find((d) => d.title === title);
+          return (
+            <Card key={title} className="h-full">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between text-base">
+                  <span>{title}</span>
+                  {doc && <Upload className="h-4 w-4 text-green-600" />}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {doc ? (
+                  <div className="text-sm space-y-1">
+                    <div className="flex items-center gap-2">
+                      {getFileIcon(doc.mimeType)}
+                      <span className="font-medium">{doc.fileName}</span>
+                    </div>
+                    <p className="text-muted-foreground">
+                      {formatFileSize(doc.fileSize)} • {new Date(doc.createdAt).toLocaleDateString()}
+                    </p>
+                    <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      onClick={() => window.open(getDocumentViewUrl(doc), "_blank")}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      onClick={() => handleDownload(doc)}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          type="button"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Delete {title}</DialogTitle>
+                            <DialogDescription>
+                              Are you sure you want to delete this document? This action cannot be undone.
+                            </DialogDescription>
+                          </DialogHeader>
+                      <DialogFooter>
+                          <Button variant="outline" type="button">Cancel</Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => deleteMutation.mutate(doc.id)}
+                      disabled={deleteMutation.isPending}
+                      type="button"
+                    >
+                              {deleteMutation.isPending ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Deleting...
+                                </>
+                              ) : (
+                                "Delete"
+                              )}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Not uploaded yet.</p>
+                )}
+
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  disabled={isUploading || uploadMutation.isPending}
+                  type="button"
+                  onClick={() => {
+                    setPendingTitle(title);
+                    fileInputRef.current?.click();
+                  }}
+                >
+                  {isUploading && pendingTitle === title ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      {doc ? "Replace" : "Upload"} {title}
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
       {/* Documents List */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle>Uploaded Documents ({documents.length})</CardTitle>
         </CardHeader>
@@ -350,7 +414,7 @@ export default function DocumentsTab({ residentId }: DocumentsTabProps) {
             </div>
           )}
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

@@ -42,6 +42,7 @@ export const residents = pgTable("residents", {
   salesReferral: salesReferralEnum("sales_referral").notNull().default('Other'),
   billingDate: integer("billing_date").notNull().default(1), // Day of month for billing (1-31)
   numberOfBeds: integer("number_of_beds").notNull().default(1), // Number of beds required by the resident
+  price: integer("price"), // Optional price override for this resident
   classification: residentClassificationEnum("classification").notNull().default('independent'), // Resident classification: independent, dependent, or memory_care
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -53,9 +54,11 @@ export const nextOfKin = pgTable("next_of_kin", {
   residentId: integer("resident_id").references(() => residents.id).notNull(),
   fullName: text("full_name").notNull(),
   relationship: text("relationship").notNull(),
+  idNumber: text("id_number"),
   phone: text("phone").notNull(),
   email: text("email"),
   address: text("address"),
+  emergencyContact: boolean("emergency_contact").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -251,11 +254,14 @@ export const insertResidentSchema = createInsertSchema(residents, {
   fullName: (schema) => schema.min(2, "Full name must be at least 2 characters"),
   email: (schema) => schema.email("Must provide a valid email"),
   phone: (schema) => schema.min(10, "Phone number must be at least 10 characters"),
+  price: (schema) => schema.int().positive().optional(),
 }).omit({ createdAt: true, updatedAt: true });
 
 export const insertNextOfKinSchema = createInsertSchema(nextOfKin, {
   fullName: (schema) => schema.min(2, "Full name must be at least 2 characters"),
   phone: (schema) => schema.min(10, "Phone number must be at least 10 characters"),
+  idNumber: (schema) => schema.optional(),
+  emergencyContact: (schema) => schema.optional(),
 }).omit({ createdAt: true, updatedAt: true });
 
 export const insertRoomSchema = createInsertSchema(rooms, {
