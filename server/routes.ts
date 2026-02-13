@@ -27,7 +27,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { checkRole, checkWriteAccess } = setupAuth(app);
 
   // ==================== User Routes ====================
-  app.get("/api/users", checkRole('superadmin'), async (req, res) => {
+  app.get("/api/users", checkRole('superadmin', 'admin'), async (req, res) => {
     try {
       const users = await storage.getAllUsers();
       res.json(users);
@@ -83,6 +83,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating password:', error);
       res.status(500).json({ message: 'Failed to update password' });
+    }
+  });
+
+  app.delete("/api/users/:id", checkRole('superadmin', 'admin'), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      if (user.role !== 'user') {
+        return res.status(400).json({ message: 'Only users with role "user" can be deleted' });
+      }
+
+      await storage.deleteUser(id);
+      res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ message: 'Failed to delete user' });
     }
   });
 

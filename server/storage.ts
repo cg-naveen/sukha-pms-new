@@ -33,6 +33,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<any>;
   getAllUsers(): Promise<any[]>;
   updateUser(id: number, userData: Partial<InsertUser>): Promise<any>;
+  deleteUser(id: number): Promise<any>;
   
   // Residents
   getResident(id: number): Promise<any>;
@@ -132,6 +133,14 @@ class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return updatedUser;
+  }
+
+  async deleteUser(id: number) {
+    const [deletedUser] = await db
+      .delete(users)
+      .where(eq(users.id, id))
+      .returning();
+    return deletedUser;
   }
 
   // Resident methods

@@ -31,7 +31,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Plus, Search, Key, AlertCircle, Loader2 } from "lucide-react";
+import { Plus, Search, Key, AlertCircle, Loader2, Trash2 } from "lucide-react";
 
 export default function UsersPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -44,7 +44,7 @@ export default function UsersPage() {
   // Fetch users data
   const { data: users, isLoading } = useQuery<any[]>({
     queryKey: ["/api/users"],
-    enabled: currentUser?.role === 'admin',
+    enabled: currentUser?.role === 'superadmin' || currentUser?.role === 'admin',
   });
 
   // Filter users based on search
@@ -78,6 +78,44 @@ export default function UsersPage() {
       });
     },
   });
+
+  // Delete user mutation (only allowed for role "user")
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiRequest("DELETE", `/api/users/${id}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "User deleted",
+        description: "The user has been deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteUser = (user: any) => {
+    if (user.role !== 'user') {
+      toast({
+        title: "Cannot delete",
+        description: "Only users with role 'User' can be deleted",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete ${user.fullName}? This action cannot be undone.`);
+    if (confirmed) {
+      deleteUserMutation.mutate(user.id);
+    }
+  };
 
   const openForm = (user: any = null) => {
     setSelectedUser(user);
@@ -191,6 +229,26 @@ export default function UsersPage() {
                         <Key className="h-4 w-4 mr-1" />
                         Reset Password
                       </Button>
+                      {user.role === 'user' && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteUser(user)}
+                          disabled={deleteUserMutation.isPending && deleteUserMutation.variables === user.id}
+                        >
+                          {deleteUserMutation.isPending && deleteUserMutation.variables === user.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                              Deleting...
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
