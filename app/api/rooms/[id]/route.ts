@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '../../../../lib/db'
-import { rooms, occupancy } from '../../../../shared/schema'
+import { rooms, occupancy, residents, billings } from '../../../../shared/schema'
 import { requireAuth } from '../../../../lib/auth'
 import { insertRoomSchema } from '../../../../shared/schema'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 
 export async function GET(
@@ -82,8 +82,26 @@ export async function DELETE(
     const resolvedParams = await params
     const roomId = parseInt(resolvedParams.id)
 
-    // Delete all occupancy records for this room first
+    // Get all occupancy records for this room to clean up billings
+    const roomOccupancies = await db
+      .select({ id: occupancy.id })
+      .from(occupancy)
+      .where(eq(occupancy.roomId, roomId))
+
+    // Delete billings linked to those occupancies
+    if (roomOccupancies.length > 0) {
+      const occupancyIds = roomOccupancies.map((o) => o.id)
+      await db.delete(billings).where(inArray(billings.occupancyId, occupancyIds))
+    }
+
+    // Delete all occupancy records for this room
     await db.delete(occupancy).where(eq(occupancy.roomId, roomId))
+
+    // Unlink residents that reference this room
+    await db
+      .update(residents)
+      .set({ roomId: null })
+      .where(eq(residents.roomId, roomId))
 
     // Then delete the room
     await db.delete(rooms).where(eq(rooms.id, roomId))

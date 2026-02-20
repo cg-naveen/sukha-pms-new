@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { format } from "date-fns";
-import { Loader2, CalendarIcon } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -112,7 +112,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
         photo: resident?.photo || "",
         roomId: resident?.roomId || undefined,
         salesReferral: resident?.salesReferral || "Other",
-        billingDate: resident?.billingDate || 1,
+        billingDate: resident?.billingDate || undefined,
         numberOfBeds: resident?.numberOfBeds || 1,
         price: resident?.price || undefined,
         classification: resident?.classification || "independent",
@@ -586,33 +586,22 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
               control={form.control}
               name="resident.billingDate"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Check in Date (Day of Month)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      placeholder="1" 
-                      min="1"
-                      max="31"
-                      {...field}
-                      onChange={(e) => {
-                        const value = e.target.value.trim()
-                        if (value === "") {
-                          field.onChange("")
-                        } else {
-                          const numValue = parseInt(value, 10)
-                          if (!isNaN(numValue) && numValue >= 1 && numValue <= 31) {
-                            field.onChange(numValue)
-                          }
-                        }
-                      }}
-                      value={field.value ?? ""}
-                    />
-                  </FormControl>
+                <FormItem className="flex flex-col">
+                  <FormLabel>Check in Date</FormLabel>
+                  <DatePickerDOB
+                    value={field.value ? field.value.split('T')[0] : undefined}
+                    onChange={(date) => {
+                      if (date) {
+                        const y = date.getFullYear();
+                        const m = String(date.getMonth() + 1).padStart(2, '0');
+                        const d = String(date.getDate()).padStart(2, '0');
+                        field.onChange(`${y}-${m}-${d}`);
+                      } else {
+                        field.onChange(undefined);
+                      }
+                    }}
+                  />
                   <FormMessage />
-                  <p className="text-xs text-muted-foreground">
-                    Day of month (1-31) for resident check-in/billing start
-                  </p>
                 </FormItem>
               )}
             />
@@ -640,10 +629,12 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                     value={field.value ?? undefined}
                     onChange={(date) => {
                       if (date) {
-                        const dateString = date.toISOString().split('T')[0]
-                        field.onChange(dateString)
+                        const y = date.getFullYear();
+                        const m = String(date.getMonth() + 1).padStart(2, '0');
+                        const d = String(date.getDate()).padStart(2, '0');
+                        field.onChange(`${y}-${m}-${d}`);
                       } else {
-                        field.onChange(undefined)
+                        field.onChange(undefined);
                       }
                     }}
                     disabled={(date) =>

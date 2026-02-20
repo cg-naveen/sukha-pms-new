@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '../../../../lib/db'
-import { residents, nextOfKin, occupancy, rooms, billings, insertOccupancySchema } from '../../../../shared/schema'
+import { residents, nextOfKin, occupancy, rooms, billings, documents, visitors, insertOccupancySchema } from '../../../../shared/schema'
 import { requireAuth } from '../../../../lib/auth'
 import { insertResidentSchema } from '../../../../shared/schema'
 import { eq, and, count } from 'drizzle-orm'
 import { z } from 'zod'
+import { deleteFromGoogleDrive } from '../../../../lib/google-drive'
 
 export async function GET(
   request: NextRequest,
@@ -166,13 +167,33 @@ export async function DELETE(
     const residentId = parseInt(resolvedParams.id)
 
     // Delete related records in order of dependencies
-    // 1. Delete billings first (depends on resident)
+    // 1. Delete documents (and their physical files) first
+    const documentRecords = await db
+      .select()
+      .from(documents)
+      .where(eq(documents.residentId, residentId))
+
+    for (const doc of documentRecords) {
+      if (doc.filePath && !doc.filePath.startsWith('/uploads/') && !doc.filePath.startsWith('uploads/')) {
+        try {
+          await deleteFromGoogleDrive(doc.filePath)
+        } catch (err) {
+          console.error('Error deleting document from Google Drive:', err)
+        }
+      }
+    }
+    await db.delete(documents).where(eq(documents.residentId, residentId))
+
+    // 2. Delete visitors records
+    await db.delete(visitors).where(eq(visitors.residentId, residentId))
+
+    // 3. Delete billings
     await db.delete(billings).where(eq(billings.residentId, residentId))
 
-    // 2. Delete next of kin records
+    // 4. Delete next of kin records
     await db.delete(nextOfKin).where(eq(nextOfKin.residentId, residentId))
 
-    // 3. Delete occupancy records and update room status
+    // 5. Delete occupancy records and update room status
     const occupancyRecords = await db
       .select()
       .from(occupancy)
@@ -196,7 +217,7 @@ export async function DELETE(
       }
     }
 
-    // 4. Finally delete the resident
+    // 6. Finally delete the resident
     await db.delete(residents).where(eq(residents.id, residentId))
 
     return NextResponse.json({ message: 'Resident deleted successfully' })

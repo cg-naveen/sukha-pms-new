@@ -173,7 +173,7 @@ export default function ResidentsPage() {
       id_number: r.idNumber || '',
       address: r.address || '',
       sales_referral: r.salesReferral,
-      billing_date: r.billingDate || 1,
+      billing_date: r.billingDate || '',
       number_of_beds: r.numberOfBeds || 1,
       classification: r.classification || 'independent',
     }));

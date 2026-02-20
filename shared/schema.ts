@@ -40,7 +40,7 @@ export const residents = pgTable("residents", {
   photo: text("photo"),
   roomId: integer("room_id").references(() => rooms.id),
   salesReferral: salesReferralEnum("sales_referral").notNull().default('Other'),
-  billingDate: integer("billing_date").notNull().default(1), // Day of month for billing (1-31)
+  billingDate: date("billing_date"), // Check-in date (full date, day used for monthly billing)
   numberOfBeds: integer("number_of_beds").notNull().default(1), // Number of beds required by the resident
   price: integer("price"), // Optional price override for this resident
   classification: residentClassificationEnum("classification").notNull().default('independent'), // Resident classification: independent, dependent, or memory_care
