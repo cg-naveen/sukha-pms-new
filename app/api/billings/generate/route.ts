@@ -63,8 +63,12 @@ export async function POST(request: NextRequest) {
 
     for (const resident of allResidents) {
       try {
-        // Check if resident's billingDate matches today's day
-        if (resident.billingDate !== currentDay) {
+        // Check if resident's billingDate (stored as YYYY-MM-DD) day matches today's day
+        // Parse the day directly from the date string to avoid timezone issues
+        const billingDay = resident.billingDate
+          ? parseInt(resident.billingDate.split('-')[2], 10)
+          : null
+        if (billingDay === null || billingDay !== currentDay) {
           continue // Skip residents whose billing date is not today
         }
 
@@ -77,8 +81,8 @@ export async function POST(request: NextRequest) {
 
         const room = activeOccupancy.room
 
-        // Calculate due date (billingDate of current month)
-        const dueDate = new Date(currentYear, currentMonth, resident.billingDate)
+        // Calculate due date (billing day of current month)
+        const dueDate = new Date(currentYear, currentMonth, billingDay)
         const dueDateStr = dueDate.toISOString().split('T')[0]
 
         // Check if billing already exists for this resident and month

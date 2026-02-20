@@ -166,7 +166,7 @@ async function seed() {
           dateOfBirth: "1985-03-15",
           idNumber: "ID12345678",
           address: "Previous address: 123 Main St, Anytown",
-          billingDate: 1
+          billingDate: "2024-01-01"
         },
         {
           fullName: "Maria Garcia",
@@ -175,7 +175,7 @@ async function seed() {
           dateOfBirth: "1990-07-22",
           idNumber: "ID23456789",
           address: "Previous address: 456 Oak Ave, Somewhere City",
-          billingDate: 5
+          billingDate: "2024-01-05"
         },
         {
           fullName: "Robert Johnson",
@@ -184,7 +184,7 @@ async function seed() {
           dateOfBirth: "1978-11-30",
           idNumber: "ID34567890",
           address: "Previous address: 789 Pine Rd, Another Town",
-          billingDate: 10
+          billingDate: "2024-01-10"
         },
         {
           fullName: "Patricia Williams",
@@ -193,7 +193,7 @@ async function seed() {
           dateOfBirth: "1982-05-10",
           idNumber: "ID45678901",
           address: "Previous address: 321 Cedar Ln, Elsewhere",
-          billingDate: 15
+          billingDate: "2024-01-15"
         }
       ];
       

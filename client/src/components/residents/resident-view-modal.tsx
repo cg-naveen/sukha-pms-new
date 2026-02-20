@@ -111,7 +111,13 @@ export default function ResidentViewModal({
                 <div>
                   <label className="text-sm font-medium text-gray-500">Check in Date</label>
                   <p className="text-sm text-gray-900 mt-1">
-                    Day {residentDetail?.billingDate || resident.billingDate || 1} of each month
+                    {(() => {
+                      const bd = residentDetail?.billingDate || resident.billingDate;
+                      if (!bd) return 'N/A';
+                      // bd may be "YYYY-MM-DD" or a full ISO string from Supabase
+                      const dateStr = typeof bd === 'string' ? bd.split('T')[0] : bd;
+                      return format(new Date(dateStr + 'T00:00:00'), 'dd MMM yyyy');
+                    })()}
                   </p>
                 </div>
                 <div className="md:col-span-2">

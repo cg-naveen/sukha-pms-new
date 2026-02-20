@@ -25,20 +25,30 @@ interface DatePickerDOBProps {
   disabled?: (date: Date) => boolean
 }
 
+// Parse a date string as local time to avoid UTC offset shifting the day
+function parseDateLocal(value: Date | string | null | undefined): Date | undefined {
+  if (!value) return undefined
+  if (value instanceof Date) return value
+  // Extract YYYY-MM-DD part in case it's a full ISO string from Supabase
+  const dateStr = value.split('T')[0]
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
 export function DatePickerDOB({
   value,
   onChange,
   placeholder = "Pick a date",
   disabled,
 }: DatePickerDOBProps) {
+  const selectedDate = parseDateLocal(value)
+
   const [month, setMonth] = React.useState<Date>(
-    value ? new Date(value) : new Date()
+    selectedDate ?? new Date()
   )
   const [year, setYear] = React.useState<number>(
-    value ? new Date(value).getFullYear() : new Date().getFullYear()
+    selectedDate ? selectedDate.getFullYear() : new Date().getFullYear()
   )
-
-  const selectedDate = value ? new Date(value) : undefined
 
   // Generate year options (from 1900 to current year)
   const currentYear = new Date().getFullYear()
@@ -81,7 +91,7 @@ export function DatePickerDOB({
         <Button
           variant="outline"
           className={cn(
-            "w-full pl-3 text-left font-normal",
+            "w-full pl-3 text-left font-normal justify-start",
             !selectedDate && "text-muted-foreground"
           )}
         >
@@ -141,7 +151,7 @@ export function DatePickerDOB({
             caption_label: "text-sm font-medium",
             nav: "space-x-1 flex items-center",
             nav_button: cn(
-              "inline-flex items-center justify-center rounded-md border border-input bg-background px-2 py-1 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+              "inline-flex items-center justify-start rounded-md border border-input bg-background px-2 py-1 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
             ),
             nav_button_previous: "absolute left-1",
             nav_button_next: "absolute right-1",

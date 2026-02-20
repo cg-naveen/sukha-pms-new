@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
           idNumber: row['id_number'] || row['idNumber'] ? (row['id_number'] || row['idNumber']).trim() : undefined,
           address: row['address'] ? (row['address']).trim() : undefined,
           salesReferral: (row['sales_referral'] || row['salesReferral'] || 'Other').trim(),
-          billingDate: row['billing_date'] || row['billingDate'] ? parseInt(row['billing_date'] || row['billingDate']) : 1,
+          billingDate: row['billing_date'] || row['billingDate'] ? String(row['billing_date'] || row['billingDate']).trim() : undefined,
           numberOfBeds: row['number_of_beds'] || row['numberOfBeds'] ? parseInt(row['number_of_beds'] || row['numberOfBeds']) : 1,
           classification: (row['classification'] || 'independent').trim() as 'independent' | 'dependent' | 'memory_care',
         }
