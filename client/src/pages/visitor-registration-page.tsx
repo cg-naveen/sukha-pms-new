@@ -148,7 +148,7 @@ export default function VisitorRegistrationPage() {
       setSubmissionSuccess(true);
       toast({
         title: "Registration successful",
-        description: "Your visit has been registered. You will receive a confirmation email shortly.",
+        description: "Your visit has been registered. You will receive the confirmation on WhatsApp once your visit is approved by the staff.",
       });
     },
     onError: (error: Error) => {
@@ -201,7 +201,7 @@ export default function VisitorRegistrationPage() {
               Thank you for registering your visit. Your registration has been submitted and is awaiting approval.
             </p>
             <p>
-              You will receive a confirmation email once your visit is approved by the staff.
+              You will receive the confirmation on WhatsApp once your visit is approved by the staff.
             </p>
           </CardContent>
           <CardFooter className="flex justify-center">
