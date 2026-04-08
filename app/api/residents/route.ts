@@ -42,42 +42,45 @@ export async function GET(request: NextRequest) {
     
     const allResidents = await query
 
-    // For each resident, fetch their occupancy and room data
-    const residentsWithOccupancy = await Promise.all(
-      allResidents.map(async (resident) => {
-        const occupancyData = await db
-          .select({
-            id: occupancy.id,
-            roomId: occupancy.roomId,
-            residentId: occupancy.residentId,
-            startDate: occupancy.startDate,
-            endDate: occupancy.endDate,
-            active: occupancy.active,
-            createdAt: occupancy.createdAt,
-            updatedAt: occupancy.updatedAt,
-            room: {
-              id: rooms.id,
-              unitNumber: rooms.unitNumber,
-              roomType: rooms.roomType,
-              size: rooms.size,
-              floor: rooms.floor,
-              numberOfBeds: rooms.numberOfBeds,
-              status: rooms.status,
-              monthlyRate: rooms.monthlyRate,
-              description: rooms.description,
-            }
-          })
-          .from(occupancy)
-          .leftJoin(rooms, eq(occupancy.roomId, rooms.id))
-          .where(eq(occupancy.residentId, resident.id))
-
-        return {
-          ...resident,
-          occupancy: occupancyData
+    const allOccupancies = await db
+      .select({
+        id: occupancy.id,
+        roomId: occupancy.roomId,
+        residentId: occupancy.residentId,
+        startDate: occupancy.startDate,
+        endDate: occupancy.endDate,
+        active: occupancy.active,
+        createdAt: occupancy.createdAt,
+        updatedAt: occupancy.updatedAt,
+        room: {
+          id: rooms.id,
+          unitNumber: rooms.unitNumber,
+          slotLabel: rooms.slotLabel,
+          roomType: rooms.roomType,
+          size: rooms.size,
+          floor: rooms.floor,
+          numberOfBeds: rooms.numberOfBeds,
+          bedConfig: rooms.bedConfig,
+          status: rooms.status,
+          monthlyRate: rooms.monthlyRate,
+          description: rooms.description,
+          remark: rooms.remark,
         }
       })
-    )
-    
+      .from(occupancy)
+      .leftJoin(rooms, eq(occupancy.roomId, rooms.id))
+
+    const occupanciesByResident = allOccupancies.reduce<Record<number, typeof allOccupancies>>((acc, occ) => {
+      if (!acc[occ.residentId]) acc[occ.residentId] = []
+      acc[occ.residentId].push(occ)
+      return acc
+    }, {})
+
+    const residentsWithOccupancy = allResidents.map((resident) => ({
+      ...resident,
+      occupancy: occupanciesByResident[resident.id] ?? [],
+    }))
+
     return NextResponse.json(residentsWithOccupancy)
   } catch (error) {
     console.error('Error fetching residents:', error)
