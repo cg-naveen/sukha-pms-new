@@ -497,9 +497,10 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
                             .filter((room: any) => room.isAvailable)
                             .map((room: any) => {
                               const getBedLabel = (beds: number) => {
+                                const labels: Record<string, string> = { single: 'Single', twin_sharing: 'Twin Sharing', quad_suite: 'Quad Suite', vip: 'VIP' };
+                                if (room.bedConfig && labels[room.bedConfig]) return labels[room.bedConfig];
                                 if (beds === 1) return 'Single';
                                 if (beds === 2) return 'Twin Sharing';
-                                if (beds === 3) return 'Triple Sharing';
                                 if (beds === 4) return 'VIP';
                                 return `${beds} Beds`;
                               };

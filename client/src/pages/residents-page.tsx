@@ -400,9 +400,12 @@ export default function ResidentsPage() {
                             <div className="text-sm text-gray-500">
                               {(() => {
                                 const beds = currentOccupancy.room.numberOfBeds || 1;
+                                const labels: Record<string, string> = { single: 'Single', twin_sharing: 'Twin Sharing', quad_suite: 'Quad Suite', vip: 'VIP' };
+                                const bedConfig = currentOccupancy.room.bedConfig;
+                                if (bedConfig && labels[bedConfig]) return labels[bedConfig];
                                 if (beds === 1) return 'Single';
                                 if (beds === 2) return 'Twin Sharing';
-                                if (beds === 3) return 'Triple Sharing';
+                                if (beds === 4) return 'VIP';
                                 return `${beds} Beds`;
                               })()}
                             </div>

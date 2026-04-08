@@ -181,19 +181,14 @@ export default function RoomsPage() {
     }
   };
 
-  // Helper function to convert numberOfBeds to bed configuration label
-  const getBedConfigLabel = (numberOfBeds: number): string => {
+  // Helper function to get bed configuration filter key
+  const getBedConfigLabel = (bedConfig: string | null | undefined, numberOfBeds: number): string => {
+    if (bedConfig) return bedConfig;
     switch (numberOfBeds) {
-      case 1:
-        return "single";
-      case 2:
-        return "twin_sharing";
-      case 3:
-        return "triple_sharing";
-      case 4:
-        return "vip";
-      default:
-        return "unknown";
+      case 1: return "single";
+      case 2: return "twin_sharing";
+      case 4: return "vip";
+      default: return "unknown";
     }
   };
 
@@ -206,7 +201,7 @@ export default function RoomsPage() {
           room.remark?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           room.description?.toLowerCase().includes(searchQuery.toLowerCase());
         
-        const matchesBedConfig = bedConfigFilter === "all_bed_configs" || getBedConfigLabel(room.numberOfBeds) === bedConfigFilter;
+        const matchesBedConfig = bedConfigFilter === "all_bed_configs" || getBedConfigLabel(room.bedConfig, room.numberOfBeds) === bedConfigFilter;
         const matchesStatus = statusFilter === "all_statuses" || room.status === statusFilter;
         
         return matchesSearch && matchesBedConfig && matchesStatus;
@@ -235,10 +230,17 @@ export default function RoomsPage() {
     return type.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
   };
 
-  const getBedSharingLabel = (beds: number) => {
+  const bedConfigLabels: Record<string, string> = {
+    single: 'Single',
+    twin_sharing: 'Twin Sharing',
+    quad_suite: 'Quad Suite',
+    vip: 'VIP',
+  };
+
+  const getBedSharingLabel = (bedConfig: string | null | undefined, beds: number) => {
+    if (bedConfig && bedConfigLabels[bedConfig]) return bedConfigLabels[bedConfig];
     if (beds === 1) return 'Single';
     if (beds === 2) return 'Twin Sharing';
-    if (beds === 3) return 'Triple Sharing';
     if (beds === 4) return 'VIP';
     return `${beds} Beds`;
   };
@@ -327,7 +329,7 @@ export default function RoomsPage() {
                     <SelectItem value="all_bed_configs">All Bed Configurations</SelectItem>
                     <SelectItem value="single">Single</SelectItem>
                     <SelectItem value="twin_sharing">Twin Sharing</SelectItem>
-                    <SelectItem value="triple_sharing">Triple Sharing</SelectItem>
+                    <SelectItem value="quad_suite">Quad Suite</SelectItem>
                     <SelectItem value="vip">VIP</SelectItem>
                   </SelectGroup>
                 </SelectContent>
@@ -390,7 +392,7 @@ export default function RoomsPage() {
                       <TableCell className="font-medium">{room.slotLabel}</TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium">{getBedSharingLabel(room.numberOfBeds || 1)}</span>
+                          <span className="font-medium">{getBedSharingLabel(room.bedConfig, room.numberOfBeds || 1)}</span>
                           <span className="text-xs text-gray-500">({room.numberOfBeds || 1} bed{room.numberOfBeds !== 1 ? 's' : ''})</span>
                         </div>
                       </TableCell>

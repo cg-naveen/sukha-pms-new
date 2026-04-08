@@ -30,8 +30,24 @@ interface RoomFormProps {
   onClose: () => void;
 }
 
+const bedConfigToCount: Record<string, number> = {
+  single: 1,
+  twin_sharing: 2,
+  quad_suite: 4,
+  vip: 4,
+};
+
 export default function RoomForm({ room, onClose }: RoomFormProps) {
   const { toast } = useToast();
+
+  // Derive initial bedConfig from existing room data
+  const getInitialBedConfig = (r: Room | null): string => {
+    if (r?.bedConfig) return r.bedConfig;
+    // fallback for old records without bedConfig
+    if (r?.numberOfBeds === 2) return 'twin_sharing';
+    if (r?.numberOfBeds === 4) return 'vip';
+    return 'single';
+  };
 
   // Create form with default values
   const form = useForm<z.infer<typeof insertRoomSchema>>({
@@ -43,6 +59,7 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
       size: room?.size || 0,
       floor: room?.floor || 1,
       numberOfBeds: room?.numberOfBeds || 1,
+      bedConfig: getInitialBedConfig(room),
       status: room?.status || "vacant",
       monthlyRate: room?.monthlyRate || 0,
       description: room?.description || "",
@@ -165,13 +182,16 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="numberOfBeds"
+            name="bedConfig"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Bed Configuration</FormLabel>
                 <Select
-                  onValueChange={(value) => field.onChange(parseInt(value, 10))}
-                  value={field.value?.toString() || "1"}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    form.setValue('numberOfBeds', bedConfigToCount[value] ?? 1);
+                  }}
+                  value={field.value || "single"}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -179,10 +199,10 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="1">Single (1 bed)</SelectItem>
-                    <SelectItem value="2">Twin Sharing (2 beds)</SelectItem>
-                    <SelectItem value="3">Triple Sharing (3 beds)</SelectItem>
-                    <SelectItem value="4">VIP</SelectItem>
+                    <SelectItem value="single">Single (1 bed)</SelectItem>
+                    <SelectItem value="twin_sharing">Twin Sharing (2 beds)</SelectItem>
+                    <SelectItem value="quad_suite">Quad Suite (4 beds)</SelectItem>
+                    <SelectItem value="vip">VIP (4 beds)</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

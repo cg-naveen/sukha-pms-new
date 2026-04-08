@@ -72,6 +72,7 @@ export const rooms = pgTable("rooms", {
   size: integer("size").notNull(), // Size in square feet
   floor: integer("floor").notNull(),
   numberOfBeds: integer("number_of_beds").notNull().default(1), // Number of beds in the room
+  bedConfig: text("bed_config"), // Bed configuration type: single, twin_sharing, quad_suite, vip
   status: roomStatusEnum("status").notNull().default('vacant'),
   monthlyRate: integer("monthly_rate").notNull(),
   description: text("description"),
