@@ -34,7 +34,7 @@ const bedConfigToCount: Record<string, number> = {
   single: 1,
   twin_sharing: 2,
   quad_suite: 4,
-  vip: 4,
+  vip: 1,
 };
 
 export default function RoomForm({ room, onClose }: RoomFormProps) {
@@ -45,7 +45,7 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
     if (r?.bedConfig) return r.bedConfig;
     // fallback for old records without bedConfig
     if (r?.numberOfBeds === 2) return 'twin_sharing';
-    if (r?.numberOfBeds === 4) return 'vip';
+    if (r?.numberOfBeds === 4) return 'quad_suite';
     return 'single';
   };
 
@@ -202,7 +202,7 @@ export default function RoomForm({ room, onClose }: RoomFormProps) {
                     <SelectItem value="single">Single (1 bed)</SelectItem>
                     <SelectItem value="twin_sharing">Twin Sharing (2 beds)</SelectItem>
                     <SelectItem value="quad_suite">Quad Suite (4 beds)</SelectItem>
-                    <SelectItem value="vip">VIP (4 beds)</SelectItem>
+                    <SelectItem value="vip">VIP</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

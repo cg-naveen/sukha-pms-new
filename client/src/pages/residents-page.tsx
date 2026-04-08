@@ -405,7 +405,7 @@ export default function ResidentsPage() {
                                 if (bedConfig && labels[bedConfig]) return labels[bedConfig];
                                 if (beds === 1) return 'Single';
                                 if (beds === 2) return 'Twin Sharing';
-                                if (beds === 4) return 'VIP';
+                                if (beds === 4) return 'Quad Suite';
                                 return `${beds} Beds`;
                               })()}
                             </div>
