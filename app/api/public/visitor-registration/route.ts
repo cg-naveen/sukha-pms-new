@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       countryCode
     } = body
 
-    if (!fullName || !email || !phone || !nricPassport || !visitDate || !visitTime || !numberOfVisitors || !purposeOfVisit || !residentName) {
+    if (!fullName || !email || !phone || !nricPassport || !visitDate || !visitTime || !numberOfVisitors || !purposeOfVisit) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
