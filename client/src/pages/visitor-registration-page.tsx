@@ -55,7 +55,7 @@ const visitorRegistrationSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(10, "Please enter a valid phone number"),
   nricPassport: z.string().min(6, "NRIC/Passport must be at least 6 characters"),
-  residentName: z.string().min(2, "Resident name is required"),
+  residentName: z.string().optional(),
   roomNumber: z.string().optional(),
   visitDate: z.date({
     required_error: "Please select a date for your visit",
@@ -341,9 +341,9 @@ export default function VisitorRegistrationPage() {
                       name="residentName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Name of Resident to Visit *</FormLabel>
+                          <FormLabel>Name of Resident to Visit</FormLabel>
                           <FormControl>
-                            <Input placeholder="Jane Doe" {...field} />
+                            <Input placeholder="Leave blank if you don't have family or a resident here" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

@@ -346,7 +346,7 @@ export const publicVisitorRegistrationSchema = z.object({
   email: z.string().email("Must provide a valid email"),
   phone: z.string().min(10, "Phone number must be at least 10 characters"),
   nricPassport: z.string().min(5, "NRIC/Passport number must be at least 5 characters"),
-  residentName: z.string().min(2, "Resident name is required"),
+  residentName: z.string().optional().nullable(),
   roomNumber: z.string().optional().nullable(),
   visitDate: z.string(),
   visitTime: z.string(),
