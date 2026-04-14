@@ -352,7 +352,7 @@ export const publicVisitorRegistrationSchema = z.object({
   visitTime: z.string(),
   vehicleNumber: z.string().optional().nullable(),
   numberOfVisitors: z.number().min(1, "Number of visitors must be at least 1"),
-  purposeOfVisit: z.enum(["general_visit", "site_visit", "celebration", "delivery", "maintenance", "other"]),
+  purposeOfVisit: z.enum(["general_visit", "enquiry_tour", "pickup_dropoff", "delivery", "maintenance", "other"]),
   otherPurpose: z.string().optional(),
   termsAccepted: z.boolean().refine((val) => val === true, {
     message: "You must accept the terms and conditions to proceed",
