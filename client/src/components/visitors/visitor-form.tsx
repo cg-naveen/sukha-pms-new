@@ -249,12 +249,10 @@ export default function VisitorForm({ visitor, isPublic = false, isWalkIn = fals
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="general_visit">General Visit</SelectItem>
-                  <SelectItem value="site_visit">Site Visit</SelectItem>
-                  <SelectItem value="celebration">Celebration</SelectItem>
-                  <SelectItem value="delivery">Delivery</SelectItem>
-                  <SelectItem value="maintenance">Maintenance</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="general_visit">General visit of resident</SelectItem>
+                  <SelectItem value="enquiry_tour">Enquiry/Tour</SelectItem>
+                  <SelectItem value="pickup_dropoff">Resident/Item pickup & dropoff</SelectItem>
+                  <SelectItem value="other">Others</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
