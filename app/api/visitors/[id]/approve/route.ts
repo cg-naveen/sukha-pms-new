@@ -52,6 +52,18 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         const qrCodeVerifyUrl = `${baseUrl}/api/public/visitors/verify/${qrCode}`
 
         // Replace template variables (remove qrCodeUrl from template since we'll send image)
+        const purposeLabels: Record<string, string> = {
+          general_visit: 'General Visit',
+          enquiry_tour: 'Enquiry / Tour',
+          pickup_dropoff: 'Pickup / Drop-off',
+          delivery: 'Delivery',
+          maintenance: 'Maintenance',
+          other: updated.otherPurpose || 'Other',
+        }
+        const visitPurpose = updated.purposeOfVisit
+          ? (purposeLabels[updated.purposeOfVisit] ?? updated.purposeOfVisit)
+          : 'N/A'
+
         const textMessage = replaceTemplateVariables(
           settingsData.visitorApprovalMessageTemplate,
           {
@@ -59,6 +71,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
             residentName: updated.residentName || 'Resident',
             visitDate: updated.visitDate ? format(new Date(updated.visitDate), 'dd MMM yyyy') : 'N/A',
             visitTime: updated.visitTime || 'N/A',
+            visitPurpose,
           }
         )
 
