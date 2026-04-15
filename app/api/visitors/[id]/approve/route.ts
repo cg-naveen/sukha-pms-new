@@ -60,12 +60,11 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
           maintenance: 'Maintenance',
           other: updated.otherPurpose || 'Other',
         }
-        const visitPurpose = updated.purposeOfVisit
-          ? (purposeLabels[updated.purposeOfVisit] ?? updated.purposeOfVisit)
-          : 'N/A'
+        // const visitPurpose = updated.purposeOfVisit
+        //   ? (purposeLabels[updated.purposeOfVisit] ?? updated.purposeOfVisit)
+        //   : 'N/A'
 
-        console.log('[approve] purposeOfVisit:', updated.purposeOfVisit, '| visitPurpose resolved:', visitPurpose)
-        console.log('[approve] template:', settingsData.visitorApprovalMessageTemplate)
+
 
         const textMessage = replaceTemplateVariables(
           settingsData.visitorApprovalMessageTemplate,
@@ -74,7 +73,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
             residentName: updated.residentName || 'Resident',
             visitDate: updated.visitDate ? format(new Date(updated.visitDate), 'dd MMM yyyy') : 'N/A',
             visitTime: updated.visitTime || 'N/A',
-            visitPurpose,
+            visitPurpose: updated.purposeOfVisit,
           }
         )
 
