@@ -45,6 +45,18 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 
       if (settingsData?.wabotEnabled && settingsData?.visitorRejectionMessageTemplate && settingsData.wabotApiBaseUrl) {
         // Replace template variables
+        const purposeLabels: Record<string, string> = {
+          general_visit: 'General Visit',
+          enquiry_tour: 'Enquiry / Tour',
+          pickup_dropoff: 'Pickup / Drop-off',
+          delivery: 'Delivery',
+          maintenance: 'Maintenance',
+          other: updated.otherPurpose || 'Other',
+        }
+        const visitPurpose = updated.purposeOfVisit
+          ? (purposeLabels[updated.purposeOfVisit] ?? updated.purposeOfVisit)
+          : 'N/A'
+
         const message = replaceTemplateVariables(
           settingsData.visitorRejectionMessageTemplate,
           {
@@ -52,6 +64,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
             residentName: updated.residentName || 'Resident',
             visitDate: updated.visitDate ? format(new Date(updated.visitDate), 'dd MMM yyyy') : 'N/A',
             visitTime: updated.visitTime || 'N/A',
+            visitPurpose,
           }
         )
 

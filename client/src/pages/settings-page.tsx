@@ -841,7 +841,7 @@ export default function SettingsPage() {
                             />
                           </FormControl>
                           <FormDescription>
-                            WhatsApp message template for visitor approval. Available variables: {"{"}visitorName{"}"}, {"{"}residentName{"}"}, {"{"}visitDate{"}"}, {"{"}visitTime{"}"}
+                            WhatsApp message template for visitor approval. Available variables: {"{"}visitorName{"}"}, {"{"}residentName{"}"}, {"{"}visitDate{"}"}, {"{"}visitTime{"}"}, {"{"}visitPurpose{"}"}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -863,7 +863,7 @@ export default function SettingsPage() {
                             />
                           </FormControl>
                           <FormDescription>
-                            WhatsApp message template for visitor rejection. Available variables: {"{"}visitorName{"}"}, {"{"}residentName{"}"}, {"{"}visitDate{"}"}, {"{"}visitTime{"}"}
+                            WhatsApp message template for visitor rejection. Available variables: {"{"}visitorName{"}"}, {"{"}residentName{"}"}, {"{"}visitDate{"}"}, {"{"}visitTime{"}"}, {"{"}visitPurpose{"}"}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
