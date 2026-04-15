@@ -65,6 +65,17 @@ export async function POST(request: NextRequest) {
     // If auto-approved and wabot is enabled, send WhatsApp notification
     if (autoApproval && settingsData?.wabotEnabled && settingsData?.visitorApprovalMessageTemplate && settingsData.wabotApiBaseUrl) {
       try {
+        const purposeLabels: Record<string, string> = {
+          general_visit: 'General Visit',
+          enquiry_tour: 'Enquiry / Tour',
+          pickup_dropoff: 'Pickup / Drop-off',
+          delivery: 'Delivery',
+          maintenance: 'Maintenance',
+          other: newVisitor.otherPurpose || 'Other',
+        }
+        const rawPurpose = String(newVisitor.purposeOfVisit || '')
+        const visitPurpose = rawPurpose ? (purposeLabels[rawPurpose] ?? rawPurpose) : 'N/A'
+
         const textMessage = replaceTemplateVariables(
           settingsData.visitorApprovalMessageTemplate,
           {
@@ -72,6 +83,7 @@ export async function POST(request: NextRequest) {
             residentName: newVisitor.residentName || 'Resident',
             visitDate: newVisitor.visitDate ? format(new Date(newVisitor.visitDate), 'dd MMM yyyy') : 'N/A',
             visitTime: newVisitor.visitTime || 'N/A',
+            visitPurpose,
           }
         )
 
