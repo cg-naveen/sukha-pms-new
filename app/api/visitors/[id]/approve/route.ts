@@ -63,10 +63,6 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         const rawPurpose = String(updated.purposeOfVisit || '')
         const visitPurpose = rawPurpose ? (purposeLabels[rawPurpose] ?? rawPurpose) : 'N/A'
 
-        console.log('[approve] rawPurpose:', rawPurpose)
-        console.log('[approve] visitPurpose:', visitPurpose)
-        console.log('[approve] template:', settingsData.visitorApprovalMessageTemplate)
-
         const textMessage = replaceTemplateVariables(
           settingsData.visitorApprovalMessageTemplate,
           {
