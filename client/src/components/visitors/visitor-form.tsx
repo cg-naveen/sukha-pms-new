@@ -59,7 +59,7 @@ export default function VisitorForm({ visitor, isPublic = false, isWalkIn = fals
   const form = useForm<z.infer<typeof insertVisitorSchema>>({
     resolver: zodResolver(insertVisitorSchema),
     defaultValues: {
-      residentId: visitor?.residentId || 0,
+      residentId: visitor?.residentId || undefined,
       fullName: visitor?.fullName || "",
       email: visitor?.email || "",
       phone: visitor?.phone || "",
@@ -125,17 +125,23 @@ export default function VisitorForm({ visitor, isPublic = false, isWalkIn = fals
             name="residentId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Resident to Visit</FormLabel>
+                <FormLabel>
+                  Resident to Visit
+                  {!isPublic && <span className="text-muted-foreground font-normal ml-1">(Optional)</span>}
+                </FormLabel>
                 <Select
-                  onValueChange={(value) => field.onChange(parseInt(value, 10))}
+                  onValueChange={(value) => field.onChange(value && value !== "none" ? parseInt(value, 10) : undefined)}
                   defaultValue={field.value ? field.value.toString() : undefined}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select resident" />
+                      <SelectValue placeholder="Select resident (optional)" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    {!isPublic && (
+                      <SelectItem value="none">-- No specific resident --</SelectItem>
+                    )}
                     {Array.isArray(residents) ? residents.map((resident: any) => (
                       <SelectItem key={resident.id} value={resident.id.toString()}>
                         {resident.fullName} - Room {resident.occupancy?.[0]?.room
@@ -286,9 +292,20 @@ export default function VisitorForm({ visitor, isPublic = false, isWalkIn = fals
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Visit Time</FormLabel>
-                <FormControl>
-                  <Input type="time" {...field} value={field.value || ""} />
-                </FormControl>
+                <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a time" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {["10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM"].map((time) => (
+                      <SelectItem key={time} value={time}>
+                        {time}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

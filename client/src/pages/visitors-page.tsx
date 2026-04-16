@@ -361,9 +361,10 @@ export default function VisitorsPage() {
                 <TableHead>Visitor Name</TableHead>
                 <TableHead>Resident</TableHead>
                 <TableHead>Visit Date</TableHead>
+                <TableHead className="whitespace-nowrap">Visit Time</TableHead>
                 <TableHead>Purpose</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right w-[120px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -372,6 +373,7 @@ export default function VisitorsPage() {
                   <TableRow key={i}>
                     <TableCell><Skeleton className="h-8 w-[200px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[200px]" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-[120px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[120px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[200px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[100px]" /></TableCell>
@@ -392,13 +394,14 @@ export default function VisitorsPage() {
                       </div>
                     </TableCell>
                     <TableCell>{format(new Date(visitor.visitDate), "MMM d, yyyy")}</TableCell>
+                    <TableCell className="whitespace-nowrap">{visitor.visitTime}</TableCell>
                     <TableCell>
                       <div className="max-w-xs truncate" title={visitor.purposeOfVisit}>
                         {visitor.purposeOfVisit ? visitor.purposeOfVisit.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : '-'}
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(visitor.status)}</TableCell>
-                    <TableCell className="text-right space-x-2">
+                    <TableCell className="text-right w-[120px] space-x-1">
                       {visitor.status === 'pending' && (
                         <>
                           <Button 
