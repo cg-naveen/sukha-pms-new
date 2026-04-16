@@ -292,9 +292,20 @@ export default function VisitorForm({ visitor, isPublic = false, isWalkIn = fals
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Visit Time</FormLabel>
-                <FormControl>
-                  <Input type="time" {...field} value={field.value || ""} />
-                </FormControl>
+                <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a time" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {["10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM"].map((time) => (
+                      <SelectItem key={time} value={time}>
+                        {time}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
