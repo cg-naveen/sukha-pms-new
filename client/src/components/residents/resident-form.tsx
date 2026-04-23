@@ -107,7 +107,7 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
         phone: resident?.phone || "",
         countryCode: resident?.countryCode || "+60",
         dateOfBirth: resident?.dateOfBirth || undefined,
-        idNumber: resident?.idNumber || "",
+        idNumber: resident?.idNumber || undefined,
         address: resident?.address || "",
         photo: resident?.photo || "",
         roomId: resident?.roomId || undefined,
@@ -218,6 +218,9 @@ export default function ResidentForm({ resident, onClose }: ResidentFormProps) {
           delete residentData[key];
         }
       });
+      if (residentData.idNumber === "") {
+        delete residentData.idNumber;
+      }
 
       if (resident) {
         // Update existing resident
