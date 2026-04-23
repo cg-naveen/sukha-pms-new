@@ -35,7 +35,7 @@ export const residents = pgTable("residents", {
   phone: text("phone").notNull(),
   countryCode: countryCodeEnum("country_code").notNull().default('+60'),
   dateOfBirth: date("date_of_birth"),
-  idNumber: text("id_number").unique(),
+  idNumber: text("id_number"),
   address: text("address"),
   photo: text("photo"),
   roomId: integer("room_id").references(() => rooms.id),
