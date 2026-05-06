@@ -77,6 +77,7 @@ export default function VisitorsPage() {
       purpose_of_visit: v.purposeOfVisit,
       visit_date: v.visitDate,
       visit_time: v.visitTime || '',
+      vehicle_number: v.vehicleNumber || '',
       status: v.status,
       resident_id: v.residentId || '',
     }));
@@ -362,6 +363,8 @@ export default function VisitorsPage() {
                 <TableHead>Resident</TableHead>
                 <TableHead>Visit Date</TableHead>
                 <TableHead className="whitespace-nowrap">Visit Time</TableHead>
+                <TableHead className="whitespace-nowrap">Phone Number</TableHead>
+                <TableHead className="whitespace-nowrap">Vehicle No.</TableHead>
                 <TableHead>Purpose</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right w-[120px]">Actions</TableHead>
@@ -375,6 +378,8 @@ export default function VisitorsPage() {
                     <TableCell><Skeleton className="h-8 w-[200px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[120px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[120px]" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-[140px]" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-[100px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[200px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[100px]" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-[150px] ml-auto" /></TableCell>
@@ -395,6 +400,10 @@ export default function VisitorsPage() {
                     </TableCell>
                     <TableCell>{format(new Date(visitor.visitDate), "MMM d, yyyy")}</TableCell>
                     <TableCell className="whitespace-nowrap">{visitor.visitTime}</TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {visitor.phone ? `${visitor.phone}` : '-'}
+                    </TableCell>
+                    <TableCell>{visitor.vehicleNumber || '-'}</TableCell>
                     <TableCell>
                       <div className="max-w-xs truncate" title={visitor.purposeOfVisit}>
                         {visitor.purposeOfVisit ? visitor.purposeOfVisit.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : '-'}
@@ -439,7 +448,7 @@ export default function VisitorsPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-6 text-gray-500">
+                  <TableCell colSpan={8} className="text-center py-6 text-gray-500">
                     No visitors found matching filters
                   </TableCell>
                 </TableRow>
