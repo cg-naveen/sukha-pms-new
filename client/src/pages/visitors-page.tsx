@@ -39,7 +39,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
-import { Plus, Search, Check, X, QrCode, Loader2, ScanLine, UserCheck, Download, Upload } from "lucide-react";
+import { Plus, Search, Check, X, QrCode, Loader2, ScanLine, UserCheck, Download, Upload, Trash2 } from "lucide-react";
 import { exportToCSV } from "@/lib/csv-utils";
 import { useRef } from "react";
 
@@ -212,6 +212,34 @@ export default function VisitorsPage() {
       });
     },
   });
+
+  // Delete visitor mutation
+  const deleteVisitorMutation = useMutation({
+    mutationFn: async (visitorId: number) => {
+      const res = await apiRequest('DELETE', `/api/visitors/${visitorId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Visitor deleted',
+        description: 'The visitor has been deleted successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/visitors'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleDeleteVisitor = (visitorId: number) => {
+    if (window.confirm('Are you sure you want to delete this visitor? This action cannot be undone.')) {
+      deleteVisitorMutation.mutate(visitorId);
+    }
+  };
 
   const openForm = () => {
     setIsFormOpen(true);
@@ -410,39 +438,59 @@ export default function VisitorsPage() {
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(visitor.status)}</TableCell>
-                    <TableCell className="text-right w-[120px] space-x-1">
-                      {visitor.status === 'pending' && (
-                        <>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
-                            onClick={() => openApproveDialog(visitor)}
+                    <TableCell className="text-right w-[120px]">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        {visitor.status === 'pending' && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+                              onClick={() => openApproveDialog(visitor)}
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-200"
+                              onClick={() => openRejectDialog(visitor)}
+                            >
+                              <X className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        {visitor.status === 'approved' && visitor.qrCode && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openQrDialog(visitor)}
                           >
-                            <Check className="h-4 w-4 mr-1" />
-                            Approve
+                            <QrCode className="h-4 w-4 mr-1" />
+                            QR Code
                           </Button>
-                          <Button 
-                            variant="outline" 
+                        )}
+                        {user?.role === 'admin' && (
+                          <Button
+                            variant="outline"
                             size="sm"
                             className="bg-red-50 text-red-700 hover:bg-red-100 border-red-200"
-                            onClick={() => openRejectDialog(visitor)}
+                            onClick={() => handleDeleteVisitor(visitor.id)}
+                            disabled={deleteVisitorMutation.isPending}
                           >
-                            <X className="h-4 w-4 mr-1" />
-                            Reject
+                            {deleteVisitorMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Delete
+                              </>
+                            )}
                           </Button>
-                        </>
-                      )}
-                      {visitor.status === 'approved' && visitor.qrCode && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => openQrDialog(visitor)}
-                        >
-                          <QrCode className="h-4 w-4 mr-1" />
-                          QR Code
-                        </Button>
-                      )}
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
