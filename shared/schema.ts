@@ -363,7 +363,7 @@ export const insertCompanionBookingSchema = createInsertSchema(companionBookings
   phone: (schema) => schema.min(8, "Phone number must be at least 8 characters"),
   area: (schema) => schema.min(2, "Area must be at least 2 characters"),
   package: (schema) => schema.min(1, "Package is required"),
-}).omit({ id: true, status: true, createdAt: true });
+}).omit({ id: true, status: true, created_at: true });
 
 export type InsertCompanionBooking = z.infer<typeof insertCompanionBookingSchema>;
 export type CompanionBooking = typeof companionBookings.$inferSelect;
