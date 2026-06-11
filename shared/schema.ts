@@ -195,6 +195,23 @@ export const settings = pgTable("settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Companion bookings table
+export const companionBookings = pgTable("companion_bookings", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  phone: text("phone").notNull(),
+  area: text("area").notNull(),
+  package: text("package").notNull(),
+  preferredDate: date("preferred_date"),
+  preferredLanguage: text("preferred_language"),
+  notes: text("notes"),
+  age: integer("age"),
+  gender: text("gender"),
+  seniorName: text("senior_name"),
+  status: text("status").default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   approvedVisitors: many(visitors),
@@ -339,6 +356,17 @@ export type InsertSettings = z.infer<typeof insertSettingsSchema>;
 export type Settings = typeof settings.$inferSelect;
 
 export type Login = z.infer<typeof loginSchema>;
+
+// Companion booking schema
+export const insertCompanionBookingSchema = createInsertSchema(companionBookings, {
+  name: (schema) => schema.min(2, "Name must be at least 2 characters"),
+  phone: (schema) => schema.min(8, "Phone number must be at least 8 characters"),
+  area: (schema) => schema.min(2, "Area must be at least 2 characters"),
+  package: (schema) => schema.min(1, "Package is required"),
+}).omit({ id: true, status: true, createdAt: true });
+
+export type InsertCompanionBooking = z.infer<typeof insertCompanionBookingSchema>;
+export type CompanionBooking = typeof companionBookings.$inferSelect;
 
 // Public visitor registration schema
 export const publicVisitorRegistrationSchema = z.object({
