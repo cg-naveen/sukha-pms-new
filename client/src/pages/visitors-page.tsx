@@ -39,7 +39,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
-import { Plus, Search, Check, X, QrCode, Loader2, ScanLine, UserCheck, Download, Upload, Trash2 } from "lucide-react";
+import { Plus, Search, Check, X, QrCode, Loader2, ScanLine, UserCheck, Download, Upload, Trash2, ArrowUpDown } from "lucide-react";
 import { exportToCSV } from "@/lib/csv-utils";
 import { useRef } from "react";
 
@@ -53,6 +53,7 @@ export default function VisitorsPage() {
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
   const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"default" | "asc" | "desc">("default");
   const { toast } = useToast();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -148,10 +149,11 @@ export default function VisitorsPage() {
 
   // Fetch visitors data
   const { data: visitors, isLoading } = useQuery({
-    queryKey: ["/api/visitors", statusFilter],
+    queryKey: ["/api/visitors", statusFilter, sortOrder],
     queryFn: async ({ queryKey }) => {
-      const [_, status] = queryKey;
-      const res = await fetch(`/api/visitors?status=${status}`);
+      const [_, status, sort] = queryKey;
+      const sortParam = sort !== 'default' ? `&sort=visitDate_${sort}` : '';
+      const res = await fetch(`/api/visitors?status=${status}${sortParam}`);
       if (!res.ok) throw new Error("Failed to fetch visitors");
       return res.json();
     },
@@ -160,7 +162,7 @@ export default function VisitorsPage() {
   // Filter data based on search
   const filteredVisitors = visitors
     ? visitors.filter((visitor: any) => {
-        return searchQuery === "" || 
+        return searchQuery === "" ||
           visitor.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
           visitor.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
           (visitor.residentName || '').toLowerCase().includes(searchQuery.toLowerCase());
@@ -376,6 +378,28 @@ export default function VisitorsPage() {
                   <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="w-full md:w-auto flex items-center gap-1">
+              <Button
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={() => setSortOrder(sortOrder === "default" ? "desc" : sortOrder === "desc" ? "asc" : "default")}
+              >
+                <ArrowUpDown className="h-4 w-4" />
+                {sortOrder === "default" ? "Sort by Visit Date" : sortOrder === "desc" ? "Visit Date: Newest First" : "Visit Date: Oldest First"}
+              </Button>
+              {sortOrder !== "default" && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="px-2"
+                  onClick={() => setSortOrder("default")}
+                  title="Reset sort"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>

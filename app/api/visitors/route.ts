@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '../../../lib/db'
 import { visitors, residents, rooms, insertVisitorSchema } from '../../../shared/schema'
 import { requireAuth } from '../../../lib/auth'
-import { and, desc, eq } from 'drizzle-orm'
+import { asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
@@ -12,18 +12,22 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
+    const sortParam = searchParams.get('sort')
 
-    // Base query: newest first
+    const orderClause =
+      sortParam === 'visitDate_asc'  ? asc(visitors.visitDate) :
+      sortParam === 'visitDate_desc' ? desc(visitors.visitDate) :
+      desc(visitors.createdAt)
+
     let allVisitors
-    
-    // Apply status filter only when not "all_statuses"
+
     if (status && status !== 'all_statuses') {
       allVisitors = await db.select().from(visitors)
         .where(eq(visitors.status, status as any))
-        .orderBy(desc(visitors.createdAt))
+        .orderBy(orderClause)
     } else {
       allVisitors = await db.select().from(visitors)
-        .orderBy(desc(visitors.createdAt))
+        .orderBy(orderClause)
     }
 
     // Fetch resident and room data for each visitor
