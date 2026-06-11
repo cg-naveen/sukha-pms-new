@@ -202,14 +202,14 @@ export const companionBookings = pgTable("companion_bookings", {
   phone: text("phone").notNull(),
   area: text("area").notNull(),
   package: text("package").notNull(),
-  preferredDate: date("preferred_date"),
-  preferredLanguage: text("preferred_language"),
+  preferred_date: date("preferred_date"),
+  preferred_language: text("preferred_language"),
   notes: text("notes"),
   age: integer("age"),
   gender: text("gender"),
-  seniorName: text("senior_name"),
+  senior_name: text("senior_name"),
   status: text("status").default("pending"),
-  createdAt: timestamp("created_at").defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
 });
 
 // Relations
