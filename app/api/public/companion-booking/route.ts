@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     const [booking] = await db
       .insert(companionBookings)
-      .values(parsed.data)
+      .values(parsed.data as typeof companionBookings.$inferInsert)
       .returning({ id: companionBookings.id })
 
     return NextResponse.json(
