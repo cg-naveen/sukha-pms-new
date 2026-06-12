@@ -210,6 +210,19 @@ export const companionBookings = pgTable("companion_bookings", {
   senior_name: text("senior_name"),
   status: text("status").default("pending"),
   created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Companion booking attachments table
+export const companionBookingAttachments = pgTable("companion_booking_attachments", {
+  id: serial("id").primaryKey(),
+  booking_id: integer("booking_id").references(() => companionBookings.id).notNull(),
+  file_name: text("file_name").notNull(),
+  file_path: text("file_path").notNull(),
+  file_size: integer("file_size"),
+  mime_type: text("mime_type").notNull(),
+  uploaded_by: integer("uploaded_by").references(() => users.id),
+  created_at: timestamp("created_at").defaultNow(),
 });
 
 // Relations
