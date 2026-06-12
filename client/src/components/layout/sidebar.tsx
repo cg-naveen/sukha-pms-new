@@ -10,7 +10,8 @@ import {
   UserPlus,
   User,
   Settings,
-  ChevronLeft
+  ChevronLeft,
+  BookText
 } from "lucide-react";
 
 interface SidebarProps {
@@ -30,6 +31,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     { name: 'Rooms', href: '/rooms', icon: Building2 },
     { name: 'Billing', href: '/billings', icon: Receipt },
     { name: 'Visitors', href: '/visitors', icon: UserPlus },
+    { name: 'SERI Concierge', href: '/concierge', icon: BookText },
   ];
   
   const adminNavigation = [
