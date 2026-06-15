@@ -465,9 +465,14 @@ export default function VisitorRegistrationPage() {
                                 min={1} 
                                 max={10} 
                                 {...field} 
+                                value={field.value ?? undefined}
                                 onChange={(e) => {
-                                  const value = e.target.value === "" ? "1" : e.target.value;
-                                  field.onChange(parseInt(value, 10));
+                                  const parsed = parseInt(e.target.value);
+                                  field.onChange(isNaN(parsed) ? "" : parsed);
+                                }}
+                                onBlur={(e) => {
+                                  const parsed = parseInt(e.target.value);
+                                  if (isNaN(parsed) || parsed < 1) field.onChange(1);
                                 }}
                               />
                             </FormControl>

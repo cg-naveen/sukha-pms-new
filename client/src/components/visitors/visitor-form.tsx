@@ -318,13 +318,20 @@ export default function VisitorForm({ visitor, isPublic = false, isWalkIn = fals
               <FormItem>
                 <FormLabel>Number of Visitors</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    min="1" 
-                    max="10" 
-                    {...field} 
-                    value={field.value || 1}
-                    onChange={(e) => field.onChange(parseInt(e.target.value))}
+                  <Input
+                    type="number"
+                    min="1"
+                    max="10"
+                    {...field}
+                    value={field.value ?? undefined}
+                    onChange={(e) => {
+                      const parsed = parseInt(e.target.value);
+                      field.onChange(isNaN(parsed) ? "" : parsed);
+                    }}
+                    onBlur={(e) => {
+                      const parsed = parseInt(e.target.value);
+                      if (isNaN(parsed) || parsed < 1) field.onChange(1);
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
